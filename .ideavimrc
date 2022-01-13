@@ -1,0 +1,14 @@
+set surround
+set multiple-cursors
+
+Plug 'preservim/nerdtree'
+
+:map \r <Action>(ReformatCode)
+:map \p <Action>(ReformatWithPrettierAction)
+:map \d <Action>(Debug)
+:map gb <Action>(GotoImplementation)
+
+map <C-n> <A-n>
+map g<C-n> g<A-n>
+map <C-p> <A-p>
+map <C-x> <A-x>

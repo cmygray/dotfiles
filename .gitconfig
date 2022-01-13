@@ -1,0 +1,19 @@
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[user]
+	name = cmygray
+	email = cmygray@users.noreply.github.com
+[core]
+	precomposeunicode = true
+	quotepath = false
+	excludesfile = ~/.gitignore
+[format]
+	signoff = true
+[alias]
+	ia = !git add $(git ls-files --modified --others --exclude-standard | fzf -m)
+	id = !git diff $(git ls-files --modified --others --exclude-standard | fzf -m)
+	ir = !git reset -- $(git ls-files --modified --others --exclude-standard | fzf -m)
+	ico = !git checkout -- $(git ls-files --modified --others --exclude-standard | fzf -m)

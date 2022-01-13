@@ -1,0 +1,35 @@
+format = """
+${custom.cpu}${aws}${custom.caffeinated}
+${all}
+"""
+
+[aws]
+format = " [$symbol($profile) ($region) ($duration)]($style)"
+
+[aws.region_aliases]
+us-east-1 = "Virginia"
+ap-northeast-2 = "Seoul"
+
+[cmd_duration]
+disabled = true
+
+[directory]
+truncation_length = 0
+truncate_to_repo = false
+
+[nodejs]
+format = "[$symbol$version]($style)"
+
+# custom modules
+
+[custom.caffeinated]
+when = """ test "$CAFFEINATED" = true """
+symbol = "☕️"
+format = " $symbol"
+
+[custom.cpu]
+command = "uname -m"
+format = "[$output]($style)"
+when = "true"
+style = "bold blue"
+
