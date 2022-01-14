@@ -1,6 +1,6 @@
 local boxes = {}
 local inputEnglish = "com.apple.keylayout.ABC"
-local box_height = 25
+local box_height_fallback = 25
 local box_alpha = 0.5
 local nordblue = { ["red"]=0.533,["green"]=0.753,["blue"]=0.816,["alpha"]=1 }
 local box_color = hs.drawing.color.asRGB(nordblue)
@@ -54,7 +54,7 @@ function draw_rectangle(target_draw, screen, offset, width, fill_color)
     local screen_frame_height      = screen:frame().y
     local screen_full_frame_height = screeng.y
     local height_delta             = screen_frame_height - screen_full_frame_height
-    local height                   = box_height
+    local height                   = height_delta > 0 and height_delta or box_height_fallback
 
     target_draw:setSize(hs.geometry.rect(screeng.x + offset, screen_full_frame_height, width, height))
     target_draw:setTopLeft(hs.geometry.point(screeng.x + offset, screen_full_frame_height))
