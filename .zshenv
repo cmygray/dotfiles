@@ -9,4 +9,3 @@ alias fgb="fzf-git-branch"
 alias fgco="fzf-git-checkout"
 alias ss="starship"
 
-. "$HOME/.cargo/env"

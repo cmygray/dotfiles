@@ -12,3 +12,5 @@ iterm2_print_user_vars() {
   iterm2_set_user_var cpu $CPU
 }
 
+export RUST_WITHOUT=rust-docs
+
