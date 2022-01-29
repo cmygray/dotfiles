@@ -1,10 +1,19 @@
 #!/bin/sh
 
+brew update
+brew tap homebrew/bundle
+brew bundle --file=$HOME/dotfiles/Brewfile
+brew cleanup
+brew cask cleanup
+
+sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
 [ ! -f $HOME/Brewfile ] && ln -nfs $HOME/dotfiles/Brewfile $HOME/Brewfile
 
 [ ! -f $HOME/.zshrc ] && ln -nfs $HOME/dotfiles/.zshrc $HOME/.zshrc
 [ ! -f $HOME/.zshenv ] && ln -nfs $HOME/dotfiles/.zshenv $HOME/.zshenv
 [ ! -f $HOME/.zprofile ] && ln -nfs $HOME/dotfiles/.zprofile $HOME/.zprofile
+source $HOME/.zshrc
 
 [ ! -f $HOME/.config/starship.toml ] && ln -nfs $HOME/dotfiles/starship.toml $HOME/.config/starship.toml
 
