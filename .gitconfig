@@ -6,6 +6,8 @@
 [user]
 	name = cmygray
 	email = cmygray@users.noreply.github.com
+[includeIf "gitdir:~/Workspace/"]
+  path = ~/Workspace/.gitconfig
 [core]
 	precomposeunicode = true
 	quotepath = false
