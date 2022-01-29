@@ -1,10 +1,10 @@
 format = """
-${custom.cpu}${aws}${custom.caffeinated}
-${all}
+${custom.cpu}${nodejs}${aws}${custom.review}
+${all}${custom.caffeinated}${jobs}${character}
 """
 
 [aws]
-format = " [$symbol($profile) ($region) ($duration)]($style)"
+format = "[ ($profile) ($region) ($duration)]($style)"
 
 [aws.region_aliases]
 us-east-1 = "Virginia"
@@ -18,16 +18,18 @@ truncation_length = 0
 truncate_to_repo = false
 
 [nodejs]
-format = "[$symbol$version]($style)"
+format = "[ $symbol$version]($style)"
 
 # custom modules
 
 [custom.caffeinated]
+description = "Show coffee if you are caffeinated"
 when = """ test "$CAFFEINATED" = true """
 symbol = "☕️"
-format = " $symbol"
+format = "$symbol "
 
 [custom.cpu]
+description = "arm64 OR x86"
 command = "uname -m"
 format = "[$output]($style)"
 when = "true"
