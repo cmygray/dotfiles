@@ -95,6 +95,7 @@ export BYOBU_PREFIX=/opt/homebrew
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
 export BAT_THEME=Nord
 export FZF_BASE=$(brew --prefix fzf)
+export PATH=/opt/homebrew/bin/:$PATH
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
