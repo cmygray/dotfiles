@@ -1,7 +1,12 @@
 set surround
 set multiple-cursors
+set argtextobj
+set NERDTree
+set exchange
+set multiple-cursors
 
-Plug 'preservim/nerdtree'
+set visualbell
+set noerrorbells
 
 :map \r <Action>(ReformatCode)
 :map \p <Action>(ReformatWithPrettierAction)
