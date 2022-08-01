@@ -91,7 +91,6 @@ source $ZSH/oh-my-zsh.sh
 
 # export MANPATH="/usr/local/man:$MANPATH"
 export CHAMBER_KMS_KEY_ALIAS=aws/ssm
-export BYOBU_PREFIX=/opt/homebrew
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
 export BAT_THEME=Nord
 export FZF_BASE=$(brew --prefix fzf)
