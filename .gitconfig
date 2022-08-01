@@ -12,6 +12,7 @@
 	precomposeunicode = true
 	quotepath = false
 	excludesfile = ~/.gitignore
+	editor = nvim
 [format]
 	signoff = true
 [alias]
