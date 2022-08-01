@@ -6,7 +6,6 @@ TODO:
 
 직접 설치할 앱들:
 - 1password
-- intelliJ
 - paw
 - authy
 - karabiner
@@ -18,6 +17,8 @@ TODO:
 - monitorcontrol (appstore)
 - pdf expert
 - top notch (m1 only)
+- vimac
+- wezterm
 
 참고:
 - https://blog.appkr.dev/work-n-play/dotfiles/
