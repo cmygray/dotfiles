@@ -1,6 +1,5 @@
 TODO:
 - [ ] (bootstrap) brew 설치, gpg 설정
-- [ ] (gitconfig) 이메일을 숨기고 공개 저장소로 변경
 - [ ] (github) ssh
 - [ ] 카라비너 설정을 자동 백업하면서 깃으로 관리할 방법
 - [ ] vim, zsh-custom 서브모듈 문제 해결
