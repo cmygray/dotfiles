@@ -96,6 +96,8 @@ export BAT_THEME=Nord
 export FZF_BASE=$(brew --prefix fzf)
 export PATH=/opt/homebrew/bin/:$PATH
 
+source $HOME/.zshsecrets
+
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
 
