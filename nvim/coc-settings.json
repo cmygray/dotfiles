@@ -1,0 +1,14 @@
+{
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "prettier.singleQuote": true,
+  "yaml.format.singleQuote": false,
+  "yaml.customTags": ["!GetAtt", "!Join sequence", "!Ref", "!Sub"],
+  "coc.preferences.formatOnSave": true,
+  "languageserver": {
+    "graphql": {
+      "command": "graphql-lsp",
+      "args": ["server", "-m", "stream"],
+      "filetypes": ["typescriptreact", "graphql"]
+    }
+  }
+}

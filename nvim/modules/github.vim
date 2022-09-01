@@ -3,7 +3,7 @@ function! OpenCommitInGitHub()
   let repo_url = substitute(system('gh browse -n'), '\n\+$', '', '')
   let commit_url = repo_url . '/commit/' . commit_hash
 
-  call netrw#BrowseX(commit_url, netrw#CheckIfRemote())
+  call system('open' . ' ' . commit_url)
 endfunction
 
 nmap <leader>cc :call OpenCommitInGitHub()<cr>

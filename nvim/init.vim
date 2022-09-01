@@ -1,5 +1,10 @@
 " Plugins
-call plug#begin('~/.vim/plugged')
+call plug#begin('~/.config/nvim/plugged')
+  Plug 'wakatime/vim-wakatime'
+  Plug 'github/copilot.vim'
+  Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && yarn' }
+  Plug 'rest-nvim/rest.nvim', { 'tag': '0.2' }
+
   " Theme
   Plug 'arcticicestudio/nord-vim'
   Plug 'kyazdani42/nvim-web-devicons'
@@ -10,27 +15,30 @@ call plug#begin('~/.vim/plugged')
   Plug 'airblade/vim-gitgutter'
   Plug 'sindrets/diffview.nvim'
   Plug 'pwntester/octo.nvim'
-  Plug 'akinsho/git-conflict.nvim'
+  Plug 'akinsho/git-conflict.nvim', { 'tag': '*' }
+  Plug 'rhysd/conflict-marker.vim'
 
   " Editor
   Plug 'tpope/vim-surround'
-  Plug 'tpope/vim-vinegar'
-  Plug 'folke/todo-comments.nvim'
   Plug 'nvim-telescope/telescope.nvim'
+  Plug 'windwp/nvim-autopairs'
+  Plug 'chaoren/vim-wordmotion'
+  Plug 'stevearc/qf_helper.nvim'
+  Plug 'stevearc/oil.nvim'
+  Plug 'lalitmee/browse.nvim'
 
   " Languages and frameworks
   Plug 'sheerun/vim-polyglot'
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
+  Plug 'jparise/vim-graphql'
   Plug 'rust-lang/rust.vim'
-  Plug 'kubejm/jest.nvim'
+  Plug 'eliba2/vim-node-inspect'
 
   " Dependencies
   Plug 'nvim-lua/plenary.nvim'
   Plug 'nvim-telescope/telescope-live-grep-args.nvim'
+  Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
 
-  " Deprecated
-  Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-  Plug 'junegunn/fzf.vim'
 call plug#end()
 
 " General
@@ -55,13 +63,10 @@ set autoindent
 set smartindent
 set shiftwidth=2
 set tabstop=2
-set softtabstop=2
-set expandtab smarttab
+set expandtab
 set signcolumn=yes " vim-gitgutter
 
-let g:airline#extensions#tabline#enabled = 1
-
-let g:netrw_localrmdir = 'rm -r'
+let g:mkdp_theme = 'light'
 
 " Keymaps
 map <space> <leader>
@@ -77,16 +82,23 @@ map ,,, :source $MYVIMRC<cr>
   inoremap <C-j> <C-o>j
   inoremap <C-k> <C-o>k
 
-  " [WIP] jump to test file
-  nmap gt :execute 'find' '**/' . expand('%:t:r') . '.spec.ts'<cr>
+  " Buffers
+  nnoremap <silent> <C-w>d :bp<CR>:bd#<CR>
+  nnoremap <silent> <C-w>D :%bd\|e#<CR>
+  nnoremap <silent> <PageUp>   :bprevious!<CR>
+  nnoremap <silent> <PageDown> :bnext!<CR>
 
 " Command maps
+command W w
 command Wq wq
 command WQ wq
 command Qa qa
 command QA qa
+command Bd bd
+command BD bd
+
+command Rest :lua require('rest-nvim').run()<CR>
 
 for module in uniq(sort(globpath(&rtp, 'modules/*.vim', 0, 1)))
     execute "source " . module
 endfor
-
