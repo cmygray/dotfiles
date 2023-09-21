@@ -40,8 +40,11 @@ nmap <silent> <A-Cr> <Plug>(coc-codeaction-cursor)
 
 " Goto
 nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gpd :call CocAction('jumpDefinition', v:false)<CR>
 nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gpi :call CocAction('jumpImplementation', v:false)<CR>
 nmap <silent> gu <Plug>(coc-references)
+
 nnoremap <silent> gr :call ShowDocumentation()<CR>
 
 nmap <silent> <leader>j <Plug>(coc-diagnostic-next)
