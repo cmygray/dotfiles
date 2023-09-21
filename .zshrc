@@ -5,6 +5,7 @@ DEFAULT_USER="won"
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
+export EDITOR="nvim"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
@@ -119,6 +120,11 @@ source $HOME/.zshsecrets
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+
+autoload -U edit-command-line
+
+zle -N edit-command-line
+bindkey -M vicmd v edit-command-line
 
 kil() {
   lsof -i:"$1" | grep -Eo "[0-9]{5}" | xargs -I{} kill -9 {}
