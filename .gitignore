@@ -3,3 +3,4 @@
 .tool-versions
 .zshsecrets
 nvim/plugged
+*.http
