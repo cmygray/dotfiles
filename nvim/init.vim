@@ -8,7 +8,7 @@ call plug#begin('~/.config/nvim/plugged')
   " Theme
   Plug 'arcticicestudio/nord-vim'
   Plug 'kyazdani42/nvim-web-devicons'
-  Plug 'vim-airline/vim-airline'
+  Plug 'itchyny/lightline.vim'
 
   " Git, GitHub
   Plug 'tpope/vim-fugitive'
@@ -52,7 +52,6 @@ set wildmenu
 set wildmode=full
 set scrolloff=5
 set lazyredraw
-set laststatus=2
 set hidden
 set foldmethod=marker foldlevel=0
 set hlsearch
