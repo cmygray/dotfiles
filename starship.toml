@@ -1,6 +1,6 @@
 format = """
 ${custom.cpu}${nodejs}${aws}${custom.review}
-${all}${custom.caffeinated}${jobs}${character}
+${all}${jobs}${character}
 """
 
 [aws]
@@ -22,12 +22,6 @@ truncate_to_repo = false
 format = "[ $symbol$version]($style)"
 
 # custom modules
-
-[custom.caffeinated]
-description = "Show coffee if you are caffeinated"
-when = """ test "$CAFFEINATED" = true """
-symbol = "☕️"
-format = "$symbol "
 
 [custom.cpu]
 description = "arm64 OR x86"
