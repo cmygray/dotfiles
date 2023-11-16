@@ -4,3 +4,5 @@
 .zshsecrets
 nvim/plugged
 *.http
+.rtx.toml
+Brewfile.lock.json
