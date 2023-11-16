@@ -1,0 +1,55 @@
+prSections:
+- title: Review requested
+  filters: is:open user-review-requested:@me draft:false
+- title: Opened
+  filters: is:open author:@me draft:false
+- title: Drafts
+  filters: is:open author:@me draft:true
+    #- title: Classroom Updates
+    #filters: repo:classtinginc/classroom-service is:open author:app/renovate
+- title: Organization Updates
+  filters: repo:classtinginc/organization is:open author:app/renovate
+    #- title: Media service
+    #filters: repo:classtinginc/media-service is:open draft:false -author:@me
+    #- title: Graphql
+    #filters: repo:classtinginc/graphql is:open draft:false -author:@me
+
+issuesSections:
+- title: Authored by me
+  filters: is:open author:@me
+- title: Assigned to me
+  filters: is:open assignee:@me
+- title: Organization
+  filters: repo:classtinginc/organization
+    #- title: Classroom
+    #filters: repo:classtinginc/classroom-service
+
+defaults:
+  preview:
+    open: false
+    width: 100
+  view: prs
+
+keybindings:
+  prs:
+    - key: w
+      command: >
+        wezterm cli spawn --cwd {{.RepoPath}} -- zsh -c 'gh run watch; gh pr ready {{.PrNumber}}'
+    - key: z
+      command: > 
+        wezterm cli spawn --cwd {{.RepoPath}} -- zsh -c 'git reset --hard; gh pr checkout {{.PrNumber}} --force; git fetch origin master:master; git rebase master; vim -c ":DiffviewOpen master..HEAD"'
+    - key: x
+      command: > 
+        wezterm cli spawn --cwd {{.RepoPath}} -- zsh -c 'git reset --hard; gh pr checkout {{.PrNumber}} --force; git fetch origin main:main; git rebase main; vim -c ":DiffviewOpen main..HEAD"'
+    - key: m
+      command: >
+        wezterm cli spawn --cwd {{.RepoPath}} -- zsh -c 'gh pr merge -r {{.PrNumber}}; read'
+
+repoPaths:
+  classtinginc/organization: /Users/won/Workspace/reviews/organization
+  classtinginc/classroom-service: /Users/won/Workspace/reviews/classroom-service
+  classtinginc/graphql: /Users/won/Workspace/reviews/graphql
+  classtinginc/media-service: /Users/won/Workspace/reviews/media-service
+  classtinginc/frontend: /Users/won/Workspace/classting-frontend
+  classtinginc/account-service: /Users/won/Workspace/reviews/account-service
+        
