@@ -47,5 +47,10 @@ return {
       { key = 'k', action = act.AdjustPaneSize { 'Up', 1 } },
       { key = 'l', action = act.AdjustPaneSize { 'Right', 1 } },
     },
+  },
+
+  quick_select_patterns = {
+    '[a-zA-Z0-9]{27}',
+    '[a-zA-Z0-9]{21}'
   }
 }
