@@ -27,7 +27,11 @@ end
 
 return {
   color_scheme = 'nord',
-  font = wezterm.font 'JetBrains Mono',
+
+  font = wezterm.font_with_fallback {
+    'JetBrainsMono NF',
+    'JetBrains Mono',
+  },
 
   leader = {
     key = "'",
