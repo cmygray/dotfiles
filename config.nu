@@ -759,24 +759,17 @@ $env.config = {
     ]
 }
 
-do {
-  let rtxpath = ($nu.config-path | path dirname | path join "rtx.nu")
-  run-external rtx activate nu --redirect-stdout | save $rtxpath -f
-  $"\nsource "($rtxpath)"" | save $nu.config-path --append
-}
-
+# aliases
+use ~/dotfiles/nushell/aliases/git-aliases.nu *
 alias vim = nvim
 alias ll = ls -l
+
+# completions
+use ~/dotfiles/nushell/custom-completions/gh-completions.nu *
+use ~/dotfiles/nushell/custom-completions/git-completions.nu *
 
 source ~/.zoxide.nu
 
 use ~/.cache/starship/init.nu
 
-source "/Users/won/Library/Application Support/nushell/rtx.nu"
-source "/Users/won/Library/Application Support/nushell/rtx.nu"
-source "/Users/won/Library/Application Support/nushell/rtx.nu"
-source "/Users/won/Library/Application Support/nushell/rtx.nu"
-source "/Users/won/Library/Application Support/nushell/rtx.nu"
-source "/Users/won/Library/Application Support/nushell/rtx.nu"
-source "/Users/won/Library/Application Support/nushell/rtx.nu"
 source "/Users/won/Library/Application Support/nushell/rtx.nu"
