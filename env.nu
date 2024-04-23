@@ -88,6 +88,7 @@ $env.MANPATH = "/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
 $env.INFOPATH = "/opt/homebrew/share/info:${INFOPATH:-}"
 $env.VERCEL_TOKEN = "bBaa5wWqLAibHGhZf0ouQhRr"
 $env.PHRASE_ACCESS_TOKEN = "e5b0268ebeb9ae83d184e18ab93681f24a7ade966ffcbb6bbd2566d967fa2748"
+$env.VAULT_ADDR = "https://vault.aidt.classting.dev"
 
 # chamber
 
@@ -95,6 +96,7 @@ $env.CHAMBER_KMS_KEY_ALIAS = "aws/ssm"
 
 # plugin configs
 
-zoxide init nushell | save -f ~/.zoxide.nu
+# zoxide init nushell | save -f ~/.zoxide.nu
 mkdir ~/.cache/starship
 starship init nu | save -f ~/.cache/starship/init.nu
+
