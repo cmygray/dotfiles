@@ -9,3 +9,5 @@ require('diffview').setup({
   }
 })
 EOF
+
+command DMH DiffviewOpen main..head

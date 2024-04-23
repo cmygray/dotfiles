@@ -2,8 +2,10 @@
 call plug#begin('~/.config/nvim/plugged')
   Plug 'wakatime/vim-wakatime'
   Plug 'github/copilot.vim'
-  Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && yarn' }
+  Plug 'CopilotC-Nvim/CopilotChat.nvim', { 'branch': 'canary' }
+  Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
   Plug 'rest-nvim/rest.nvim', { 'tag': '0.2' }
+  Plug 'vimwiki/vimwiki', { 'branch': 'dev' }
 
   " Theme
   Plug 'arcticicestudio/nord-vim'
@@ -15,8 +17,9 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'airblade/vim-gitgutter'
   Plug 'sindrets/diffview.nvim'
   Plug 'pwntester/octo.nvim'
-  Plug 'akinsho/git-conflict.nvim', { 'tag': '*' }
+  Plug 'akinsho/git-conflict.nvim', { 'tag': 'v1.3.0' }
   Plug 'rhysd/conflict-marker.vim'
+  Plug 'ruanyl/vim-gh-line'
 
   " Editor
   Plug 'tpope/vim-surround'
@@ -26,11 +29,16 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'stevearc/qf_helper.nvim'
   Plug 'stevearc/oil.nvim'
   Plug 'lalitmee/browse.nvim'
+  Plug 'nanotee/zoxide.vim'
+  Plug 'kevinhwang91/nvim-ufo'
+  Plug 'kevinhwang91/nvim-bqf'
+  Plug 'chrisbra/csv.vim'
+
+  Plug 'LhKipp/nvim-nu', {'do': ':TSInstall nu'}
 
   " Languages and frameworks
-  Plug 'sheerun/vim-polyglot'
-  Plug 'neoclide/coc.nvim', {'branch': 'release'}
   Plug 'jparise/vim-graphql'
+  Plug 'neoclide/coc.nvim', {'branch': 'release'}
   Plug 'rust-lang/rust.vim'
   Plug 'eliba2/vim-node-inspect'
 
@@ -38,6 +46,7 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'nvim-lua/plenary.nvim'
   Plug 'nvim-telescope/telescope-live-grep-args.nvim'
   Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
+  Plug 'kevinhwang91/promise-async'
 
 call plug#end()
 
@@ -53,7 +62,6 @@ set wildmode=full
 set scrolloff=5
 set lazyredraw
 set hidden
-set foldmethod=marker foldlevel=0
 set hlsearch
 set incsearch
 set showmatch
@@ -65,9 +73,11 @@ set tabstop=2
 set expandtab
 set signcolumn=yes " vim-gitgutter
 
-let g:mkdp_theme = 'light'
+let g:mkdp_theme = 'dark'
 
 " Keymaps
+vnoremap // y/<C-R>"<CR>N
+
 map <space> <leader>
 
 nnoremap Y y$
@@ -88,13 +98,26 @@ map ,,, :source $MYVIMRC<cr>
   nnoremap <silent> <PageDown> :bnext!<CR>
 
 " Command maps
-command W w
-command Wq wq
-command WQ wq
-command Qa qa
-command QA qa
-command Bd bd
-command BD bd
+  " Missed Capital Input
+  command W w
+  command Wq wq
+  command WQ wq
+  command Wqa wqa
+  command WQA wqa
+  command WQa wqa
+
+  command Q q
+  command Qa qa
+  command QA qa
+
+  command Bd bd
+  command BD bd
+
+  " Aliassed commands
+  command TN tabnew
+  command TC tabclose
+
+command! -nargs=0 Cwd :let @+ = expand('%:p')
 
 command Rest :lua require('rest-nvim').run()<CR>
 
