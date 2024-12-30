@@ -95,6 +95,5 @@ $env.CHAMBER_KMS_KEY_ALIAS = "aws/ssm"
 
 # plugin configs
 
-zoxide init nushell | save -f ~/.zoxide.nu
 mkdir ~/.cache/starship
 starship init nu | save -f ~/.cache/starship/init.nu
