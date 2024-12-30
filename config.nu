@@ -759,17 +759,35 @@ $env.config = {
     ]
 }
 
+# custom commands
+
+def prev [] {
+    let prev = (history | last | get command)
+    pet new ($prev)
+}
+
+def pget [] {
+    pet search | commandline $in
+}
+
 # aliases
 use ~/dotfiles/nushell/aliases/git-aliases.nu *
 alias vim = nvim
 alias ll = ls -l
+alias awsdev = aws-vault exec classting-dev --no-session
+alias awsstag = aws-vault exec classting-stag --no-session
+alias awsprod = aws-vault exec classting-prod --no-session
 
 # completions
 use ~/dotfiles/nushell/custom-completions/gh-completions.nu *
 use ~/dotfiles/nushell/custom-completions/git-completions.nu *
 
+alias vim = nvim
+alias ll = ls -l
+
 source ~/.zoxide.nu
 
 use ~/.cache/starship/init.nu
 
-source "/Users/won/Library/Application Support/nushell/rtx.nu"
+source $"{$env.HOME}/Library/Application Support/nushell/rtx.nu"
+
