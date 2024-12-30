@@ -6,3 +6,6 @@ nvim/plugged
 *.http
 .rtx.toml
 Brewfile.lock.json
+.env*
+!.env.test
+!.env.example
