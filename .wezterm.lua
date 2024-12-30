@@ -10,6 +10,18 @@ local keys = {
   { key = '<',     mods = 'LEADER', action = act.MoveTabRelative(-1) },
   { key = '>',     mods = 'LEADER', action = act.MoveTabRelative(1) },
   {
+    key = '!',
+    mods = 'LEADER',
+    action = wezterm.action_callback(function(_, pane)
+      pane:move_to_new_window()
+    end)
+  },
+  {
+    key = 'd',
+    mods = 'LEADER',
+    action = act.CloseCurrentPane { confirm = true },
+  },
+  {
     key = 'r',
     mods = 'LEADER',
     action = act.ActivateKeyTable { name = 'resize_pane', one_shot = false, replace_current = true }
@@ -31,6 +43,11 @@ return {
   font = wezterm.font_with_fallback {
     'JetBrainsMono NF',
     'JetBrains Mono',
+  },
+
+  inactive_pane_hsb = {
+    saturation = 0.7,
+    brightness = 0.6,
   },
 
   leader = {
