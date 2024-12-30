@@ -8,6 +8,8 @@ let g:coc_global_extensions = [
       \'coc-jest',
       \'coc-markdownlint',
       \'coc-python',
+      \'coc-html',
+      \'coc-sh'
       \]
 
 inoremap <silent><expr> <TAB>

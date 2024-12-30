@@ -3,12 +3,14 @@
   "prettier.singleQuote": true,
   "yaml.format.singleQuote": false,
   "yaml.customTags": ["!GetAtt", "!Join sequence", "!Ref", "!Sub"],
+  "html.format.indentHandlebars": true,
+  "html.filetypes": ["html", "handlebars", "hbs"],
   "coc.preferences.formatOnSave": true,
   "languageserver": {
     "graphql": {
       "command": "graphql-lsp",
-      "args": ["server", "-m", "stream"],
-      "filetypes": ["typescriptreact", "graphql"]
+      "args": ["server", "--method", "stream"],
+      "filetypes": ["graphql"]
     }
   }
 }
