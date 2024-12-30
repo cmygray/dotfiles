@@ -1,5 +1,5 @@
 format = """
-${nodejs}${aws}${custom.dynein_table}${custom.dynein_local}
+${nodejs}${aws}${custom.dynein_table}${custom.dynein_local}${custom.current_jwt}
 ${all}${jobs}${character}
 """
 
@@ -43,3 +43,11 @@ command = "open ~/.dynein/config.yml | $'($in.using_region)'"
 format = "[ $output]($style)"
 when = "open ~/.dynein/config.yml | $'($in.using_region)' == local"
 style = "bold #FFA500"
+
+[custom.current_jwt]
+description = "show current jwt"
+command = "$env.current_jwt?"
+format = "[ $output]($style)"
+when = "$env.current_jwt? != null and $env.jwt != null"
+style = "#C783E5"
+
