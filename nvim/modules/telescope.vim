@@ -12,6 +12,9 @@ table.insert(vimgrep_arguments, '!.git/*')
 require('telescope').setup({
   defaults = {
     vimgrep_arguments = vimgrep_arguments,
+    file_ignore_patterns = {
+      "node_modules/",
+    }
   },
   extensions = {
     live_grep_args = {
