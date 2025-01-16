@@ -3,7 +3,7 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'wakatime/vim-wakatime'
   Plug 'github/copilot.vim'
   Plug 'CopilotC-Nvim/CopilotChat.nvim', { 'branch': 'main' }
-  Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
+  Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' }
   Plug 'rest-nvim/rest.nvim', { 'tag': '0.2' }
   Plug 'vimwiki/vimwiki'
 
