@@ -88,6 +88,9 @@ map ,,, :source $MYVIMRC<cr>
   inoremap <C-j> <C-o>j
   inoremap <C-k> <C-o>k
 
+  " Copy to clipboard
+  vnoremap <C-c> "+y
+
   " Buffers
   nnoremap <silent> <C-w>d :bp<CR>:bd#<CR>
   nnoremap <silent> <C-w>D :%bd\|e#<CR>
