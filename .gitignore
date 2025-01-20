@@ -5,6 +5,7 @@
 nvim/plugged
 *.http
 .rtx.toml
+.mise.toml
 Brewfile.lock.json
 .env*
 !.env.test
