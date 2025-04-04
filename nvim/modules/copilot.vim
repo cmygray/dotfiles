@@ -1,4 +1,5 @@
 lua << EOF
-vim.g.copilot_no_tab_map = true
-vim.api.nvim_set_keymap("i", "<C-J>", 'copilot#Accept("<CR>")', { silent = true, expr = true })
+require("copilot").setup({
+  copilot_node_command = "/Users/classting-won/.local/share/mise/installs/node/20.18.1/bin/node"
+})
 EOF
