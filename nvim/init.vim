@@ -1,8 +1,6 @@
 " Plugins
 call plug#begin('~/.config/nvim/plugged')
   Plug 'wakatime/vim-wakatime'
-  Plug 'github/copilot.vim'
-  Plug 'CopilotC-Nvim/CopilotChat.nvim', { 'branch': 'main' }
   Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' }
   Plug 'rest-nvim/rest.nvim', { 'tag': '0.2' }
   Plug 'vimwiki/vimwiki'
@@ -34,16 +32,23 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'chrisbra/csv.vim'
 
   " Languages and frameworks
+  Plug 'stevearc/conform.nvim'
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
   Plug 'jparise/vim-graphql'
   Plug 'rust-lang/rust.vim'
   Plug 'eliba2/vim-node-inspect'
 
+  Plug 'yetone/avante.nvim', { 'branch': 'main', 'do': 'make' }
+
   " Dependencies
-  Plug 'nvim-lua/plenary.nvim'
+  Plug 'nvim-lua/plenary.nvim', {'branch': 'mastser'}
   Plug 'nvim-telescope/telescope-live-grep-args.nvim'
   Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
   Plug 'kevinhwang91/promise-async'
+  Plug 'stevearc/dressing.nvim'
+  Plug 'MunifTanjim/nui.nvim'
+  Plug 'MeanderingProgrammer/render-markdown.nvim'
+  Plug 'zbirenbaum/copilot.lua'
 
 call plug#end()
 
