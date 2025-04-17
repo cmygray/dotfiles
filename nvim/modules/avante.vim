@@ -1,10 +1,17 @@
 autocmd! User avante.nvim
 lua << EOF
 require('avante').setup({
-  provider = 'gemini',
-  auto_suggestions_provider = 'copilot',
+  provider = 'openrouter',
+  vendors = {
+    openrouter = {
+      __inherited_from = 'openai',
+      endpoint = 'https://openrouter.ai/api/v1',
+      api_key_name = 'OPENROUTER_API_KEY',
+      model = "google/gemini-2.5-pro-preview-03-25",
+    },
+  },
   behavior = {
-    auto_suggestions = true,
+    auto_suggestions = false,
   },
   file_selector = {
     provider = "telescope",
