@@ -5,45 +5,30 @@ prSections:
   filters: is:open author:@me draft:false
 - title: Drafts
   filters: is:open author:@me draft:true
-    #- title: Classroom Updates
-    #filters: repo:classtinginc/classroom-service is:open author:app/renovate
-- title: Organization Updates
-  filters: repo:classtinginc/organization is:open author:app/renovate
-    #- title: Media service
-    #filters: repo:classtinginc/media-service is:open draft:false -author:@me
-    #- title: Graphql
-    #filters: repo:classtinginc/graphql is:open draft:false -author:@me
 
 issuesSections:
 - title: Authored by me
-  filters: is:open author:@me
+  filters: is:open author:@me project:classtinginc/26
 - title: Assigned to me
   filters: is:open assignee:@me
-- title: Organization
-  filters: repo:classtinginc/organization
-    #- title: Classroom
-    #filters: repo:classtinginc/classroom-service
+- title: Platform Core
+  filters: is:open project:classtinginc/26
 
 defaults:
   preview:
     open: false
     width: 100
-  view: prs
+  view: issues
 
 keybindings:
   prs:
-    - key: w
+    - key: e
       command: >
-        wezterm cli spawn --cwd {{.RepoPath}} -- zsh -c 'gh run watch; gh pr ready {{.PrNumber}}'
-    - key: z
-      command: > 
-        wezterm cli spawn --cwd {{.RepoPath}} -- zsh -c 'git reset --hard; gh pr checkout {{.PrNumber}} --force; git fetch origin master:master; git rebase master; vim -c ":DiffviewOpen master..HEAD"'
-    - key: x
-      command: > 
-        wezterm cli spawn --cwd {{.RepoPath}} -- zsh -c 'git reset --hard; gh pr checkout {{.PrNumber}} --force; git fetch origin main:main; git rebase main; vim -c ":DiffviewOpen main..HEAD"'
-    - key: m
+        wezterm cli spawn --cwd {{.RepoPath}} -- nu -c 'gh pr edit {{.PrNumber}}'
+  issues:
+    - key: e
       command: >
-        wezterm cli spawn --cwd {{.RepoPath}} -- zsh -c 'gh pr merge -r {{.PrNumber}}; read'
+        wezterm cli spawn --cwd {{.RepoPath}} -- nu -c 'gh issue edit {{.IssueNumber}}'
 
 repoPaths:
   classtinginc/organization: /Users/won/Workspace/reviews/organization
@@ -51,5 +36,5 @@ repoPaths:
   classtinginc/graphql: /Users/won/Workspace/reviews/graphql
   classtinginc/media-service: /Users/won/Workspace/reviews/media-service
   classtinginc/frontend: /Users/won/Workspace/classting-frontend
-  classtinginc/account-service: /Users/won/Workspace/reviews/account-service
+  classtinginc/account-service: /Users/classting-won/Workspace/account-service
         

@@ -4,6 +4,7 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' }
   Plug 'rest-nvim/rest.nvim', { 'tag': '0.2' }
   Plug 'vimwiki/vimwiki'
+  Plug 'mhinz/vim-startify'
 
   " Theme
   Plug 'arcticicestudio/nord-vim'
@@ -23,13 +24,13 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'nvim-telescope/telescope.nvim'
   Plug 'windwp/nvim-autopairs'
   Plug 'chaoren/vim-wordmotion'
-  Plug 'stevearc/qf_helper.nvim'
   Plug 'stevearc/oil.nvim'
   Plug 'lalitmee/browse.nvim'
   Plug 'nanotee/zoxide.vim'
   Plug 'kevinhwang91/nvim-ufo'
   Plug 'kevinhwang91/nvim-bqf'
   Plug 'chrisbra/csv.vim'
+  Plug 'simnalamburt/vim-tiny-ime'
 
   " Languages and frameworks
   Plug 'stevearc/conform.nvim'
@@ -41,7 +42,7 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'yetone/avante.nvim', { 'branch': 'main', 'do': 'make' }
 
   " Dependencies
-  Plug 'nvim-lua/plenary.nvim', {'branch': 'mastser'}
+  Plug 'nvim-lua/plenary.nvim', {'branch': 'master'}
   Plug 'nvim-telescope/telescope-live-grep-args.nvim'
   Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
   Plug 'kevinhwang91/promise-async'
@@ -49,13 +50,13 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'MunifTanjim/nui.nvim'
   Plug 'MeanderingProgrammer/render-markdown.nvim'
   Plug 'zbirenbaum/copilot.lua'
+  Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 
 call plug#end()
 
 " General
 colorscheme nord
 set encoding=utf-8
-set guifont=JetBrains\ Mono:h14
 set title
 set nu
 set nuw=3
