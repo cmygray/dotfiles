@@ -1,0 +1,66 @@
+[
+  {
+    "bindings": {
+      "ctrl-w t": "terminal_panel::ToggleFocus",
+      "ctrl-f": "file_finder::Toggle",
+      "ctrl-g": "pane::DeploySearch",
+      "ctrl-shift-z": "workspace::ToggleZoom"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      ", ,": "zed::OpenKeymap",
+      "-": "pane::RevealInProjectPanel",
+      "g i": "editor::GoToImplementation",
+      "g u": "editor::FindAllReferences",
+      "g r": "editor::OpenDocs",
+      "ctrl-w d": "tab_switcher::CloseSelectedItem",
+      "space j": "editor::GoToDiagnostic",
+      "space k": "editor::GoToPreviousDiagnostic",
+      "space r": "editor::Rename"
+    }
+  },
+  {
+    "context": "(vim_mode == insert && (showing_code_actions || showing_completions)) || (Editor && !VimControl) || (Editor && (showing_code_actions || showing_completions))",
+    "bindings": {
+      "ctrl-j": ["workspace::SendKeystrokes", "down"],
+      "ctrl-k": ["workspace::SendKeystrokes", "up"]
+    }
+  },
+
+  {
+    "context": "VimControl && !menu",
+    "bindings": {
+      // Put key bindings here if you want them to work in normal & visual mode.
+    }
+  },
+  {
+    "context": "VimControl && !menu && vim_mode != operator",
+    "bindings": {
+      "[ w": "vim::NextSubwordStart",
+      "[ b": "vim::PreviousSubwordStart",
+      "[ e": "vim::NextSubwordEnd"
+    }
+  },
+  {
+    "context": "vim_mode == normal && !menu",
+    "bindings": {
+      // "shift-y": ["workspace::SendKeystrokes", "y $"] // Use neovim's yank behavior: yank to end of line.
+    }
+  },
+  {
+    "context": "vim_mode == insert",
+    "bindings": {
+      // "j k": "vim::NormalBefore" // In insert mode, make jk escape to normal mode.
+    }
+  },
+  {
+    "context": "EmptyPane || SharedScreen",
+    "bindings": {
+      // Put key bindings here (in addition to the context above) if you want them to
+      // work when no editor exists.
+      // "space f": "file_finder::Toggle"
+    }
+  }
+]

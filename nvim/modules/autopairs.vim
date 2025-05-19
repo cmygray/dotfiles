@@ -1,4 +1,2 @@
-lua << EOF
-require("nvim-autopairs").setup {}
-EOF
+lua require("nvim-autopairs").setup {}
 

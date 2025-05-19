@@ -4,9 +4,11 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' }
   Plug 'rest-nvim/rest.nvim', { 'tag': '0.2' }
   Plug 'vimwiki/vimwiki'
+  Plug 'mhinz/vim-startify'
 
   " Theme
   Plug 'arcticicestudio/nord-vim'
+  Plug 'rebelot/kanagawa.nvim'
   Plug 'kyazdani42/nvim-web-devicons'
   Plug 'itchyny/lightline.vim'
 
@@ -23,13 +25,14 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'nvim-telescope/telescope.nvim'
   Plug 'windwp/nvim-autopairs'
   Plug 'chaoren/vim-wordmotion'
-  Plug 'stevearc/qf_helper.nvim'
   Plug 'stevearc/oil.nvim'
   Plug 'lalitmee/browse.nvim'
   Plug 'nanotee/zoxide.vim'
   Plug 'kevinhwang91/nvim-ufo'
   Plug 'kevinhwang91/nvim-bqf'
   Plug 'chrisbra/csv.vim'
+  Plug 'simnalamburt/vim-tiny-ime'
+  Plug 'akinsho/toggleterm.nvim', { 'tag': '*' }
 
   " Languages and frameworks
   Plug 'stevearc/conform.nvim'
@@ -41,21 +44,21 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'yetone/avante.nvim', { 'branch': 'main', 'do': 'make' }
 
   " Dependencies
-  Plug 'nvim-lua/plenary.nvim', {'branch': 'mastser'}
+  Plug 'nvim-lua/plenary.nvim', {'branch': 'master'}
   Plug 'nvim-telescope/telescope-live-grep-args.nvim'
   Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
   Plug 'kevinhwang91/promise-async'
   Plug 'stevearc/dressing.nvim'
   Plug 'MunifTanjim/nui.nvim'
   Plug 'MeanderingProgrammer/render-markdown.nvim'
-  Plug 'zbirenbaum/copilot.lua'
+  Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+  Plug 'itchyny/vim-gitbranch'
 
 call plug#end()
 
 " General
 colorscheme nord
 set encoding=utf-8
-set guifont=JetBrains\ Mono:h14
 set title
 set nu
 set nuw=3
@@ -81,6 +84,7 @@ let g:mkdp_theme = 'dark'
 vnoremap // y/<C-R>"<CR>N
 
 map <space> <leader>
+inoremap <C-c> <Esc>
 
 nnoremap Y y$
 
@@ -101,6 +105,8 @@ map ,,, :source $MYVIMRC<cr>
   nnoremap <silent> <C-w>D :%bd\|e#<CR>
   nnoremap <silent> <PageUp>   :bprevious!<CR>
   nnoremap <silent> <PageDown> :bnext!<CR>
+
+  nnoremap <leader>zz :!zed %:p<CR>
 
 " Command maps
   " Missed Capital Input
