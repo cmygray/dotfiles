@@ -1,7 +1,6 @@
 let g:coc_global_extensions = [
       \'coc-tsserver',
       \'coc-json',
-      \'coc-rust-analyzer',
       \'coc-prettier',
       \'coc-yaml',
       \'coc-lua',

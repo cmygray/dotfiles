@@ -2,7 +2,7 @@ autocmd! User avante.nvim
 lua << EOF
 require('avante').setup({
   provider = 'openrouter',
-  vendors = {
+  providers = {
     openrouter = {
       __inherited_from = 'openai',
       endpoint = 'https://openrouter.ai/api/v1',
@@ -11,10 +11,10 @@ require('avante').setup({
     },
   },
   behavior = {
-    auto_suggestions = false,
+    auto_suggestions = true,
   },
   behavior = {
-    auto_suggestions = false,
+    auto_suggestions = true,
   },
   selector = {
     provider = "telescope",

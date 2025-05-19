@@ -19,5 +19,8 @@ ln -nfs $HOME/dotfiles/.hammerspoon $HOME/.hammerspoon
 
 ln -nfs $HOME/dotfiles/.wezterm.lua $HOME/.wezterm.lua
 
+ln -nfs $HOME/dotfiles/zed/keymap.json $HOME/.config/zed/keymap.json
+ln -nfs $HOME/dotfiles/zed/settings.json $HOME/.config/zed/settings.json
+
 sudo sh -c "echo $(which nu) >> /etc/shells"
 chsh -s $(which nu)
