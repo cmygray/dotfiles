@@ -11,10 +11,10 @@ require('avante').setup({
     },
   },
   behavior = {
-    auto_suggestions = false,
+    auto_suggestions = true,
   },
   behavior = {
-    auto_suggestions = false,
+    auto_suggestions = true,
   },
   selector = {
     provider = "telescope",
