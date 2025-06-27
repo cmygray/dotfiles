@@ -11,3 +11,5 @@ Brewfile.lock.json
 !.env.test
 !.env.example
 mise.toml
+CLAUDE.md
+AGENT.md

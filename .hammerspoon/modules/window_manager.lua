@@ -1,46 +1,46 @@
-function get_frame ()
-  if #hs.screen.allScreens() == 1 then
-    return hs.screen.mainScreen():frame()
-  else
-    local frame = {
-      x = 0,
-      y = 0,
-      w = 0,
-      h = 0,
-      left_w = 0,
-      left_h = 0,
-      right_w = 0,
-      right_h = 0
-    }
+function get_frame()
+	if #hs.screen.allScreens() == 1 then
+		return hs.screen.mainScreen():frame()
+	else
+		local frame = {
+			x = 0,
+			y = 0,
+			w = 0,
+			h = 0,
+			left_w = 0,
+			left_h = 0,
+			right_w = 0,
+			right_h = 0,
+		}
 
-    local left_frame = hs.screen.allScreens()[1]:frame()
-    local right_frame = hs.screen.allScreens()[2]:frame()
+		local left_frame = hs.screen.allScreens()[1]:frame()
+		local right_frame = hs.screen.allScreens()[2]:frame()
 
-    frame.x = left_frame.x
-    frame.y = left_frame.y
-    frame.w = left_frame.w + right_frame.w
-    frame.h = left_frame.h
-    frame.left_w = left_frame.w
-    frame.left_h = left_frame.h
-    frame.right_w = right_frame.w
-    frame.right_h = right_frame.h
+		frame.x = left_frame.x
+		frame.y = left_frame.y
+		frame.w = left_frame.w + right_frame.w
+		frame.h = left_frame.h
+		frame.left_w = left_frame.w
+		frame.left_h = left_frame.h
+		frame.right_w = right_frame.w
+		frame.right_h = right_frame.h
 
-    return frame
-  end
+		return frame
+	end
 end
 
-hs.hotkey.bind({"ctrl", "shift", "alt"}, "return", function()
-  local frame = get_frame()
+hs.hotkey.bind({ "ctrl", "shift", "alt" }, "return", function()
+	local frame = get_frame()
 
-  local window = hs.window.focusedWindow()
-  local window_frame = window:frame()
+	local window = hs.window.focusedWindow()
+	local window_frame = window:frame()
 
-  window_frame.x = frame.x
-  window_frame.y = frame.y
-  window_frame.w = frame.w
-  window_frame.h = frame.h
+	window_frame.x = frame.x
+	window_frame.y = frame.y
+	window_frame.w = frame.w
+	window_frame.h = frame.h
 
-  window:setFrame(window_frame)
+	window:setFrame(window_frame)
 end)
 
 --hs.hotkey.bind({"ctrl", "shift", "alt"}, "left", function()
@@ -197,32 +197,32 @@ end)
 --  window:setFrame(window_frame)
 --end)
 
-hs.hotkey.bind({"ctrl", "shift", "alt"}, "up", function()
-  local frame = get_frame()
+hs.hotkey.bind({ "ctrl", "shift", "alt" }, "up", function()
+	local frame = get_frame()
 
-  local window = hs.window.focusedWindow()
-  local window_frame = window:frame()
+	local window = hs.window.focusedWindow()
+	local window_frame = window:frame()
 
-  window_frame.x = frame.x
-  window_frame.y = frame.y
-  window_frame.w = frame.w
-  window_frame.h = frame.h / 2
+	window_frame.x = frame.x
+	window_frame.y = frame.y
+	window_frame.w = frame.w
+	window_frame.h = frame.h / 2
 
-  window:setFrame(window_frame)
+	window:setFrame(window_frame)
 end)
 
-hs.hotkey.bind({"ctrl", "shift", "alt"}, "down", function()
-  local frame = get_frame()
+hs.hotkey.bind({ "ctrl", "shift", "alt" }, "down", function()
+	local frame = get_frame()
 
-  local window = hs.window.focusedWindow()
-  local window_frame = window:frame()
+	local window = hs.window.focusedWindow()
+	local window_frame = window:frame()
 
-  window_frame.x = frame.x
-  window_frame.y = frame.y + frame.h / 2
-  window_frame.w = frame.w
-  window_frame.h = frame.h / 2
+	window_frame.x = frame.x
+	window_frame.y = frame.y + frame.h / 2
+	window_frame.w = frame.w
+	window_frame.h = frame.h / 2
 
-  window:setFrame(window_frame)
+	window:setFrame(window_frame)
 end)
 
 --hs.hotkey.bind({"ctrl", "alt"}, "c", function()
@@ -236,4 +236,3 @@ end)
 
 --  window:setFrame(window_frame)
 --end)
-

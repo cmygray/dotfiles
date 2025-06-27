@@ -13,6 +13,7 @@ let g:startify_list_order = [
 
 augroup vimstartify
     autocmd User Startified setlocal cursorline
+    autocmd SessionLoadPost * nested call timer_start(100, { -> execute('bufdo e')})
 
 function! GetUniqueSessionName()
   let path = fnamemodify(getcwd(), ':~:t')

@@ -75,7 +75,7 @@ $env.NU_PLUGIN_DIRS = [
 ]
 
 # To add entries to PATH (on Windows you might use Path), you can use the following pattern:
-$env.PATH = ($env.PATH | split row (char esep) | prepend '/opt/homebrew/bin' | prepend '/opt/homebrew/sbin' | prepend '/Users/won/.config/git-fuzzy/bin')
+$env.PATH = ($env.PATH | split row (char esep) | prepend '/opt/homebrew/bin' | prepend '/opt/homebrew/sbin' | prepend '/Users/won/.config/git-fuzzy/bin' | prepand (npm bin -g))
 
 $env.EDITOR = nvim
 

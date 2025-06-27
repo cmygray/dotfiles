@@ -32,6 +32,8 @@
 	email = cmygray@users.noreply.github.com
 [includeIf "gitdir:~/Workspace/"]
   path = ~/Workspace/.gitconfig
+[includeIf "gitdir:~/agent-workspace/"]
+  path = ~/agent-workspace/.gitconfig
 [core]
 	precomposeunicode = true
 	quotepath = false

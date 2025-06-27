@@ -14,6 +14,12 @@
     "enabled_in_text_threads": false
   },
 
+  "terminal": {
+    "shell": {
+      "program": "zsh"
+    }
+  },
+
   // langs
   "languages": {
     "YAML": {
@@ -25,7 +31,7 @@
   // AI
   "agent": {
     "always_allow_tool_actions": true,
-    "default_profile": "ask",
+    "default_profile": "write",
     "model_parameters": [],
     "default_model": {
       "provider": "openrouter",
