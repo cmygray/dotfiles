@@ -36,7 +36,13 @@ call plug#begin('~/.config/nvim/plugged')
 
   " Languages and frameworks
   Plug 'stevearc/conform.nvim'
-  Plug 'neoclide/coc.nvim', {'branch': 'release'}
+  Plug 'neovim/nvim-lspconfig'
+  Plug 'hrsh7th/nvim-cmp'
+  Plug 'hrsh7th/cmp-nvim-lsp'
+  Plug 'hrsh7th/cmp-buffer'
+  Plug 'hrsh7th/cmp-path'
+  Plug 'L3MON4D3/LuaSnip'
+  Plug 'saadparwaiz1/cmp_luasnip'
   Plug 'jparise/vim-graphql'
   Plug 'rust-lang/rust.vim'
   Plug 'eliba2/vim-node-inspect'
@@ -135,3 +141,5 @@ command Rest :lua require('rest-nvim').run()<CR>
 for module in uniq(sort(globpath(&rtp, 'modules/*.vim', 0, 1)))
     execute "source " . module
 endfor
+
+lua require('lsp')
