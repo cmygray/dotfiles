@@ -75,9 +75,18 @@ $env.NU_PLUGIN_DIRS = [
 ]
 
 # To add entries to PATH (on Windows you might use Path), you can use the following pattern:
-$env.PATH = ($env.PATH | split row (char esep) | prepend '/opt/homebrew/bin' | prepend '/opt/homebrew/sbin' | prepend '/Users/won/.config/git-fuzzy/bin' | prepand (npm bin -g))
+$env.PATH = ($env.PATH | split row (char esep)
+    | prepend '/opt/homebrew/bin'
+    | prepend '/opt/homebrew/sbin'
+    | prepend '/Users/classting-won/.config/git-fuzzy/bin'
+    | prepend '/Users/classting-won/.krew/bin'
+    | prepend '/opt/homebrew/opt/postgresql@16/bin'
+    | prepend '/Users/classting-won/.local/bin'
+    | prepend '/Users/classting-won/.atuin/bin'
+    | prepend '/Users/classting-won/.local/share/mise/installs/node/20.19.0/bin'
+)
 
-$env.EDITOR = nvim
+$env.EDITOR = "nvim"
 
 # $ /opt/homebrew/bin/brew shellenv
 
@@ -86,8 +95,14 @@ $env.HOMEBREW_CELLAR = "/opt/homebrew/Cellar"
 $env.HOMEBREW_REPOSITORY = "/opt/homebrew"
 $env.MANPATH = "/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
 $env.INFOPATH = "/opt/homebrew/share/info:${INFOPATH:-}"
-$env.VERCEL_TOKEN = "***REMOVED***"
-$env.PHRASE_ACCESS_TOKEN = "***REMOVED***"
+
+const secrets_file = ($nu.home-path | path join "dotfiles" | path join "secrets.nu")
+
+if ($secrets_file | path exists) {
+    source $secrets_file
+} else {
+    print $"Warning: ($secrets_file) not found. Copy secrets.nu.example to secrets.nu and fill in your values."
+}
 
 # chamber
 
@@ -95,5 +110,9 @@ $env.CHAMBER_KMS_KEY_ALIAS = "aws/ssm"
 
 # plugin configs
 
+#zoxide init nushell | save -f ~/.zoxide.nu
 mkdir ~/.cache/starship
 starship init nu | save -f ~/.cache/starship/init.nu
+
+let mise_path = $nu.default-config-dir | path join mise.nu
+^mise activate nu | save $mise_path --force
