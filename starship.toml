@@ -1,5 +1,5 @@
 format = """
-${nodejs}${aws}${custom.dynein_table}${custom.dynein_local}${custom.current_jwt}
+${nodejs}${aws}${custom.dynein}${custom.temp_env}
 ${all}${jobs}${character}
 """
 
@@ -21,33 +21,15 @@ truncate_to_repo = false
 [nodejs]
 format = "[$symbol$version]($style)"
 
-# custom modules
-
-#[custom.cpu]
-#description = "arm64 OR x86"
-#command = "uname -m"
-#format = "[$output]($style)"
-#when = "true"
-#style = "bold blue"
-
-[custom.dynein_table]
-description = "show current table"
-command = "open ~/.dynein/config.yml | $'($in.using_table)'"
-format = "[ $output]($style)"
+[custom.dynein]
+description = "show dynein table and region"
+command = "open ~/.dynein/config.yml | $'($in.using_table) ($in.using_region)'"
+format = " [$output]($style)"
 when = '''"~/.dynein/config.yml" | path exists'''
 style = "bold #FFA500"
 
-[custom.dynein_local]
-description = "show current region"
-command = "open ~/.dynein/config.yml | $'($in.using_region)'"
-format = "[ $output]($style)"
-when = "open ~/.dynein/config.yml | $'($in.using_region)' == local"
-style = "bold #FFA500"
-
-[custom.current_jwt]
-description = "show current jwt"
-command = "$env.current_jwt?"
-format = "[ $output]($style)"
-when = "$env.current_jwt? != null and $env.jwt != null"
-style = "#C783E5"
-
+[custom.temp_env]
+command = "$env.temp"
+format = " [$output]($style)"
+when = "$env.temp? != null"
+style = "gray"
