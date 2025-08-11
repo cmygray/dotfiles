@@ -3,6 +3,7 @@ call plug#begin('~/.config/nvim/plugged')
   Plug 'wakatime/vim-wakatime'
   Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && npx --yes yarn install' }
   Plug 'rest-nvim/rest.nvim', { 'tag': '0.2' }
+  Plug 'mistweaverco/kulala.nvim'
   Plug 'vimwiki/vimwiki'
   Plug 'mhinz/vim-startify'
 
