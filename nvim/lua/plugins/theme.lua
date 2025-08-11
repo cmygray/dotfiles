@@ -17,8 +17,12 @@ return {
   {
     "itchyny/lightline.vim",
     config = function()
-      -- Load lightline configuration from modules
-      vim.cmd("source " .. vim.fn.stdpath("config") .. "/modules/lightline.vim")
+      vim.opt.laststatus = 2
+      vim.opt.showmode = false
+
+      vim.g.lightline = {
+        colorscheme = 'nord',
+      }
     end,
   },
 }

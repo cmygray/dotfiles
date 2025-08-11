@@ -64,8 +64,8 @@ return {
   },
   {
     "chaoren/vim-wordmotion",
-    config = function()
-      vim.cmd("source " .. vim.fn.stdpath("config") .. "/modules/vim-wordmotion.vim")
+    init = function()
+      vim.g.wordmotion_prefix = '['
     end,
   },
   {
@@ -169,7 +169,50 @@ return {
   {
     "mhinz/vim-startify",
     config = function()
-      vim.cmd("source " .. vim.fn.stdpath("config") .. "/modules/startify.vim")
+      -- GetAutoSessionName function
+      vim.cmd([[
+        function! GetAutoSessionName()
+          let path = substitute(getcwd(), $HOME, '', '')
+          let path = substitute(path, '^/', '', '')
+          let branch = gitbranch#name()
+          let branch = empty(branch) ? '' : '@' . branch
+          return substitute(path . branch, '/', '-', 'g')
+        endfunction
+      ]])
+
+      -- Key mappings
+      vim.keymap.set('n', '\\s', ':execute "SSave! " . GetAutoSessionName()<CR>')
+      vim.keymap.set('n', '\\S', ':Startify<CR>')
+      vim.keymap.set('n', '\\d', ':SDelete<CR>y<CR>')
+
+      -- Startify configuration
+      vim.g.startify_list_order = {
+        { '    Sessions' },
+        'sessions',
+        { '    Most Recently Used files' },
+        'files',
+        'bookmarks',
+        { '    Commands' },
+        'commands'
+      }
+
+      -- Autocommands
+      vim.api.nvim_create_augroup("vimstartify", { clear = true })
+      vim.api.nvim_create_autocmd("User", {
+        group = "vimstartify",
+        pattern = "Startified",
+        callback = function()
+          vim.opt.cursorline = true
+        end,
+      })
+      vim.api.nvim_create_autocmd("SessionLoadPost", {
+        group = "vimstartify",
+        callback = function()
+          vim.defer_fn(function()
+            vim.cmd('bufdo e')
+          end, 100)
+        end,
+      })
     end,
   },
 }
