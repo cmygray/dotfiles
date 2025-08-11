@@ -55,9 +55,8 @@ local on_attach = function(client, bufnr)
 	end, bufopts)
 end
 
--- 설치된 LSP 서버 목록 (coc-extensions 기반)
--- 'coc-sh'는 'bashls', 'coc-python'은 'pyright' 또는 'jedi_language_server' 등으로 대체 가능
-local servers = { "ts_ls", "yamlls", "lua_ls", "pyright", "html", "bashls" }
+-- LSP 서버 수동 설정 (mason이 설치한 서버들)
+local servers = { "ts_ls", "yamlls", "pyright", "html", "bashls" }
 
 -- 각 서버에 대해 설정 적용
 for _, lsp in ipairs(servers) do
@@ -66,3 +65,25 @@ for _, lsp in ipairs(servers) do
 		capabilities = capabilities,
 	})
 end
+
+-- Lua LSP 특별 설정
+lspconfig.lua_ls.setup({
+	on_attach = on_attach,
+	capabilities = capabilities,
+	settings = {
+		Lua = {
+			runtime = {
+				version = "LuaJIT",
+			},
+			diagnostics = {
+				globals = { "vim" },
+			},
+			workspace = {
+				library = vim.api.nvim_get_runtime_file("", true),
+			},
+			telemetry = {
+				enable = false,
+			},
+		},
+	},
+})

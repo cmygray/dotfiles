@@ -1,8 +1,36 @@
 return {
   {
+    "williamboman/mason.nvim",
+    config = function()
+      require("mason").setup()
+    end,
+  },
+  {
+    "williamboman/mason-lspconfig.nvim",
+    dependencies = {
+      "williamboman/mason.nvim",
+      "neovim/nvim-lspconfig",
+    },
+    config = function()
+      local mason_lspconfig = require("mason-lspconfig")
+      mason_lspconfig.setup({
+        ensure_installed = {
+          "lua_ls",
+          "ts_ls", 
+          "yamlls",
+          "pyright",
+          "html",
+          "bashls",
+        },
+        automatic_installation = true,
+      })
+    end,
+  },
+  {
     "neovim/nvim-lspconfig",
     dependencies = {
       "hrsh7th/cmp-nvim-lsp",
+      "williamboman/mason-lspconfig.nvim",
     },
     config = function()
       require("lsp")
