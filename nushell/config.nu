@@ -216,8 +216,6 @@ $env.config = {
     }
 
     filesize: {
-        metric: false # true => KB, MB, GB (ISO standard), false => KiB, MiB, GiB (Windows standard)
-        format: "auto" # b, kb, kib, mb, mib, gb, gib, tb, tib, pb, pib, eb, eib, auto
     }
 
     cursor_shape: {
@@ -922,6 +920,7 @@ alias ll = ls -l
 alias awsdev = aws-vault exec classting-dev --no-session
 alias awsstag = aws-vault exec classting-stag --no-session
 alias awsprod = aws-vault exec classting-prod --no-session
+alias claude = mise exec node@20 -- claude
 
 # completions
 use ~/dotfiles/nushell/custom-completions/gh-completions.nu *
@@ -932,9 +931,8 @@ alias ll = ls -l
 
 source ~/.zoxide.nu
 
-use ~/.cache/starship/init.nu
-
-# source "/Users/classting-won/Library/Application Support/nushell/rtx.nu"
-
 use ($nu.default-config-dir | path join mise.nu)
+
+mkdir ($nu.data-dir | path join "vendor/autoload")
+starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
 
