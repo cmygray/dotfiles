@@ -158,6 +158,7 @@ return {
   },
   {
     "mhinz/vim-startify",
+    dependencies = { "itchyny/vim-gitbranch" },
     config = function()
       -- GetAutoSessionName function
       vim.cmd([[

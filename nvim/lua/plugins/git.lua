@@ -22,8 +22,5 @@ return {
 	{
 		"rhysd/conflict-marker.vim",
 	},
-	{
-		"itchyny/vim-gitbranch",
-	},
 }
 
