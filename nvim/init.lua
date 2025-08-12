@@ -71,7 +71,6 @@ vim.cmd([[
   command TC tabclose
 
   command! -nargs=0 Cwd :let @+ = expand('%:p')
-  command Rest :lua require('rest-nvim').run()<CR>
 ]])
 
 -- Load module configurations only when plugins are available
@@ -87,8 +86,8 @@ vim.api.nvim_create_autocmd("User", {
       local module_name = vim.fn.fnamemodify(module, ":t:r")
       if not vim.tbl_contains({
         "autopairs", "avante", "conform", "diffview", "git-conflict",
-        "kulala", "octo", "oil", "render-markdown", "rest", 
-        "telescope", "toggleterm", "treesitter", "ufo"
+        "kulala", "oil", "render-markdown", 
+        "telescope", "treesitter", "ufo"
       }, module_name) then
         vim.cmd("source " .. module)
       end

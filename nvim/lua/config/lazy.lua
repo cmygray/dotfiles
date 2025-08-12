@@ -23,7 +23,7 @@ require("lazy").setup("plugins", {
   },
   install = {
     missing = true, -- install missing plugins on startup
-    colorscheme = { "nord", "kanagawa", "habamax" }, -- try to load one of these colorschemes when starting an installation during startup
+    colorscheme = { "nord", "habamax" }, -- try to load one of these colorschemes when starting an installation during startup
   },
   checker = {
     enabled = true, -- automatically check for plugin updates
