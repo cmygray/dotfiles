@@ -12,5 +12,3 @@ Brewfile.lock.json
 !.env.example
 secrets.nu
 mise.toml
-CLAUDE.md
-AGENT.md
