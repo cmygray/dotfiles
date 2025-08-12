@@ -1,3 +1,6 @@
+-- Set leader key BEFORE loading lazy.nvim
+vim.g.mapleader = " "
+
 -- Setup lazy.nvim
 require("config.lazy")
 
@@ -25,9 +28,9 @@ vim.opt.signcolumn = "yes" -- for vim-gitgutter
 -- markdown-preview
 vim.g.mkdp_theme = "dark"
 
+
 -- Keymaps
 vim.keymap.set("v", "//", "y/<C-R>\"<CR>N")
-vim.keymap.set("", "<space>", "<leader>")
 vim.keymap.set("i", "<C-c>", "<Esc>")
 vim.keymap.set("n", "Y", "y$")
 
