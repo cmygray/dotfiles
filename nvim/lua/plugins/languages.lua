@@ -13,7 +13,7 @@ return {
   },
   {
     "iamcco/markdown-preview.nvim",
-    build = "cd app && npx --yes yarn install",
+    build = "cd app; npx --yes yarn install",
     config = function()
       vim.cmd("source " .. vim.fn.stdpath("config") .. "/modules/markdown-preview.vim")
     end,
