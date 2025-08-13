@@ -162,3 +162,199 @@ Use gemini -p when:
 - 직접 AWS CLI 사용 금지
 - 예시: `aws-vault exec my-profile -- aws s3 ls`
 
+## HTTP File Testing with Kulala
+
+### .http File Guide
+
+Kulala 플러그인을 사용하여 HTTP 요청을 테스트하기 위한 .http 파일 작성 가이드
+
+#### 기본 요청 구조
+
+```http
+# 기본 GET 요청
+GET https://api.example.com/users
+
+# POST 요청 with JSON body
+POST https://api.example.com/users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+
+# 요청 구분자 (### 또는 빈 줄로 구분)
+###
+
+# PUT 요청
+PUT https://api.example.com/users/1
+Content-Type: application/json
+
+{
+  "name": "Updated Name"
+}
+```
+
+#### 변수 사용
+
+```http
+# 변수 정의
+@baseUrl = https://api.example.com
+@apiKey = your-api-key-here
+@userId = 123
+
+# 변수 사용 예시
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{apiKey}}
+```
+
+#### 환경 변수
+
+```http
+# 환경 변수 사용 (.env 파일 또는 시스템 환경 변수)
+GET {{env.API_URL}}/users
+Authorization: Bearer {{env.API_TOKEN}}
+
+# 조건부 환경 설정
+@baseUrl = {{env.NODE_ENV == "production" ? "https://api.prod.com" : "https://api.dev.com"}}
+```
+
+#### 인증 방법
+
+```http
+# Basic Auth
+GET https://api.example.com/secure
+Authorization: Basic dXNlcjpwYXNzd29yZA==
+
+# Bearer Token
+GET https://api.example.com/protected
+Authorization: Bearer {{token}}
+
+# API Key in Header
+GET https://api.example.com/data
+X-API-Key: {{apiKey}}
+
+# API Key in Query
+GET https://api.example.com/data?api_key={{apiKey}}
+```
+
+#### 폼 데이터 및 파일 업로드
+
+```http
+# Form URL Encoded
+POST https://api.example.com/login
+Content-Type: application/x-www-form-urlencoded
+
+username=user&password=pass
+
+###
+
+# Multipart Form Data
+POST https://api.example.com/upload
+Content-Type: multipart/form-data; boundary=boundary123
+
+--boundary123
+Content-Disposition: form-data; name="title"
+
+My File Title
+--boundary123
+Content-Disposition: form-data; name="file"; filename="example.txt"
+Content-Type: text/plain
+
+< ./files/example.txt
+--boundary123--
+
+###
+
+# 파일 읽기 (< 문법)
+POST https://api.example.com/data
+Content-Type: application/json
+
+< ./data.json
+```
+
+#### 응답 처리
+
+```http
+# JQ를 사용한 응답 필터링
+# @jq .data.users[0].name
+GET https://api.example.com/users
+
+###
+
+# 응답을 파일로 저장
+# @save response.json
+GET https://api.example.com/users
+
+###
+
+# 응답에서 변수 추출
+# @variable token = .access_token
+POST https://api.example.com/auth/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "pass"
+}
+```
+
+#### 고급 기능
+
+```http
+# 프리스크립트 (요청 전 실행)
+# @pre-request
+# console.log("Before request");
+
+# 포스트스크립트 (응답 후 실행)  
+# @post-response
+# console.log("After response");
+
+# 테스트 검증
+# @test
+# pm.test("Status is 200", () => {
+#   pm.expect(pm.response.code).to.equal(200);
+# });
+
+GET https://api.example.com/users
+
+###
+
+# GraphQL 요청
+POST https://api.example.com/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetUsers { users { id name email } }"
+}
+
+###
+
+# 커스텀 cURL 플래그
+# @curl --connect-timeout 30
+GET https://slow-api.example.com/data
+```
+
+#### 환경 파일 (.http-client.env.json)
+
+```json
+{
+  "development": {
+    "baseUrl": "http://localhost:3000",
+    "apiKey": "dev-key"
+  },
+  "production": {
+    "baseUrl": "https://api.production.com",
+    "apiKey": "prod-key"
+  }
+}
+```
+
+#### 사용 팁
+
+1. **파일 구조**: 관련 요청들을 하나의 .http 파일에 모아서 관리
+2. **변수 활용**: 자주 사용하는 URL, 토큰 등은 변수로 정의
+3. **환경 분리**: 개발/스테이징/프로덕션 환경별로 변수 파일 분리
+4. **응답 검증**: @jq를 활용하여 응답 데이터 확인
+5. **파일 분할**: 기능별로 .http 파일을 나누어 관리
+
