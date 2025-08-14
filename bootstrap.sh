@@ -22,5 +22,11 @@ ln -nfs $HOME/dotfiles/.wezterm.lua $HOME/.wezterm.lua
 ln -nfs $HOME/dotfiles/zed/keymap.json $HOME/.config/zed/keymap.json
 ln -nfs $HOME/dotfiles/zed/settings.json $HOME/.config/zed/settings.json
 
+# Nushell configuration symlinks
+NUSHELL_CONFIG_DIR=$(nu -c '$nu.default-config-dir')
+mkdir -p "$NUSHELL_CONFIG_DIR"
+ln -nfs $HOME/dotfiles/nushell/config.nu "$NUSHELL_CONFIG_DIR/config.nu"
+ln -nfs $HOME/dotfiles/nushell/env.nu "$NUSHELL_CONFIG_DIR/env.nu"
+
 sudo sh -c "echo $(which nu) >> /etc/shells"
 chsh -s $(which nu)
