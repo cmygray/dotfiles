@@ -921,6 +921,7 @@ alias awsdev = aws-vault exec classting-dev --no-session
 alias awsstag = aws-vault exec classting-stag --no-session
 alias awsprod = aws-vault exec classting-prod --no-session
 alias claude = mise exec node@20 -- claude
+alias gemini = mise exec node@20 -- gemini
 
 # completions
 use ~/dotfiles/nushell/custom-completions/gh-completions.nu *
