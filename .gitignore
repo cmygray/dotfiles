@@ -13,3 +13,4 @@ Brewfile.lock.json
 secrets.nu
 mise.toml
 .claude
+.http
