@@ -53,3 +53,10 @@ if command -v nu >/dev/null 2>&1; then
         chsh -s $(which nu)
     fi
 fi
+
+# Install pipx packages
+if command -v pipx >/dev/null 2>&1; then
+    while read package; do
+        [ -n "$package" ] && pipx install "$package"
+    done < $HOME/dotfiles/requirements-pipx.txt
+fi
