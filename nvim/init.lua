@@ -54,6 +54,17 @@ vim.keymap.set("n", "<PageDown>", ":bnext!<CR>", { silent = true })
 
 vim.keymap.set("n", "<leader>zz", ":!zed %:p<CR>")
 
+-- GitHub commit navigation
+local function open_commit_in_github()
+  local commit_hash = vim.fn.expand('<cword>')
+  local repo_url = vim.fn.system('gh browse -n'):gsub('\n+$', '')
+  local commit_url = repo_url .. '/commit/' .. commit_hash
+  
+  vim.fn.system('start ' .. commit_url)
+end
+
+vim.keymap.set("n", "<leader>cc", open_commit_in_github, { desc = "Open commit in GitHub" })
+
 -- Command aliases
 vim.cmd([[
   command W w
