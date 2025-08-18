@@ -78,12 +78,11 @@ $env.NU_PLUGIN_DIRS = [
 $env.PATH = ($env.PATH | split row (char esep)
     | prepend '/opt/homebrew/bin'
     | prepend '/opt/homebrew/sbin'
-    | prepend '/Users/classting-won/.config/git-fuzzy/bin'
-    | prepend '/Users/classting-won/.krew/bin'
+    | prepend ($nu.home-path | path join '.config' 'git-fuzzy' 'bin')
+    | prepend ($nu.home-path | path join '.krew' 'bin')
     | prepend '/opt/homebrew/opt/postgresql@16/bin'
-    | prepend '/Users/classting-won/.local/bin'
-    | prepend '/Users/classting-won/.atuin/bin'
-    | prepend '/Users/classting-won/.local/share/mise/installs/node/20.19.0/bin'
+    | prepend ($nu.home-path | path join '.local' 'bin')
+    | prepend ($nu.home-path | path join '.atuin' 'bin')
 )
 
 $env.EDITOR = "nvim"
