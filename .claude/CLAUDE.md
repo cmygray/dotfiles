@@ -1,11 +1,26 @@
 # Development Guide
 
-## Codebase Analysis
+## AI 협업 가이드
 
-### Using Gemini CLI for Large Codebase Analysis
+### Gemini 협동 작업 가이드
 
-When analyzing large codebases or multiple files that might exceed context limits, use the Gemini CLI with its massive
-context window. Use `gemini -p` to leverage Google Gemini's large context capacity.
+#### 기본 사용법
+```bash
+# 기본 협업 모드
+gemini -p "작업 내용"
+
+# 전체 파일 컨텍스트 포함
+gemini -a -p "코드베이스 전체 분석 필요한 작업"
+
+# 안전한 샌드박스 모드
+gemini -s -p "실험적이거나 위험할 수 있는 작업"
+
+# 자동 승인 모드 (신중히 사용)
+gemini -y -p "반복적인 단순 작업"
+
+# 체크포인트 활성화 (파일 편집 추적)
+gemini -c -p "대규모 리팩토링 작업"
+```
 
 #### File and Directory Inclusion Syntax
 
@@ -41,6 +56,71 @@ gemini -p "@./ Give me an overview of this entire project"
 gemini --all_files -p "Analyze the project structure and dependencies"
 ```
 
+#### 협업 시나리오별 가이드
+
+**1. 코드 리뷰 및 분석**
+```bash
+# 보안 취약점 분석
+gemini -a -p "전체 코드베이스의 보안 취약점을 분석하고 우선순위를 매겨줘"
+
+# 성능 최적화 포인트 찾기
+gemini -a -p "성능 병목지점을 찾고 최적화 방안을 제시해줘"
+
+# 코드 품질 개선
+gemini -p "이 함수의 가독성과 유지보수성을 개선해줘" < src/service.ts
+```
+
+**2. 대규모 리팩토링**
+```bash
+# 안전한 리팩토링 (체크포인트 + 샌드박스)
+gemini -c -s -p "레거시 코드를 현대적 패턴으로 리팩토링"
+
+# 아키텍처 개선
+gemini -a -c -p "마이크로서비스 아키텍처로 모듈 분리"
+```
+
+**3. 테스트 및 문서화**
+```bash
+# 테스트 코드 생성
+gemini -p "이 모듈에 대한 포괄적인 테스트 스위트 작성"
+
+# API 문서 자동 생성
+gemini -a -p "OpenAPI 스펙 기반 문서 생성"
+```
+
+**4. 트러블슈팅**
+```bash
+# 에러 디버깅
+gemini -d -a -p "로그를 분석하여 에러 원인을 찾고 수정 방안 제시"
+
+# 성능 문제 해결
+gemini -a -p "메모리 누수나 성능 저하 원인 분석"
+```
+
+#### 협업 모범 사례
+
+**Claude와 Gemini 역할 분담**
+- **Claude**: 기획, 설계, 코드 리뷰, 정밀한 편집
+- **Gemini**: 대량 분석, 패턴 탐지, 실험적 구현, 병렬 작업
+
+**안전한 협업 원칙**
+1. 중요한 작업은 반드시 `-c` (체크포인트) 활성화
+2. 실험적 작업은 `-s` (샌드박스) 모드 사용
+3. 전체 컨텍스트 필요시에만 `-a` 플래그 사용
+4. `-y` (YOLO) 모드는 단순 반복 작업에만 제한적 사용
+
+**효과적인 프롬프트 작성**
+```bash
+# 구체적인 요구사항 명시
+gemini -p "NestJS에서 DynamoDB 연동 시 connection pool 최적화"
+
+# 제약사항 포함
+gemini -p "TypeScript 엄격 모드 준수하며 JWT 인증 미들웨어 개선"
+
+# 출력 형식 지정
+gemini -p "코드 변경사항을 diff 형태로 보여주고 변경 이유 설명"
+```
+
 #### When to Use Gemini CLI
 
 Use gemini -p when:
@@ -52,6 +132,22 @@ Use gemini -p when:
 - Verifying if specific features, patterns, or security measures are implemented
 - Checking for the presence of certain coding patterns across the entire codebase
 
+#### 모니터링 및 품질 관리
+
+**메모리 사용량 모니터링**
+```bash
+gemini --show_memory_usage -a -p "대용량 작업"
+```
+
+**텔레메트리 설정**
+```bash
+# 로컬 텔레메트리
+gemini --telemetry --telemetry-target local
+
+# 프롬프트 로깅 (민감 정보 주의)
+gemini --telemetry-log-prompts false
+```
+
 #### Important Notes
 
 - Paths in @ syntax are relative to your current working directory when invoking gemini
@@ -59,6 +155,12 @@ Use gemini -p when:
 - No need for --yolo flag for read-only analysis
 - Gemini's context window can handle entire codebases that would overflow Claude's context
 - When checking implementations, be specific about what you're looking for to get accurate results
+
+#### 주의사항
+- 민감한 정보 (API 키, 비밀번호) 포함된 파일 작업 시 주의
+- `-y` 모드는 충분한 검토 후 사용
+- 대규모 변경 전 반드시 Git 백업 확인
+- 샌드박스 모드도 완전히 안전하지 않으므로 중요 작업 전 백업 필수
 
 ### Code Analysis Patterns
 
@@ -131,19 +233,34 @@ Use gemini -p when:
 ## Git & GitHub
 
 ### Commit Guidelines
-- 커밋 요청 시 signoff 커밋할 것
+- github 페이지 조회 대신 gh cli를 사용해. 인증때문에 그래.
+- 커밋을 요청할 경우 signoff 커밋할것
 - commit 메시지를 한글로 작성
 
 ### GitHub CLI Usage
 - GitHub 페이지 조회 대신 gh CLI 사용 (인증 문제)
 
 ### Pull Request Guidelines
-- PR 오픈 시 PULL_REQUEST_TEMPLATE.md 참고
+- PR 오픈 작업 시 PULL_REQUEST_TEMPLATE.md 을 참고할 것
 - PR 메시지를 한글로 작성
 
 ### Issue Guidelines
-- 이슈 오픈 시 .github/ISSUE_TEMPLATE/ 참고
+- 이슈 오픈 작업 시 .github/ISSUE_TEMPLATE/ 을 참고할 것
 - 이슈 메시지를 한글로 작성
+
+## Notion 작업 관리 가이드
+
+### 사용자 정보
+- 이름: 원 (Won)
+- 역할: 개발자
+- Notion 계정: classting-won@classting.com
+- 작업 할당시 나를 멘션하거나 할당자로 설정할 때 이 정보를 활용
+
+### 스프린트 관리 룰
+- 스프린트 관련 대화 시 항상 현재 진행중인 스프린트("현재" 상태)를 먼저 식별하여 컨텍스트 제공
+- 스프린트 데이터베이스에서 "스프린트 상태"가 "현재"인 항목을 찾아 활성 스프린트 확인
+- 티켓 작업 시 해당 스프린트와의 연관성을 항상 고려
+- 새 작업 생성 시 현재 스프린트에 자동 연결 고려
 
 ## CLI preference
 
