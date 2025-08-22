@@ -52,6 +52,10 @@ if command -v nu >/dev/null 2>&1; then
     if [ "$SHELL" != "$(which nu)" ]; then
         chsh -s $(which nu)
     fi
+    
+    # Initialize nushell/scripts sparse checkout
+    echo "Initializing nushell/scripts..."
+    nu $HOME/dotfiles/init-nushell-scripts.nu
 fi
 
 # Install pipx packages
