@@ -475,3 +475,5 @@ GET https://slow-api.example.com/data
 4. **응답 검증**: @jq를 활용하여 응답 데이터 확인
 5. **파일 분할**: 기능별로 .http 파일을 나누어 관리
 
+
+- Translate mixed Korean-English instruction into proper English.

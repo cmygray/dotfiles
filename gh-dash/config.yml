@@ -40,6 +40,7 @@ keybindings:
         wezterm cli spawn --new-window -- nu -c 'gh notify'
 
 repoPaths:
+  classtinginc/aidt: ~/Workspace/aidt
   classtinginc/organization: ~/Workspace/organization
   classtinginc/classroom-service: ~/Workspace/classroom-service
   classtinginc/frontend: ~/Workspace/frontend
