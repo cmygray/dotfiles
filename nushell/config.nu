@@ -915,6 +915,7 @@ def kubefz [] {
 
 # aliases
 use ~/dotfiles/nushell/aliases/git-aliases.nu *
+use ~/dotfiles/nushell/aliases/docker-aliases.nu *
 alias vim = nvim
 alias ll = ls -l
 alias awsdev = aws-vault exec classting-dev --no-session
