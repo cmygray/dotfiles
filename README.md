@@ -30,27 +30,22 @@ cd ~/dotfiles
 
 ## TODO
 
-- [ ] (github) ssh 키 설정 자동화
-- [ ] 카라비너 설정을 자동 백업하면서 깃으로 관리할 방법
-- [ ] zsh-custom 플러그인 관리
-- [ ] gh extensions 자동 설치
+- [ ] sync karabiner
+- [ ] sync gh extensions
 - [ ] GPG 설정 자동화
 
 직접 설치할 앱들:
 
 - 1password
-- paw
 - authy
 - karabiner
-- allkdic
 - appcleaner
 - brave
 - fantastical
 - hammerspoon
 - monitorcontrol (appstore)
 - pdf expert
-- top notch (m1 only)
-- vimac
+- homerow
 - wezterm
 
 참고:
