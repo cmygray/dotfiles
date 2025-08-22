@@ -914,8 +914,8 @@ def kubefz [] {
 }
 
 # aliases
-use ~/dotfiles/nushell/aliases/git-aliases.nu *
-use ~/dotfiles/nushell/aliases/docker-aliases.nu *
+use ~/dotfiles/nushell/scripts/aliases/git/git-aliases.nu *
+use ~/dotfiles/nushell/scripts/aliases/docker/docker-aliases.nu *
 alias vim = nvim
 alias ll = ls -l
 alias awsdev = aws-vault exec classting-dev --no-session
@@ -925,8 +925,16 @@ alias claude = mise exec node@20 -- claude
 alias gemini = mise exec node@20 -- gemini
 
 # completions
-use ~/dotfiles/nushell/custom-completions/gh-completions.nu *
-use ~/dotfiles/nushell/custom-completions/git-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/aws/aws-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/curl/curl-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/docker/docker-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/gh/gh-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/git/git-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/gradlew/gradlew-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/npm/npm-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/rustup/rustup-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/yarn/yarn-v4-completions.nu *
+use ~/dotfiles/nushell/scripts/custom-completions/zoxide/zoxide-completions.nu *
 
 alias vim = nvim
 alias ll = ls -l
