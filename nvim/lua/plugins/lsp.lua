@@ -48,6 +48,7 @@ return {
           "pyright",
           "html",
           "bashls",
+          "jdtls",
         },
         automatic_installation = true,
       })
@@ -96,6 +97,54 @@ return {
           capabilities = capabilities,
         })
       end
+      
+      -- JDTLS 특별 설정
+      lspconfig.jdtls.setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+        cmd = { "jdtls" },
+        root_dir = function(fname)
+          return require('lspconfig').util.root_pattern('pom.xml', 'build.gradle', 'build.gradle.kts', '.project', '.git')(fname) or vim.fn.getcwd()
+        end,
+        settings = {
+          java = {
+            eclipse = {
+              downloadSources = true,
+            },
+            configuration = {
+              updateBuildConfiguration = "interactive",
+            },
+            maven = {
+              downloadSources = true,
+            },
+            implementationsCodeLens = {
+              enabled = true,
+            },
+            referencesCodeLens = {
+              enabled = true,
+            },
+            references = {
+              includeDecompiledSources = true,
+            },
+          },
+          signatureHelp = { enabled = true },
+          completion = {
+            favoriteStaticMembers = {
+              "org.hamcrest.MatcherAssert.assertThat",
+              "org.hamcrest.Matchers.*",
+              "org.hamcrest.CoreMatchers.*",
+              "org.junit.jupiter.api.Assertions.*",
+              "java.util.Objects.requireNonNull",
+              "java.util.Objects.requireNonNullElse",
+              "org.mockito.Mockito.*"
+            },
+          },
+          contentProvider = { preferred = "fernflower" },
+        },
+        init_options = {
+          bundles = {}
+        },
+      })
 
       -- Lua LSP 특별 설정
       lspconfig.lua_ls.setup({

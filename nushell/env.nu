@@ -95,6 +95,8 @@ $env.HOMEBREW_REPOSITORY = "/opt/homebrew"
 $env.MANPATH = "/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
 $env.INFOPATH = "/opt/homebrew/share/info:${INFOPATH:-}"
 
+source $"($nu.home-path)/.cargo/env.nu"
+
 const secrets_file = ($nu.default-config-dir | path join "secrets.nu")
 
 if ($secrets_file | path exists) {

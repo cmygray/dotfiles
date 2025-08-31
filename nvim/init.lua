@@ -65,6 +65,15 @@ end
 
 vim.keymap.set("n", "<leader>cc", open_commit_in_github, { desc = "Open commit in GitHub" })
 
+-- Auto-equalize windows on terminal resize
+vim.api.nvim_create_autocmd("VimResized", {
+  pattern = "*",
+  callback = function()
+    vim.cmd("wincmd =")
+  end,
+  desc = "Auto-equalize window sizes when terminal is resized"
+})
+
 -- Command aliases
 vim.cmd([[
   command W w
