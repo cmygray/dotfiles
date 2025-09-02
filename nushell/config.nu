@@ -921,8 +921,11 @@ alias ll = ls -l
 alias awsdev = aws-vault exec classting-dev --no-session
 alias awsstag = aws-vault exec classting-stag --no-session
 alias awsprod = aws-vault exec classting-prod --no-session
+alias dyu = dy use (dy list | fzf | str trim)
 alias claude = mise exec node@20 -- claude
 alias gemini = mise exec node@20 -- gemini
+alias fcd = cd (fd -t directory -d 1 | fzf)
+alias frm = rm (fd -d 1 | fzf)
 
 # completions
 use ~/dotfiles/nushell/scripts/custom-completions/aws/aws-completions.nu *
