@@ -38,6 +38,8 @@ for i = 1, 9 do
 end
 
 return {
+	automatically_reload_config = true,
+	window_decorations = "RESIZE",
 	default_cwd = wezterm.home_dir .. "/Workspace",
 	color_scheme = "nord",
 
