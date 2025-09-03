@@ -37,6 +37,9 @@ mkdir -p "$HOME/.config/zed"
 [ ! -L "$HOME/.config/zed/keymap.json" ] && ln -nfs $HOME/dotfiles/zed/keymap.json $HOME/.config/zed/keymap.json
 [ ! -L "$HOME/.config/zed/settings.json" ] && ln -nfs $HOME/dotfiles/zed/settings.json $HOME/.config/zed/settings.json
 
+mkdir -p "$HOME/.config/karabiner"
+[ ! -L "$HOME/.config/karabiner/karabiner.json" ] && ln -nfs $HOME/dotfiles/karabiner/karabiner.json $HOME/.config/karabiner/karabiner.json
+
 # Nushell configuration symlinks
 if command -v nu >/dev/null 2>&1; then
     NUSHELL_CONFIG_DIR=$(nu -c '$nu.default-config-dir')
