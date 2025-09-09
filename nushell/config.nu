@@ -927,6 +927,7 @@ alias gemini = mise exec node@20 -- gemini
 alias fcd = cd (fd -t directory -d 1 | fzf)
 alias frm = rm (fd -d 1 | fzf)
 alias serena = claude mcp add serena -- uv run --directory ~/dotfiles/serena/ serena-mcp-server --context ide-assistant --project (pwd)
+alias standup = gh standup -d 1 | gemini -p "translate to KR"
 
 # completions
 use ~/dotfiles/nushell/scripts/custom-completions/aws/aws-completions.nu *
