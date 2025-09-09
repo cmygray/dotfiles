@@ -15,9 +15,7 @@
   },
 
   "terminal": {
-    "shell": {
-      "program": "zsh"
-    }
+    "shell": "system"
   },
 
   // langs
@@ -25,29 +23,6 @@
     "YAML": {
       "formatter": "prettier",
       "format_on_save": "off"
-    }
-  },
-
-  // AI
-  "agent": {
-    "always_allow_tool_actions": true,
-    "default_profile": "write",
-    "model_parameters": [],
-    "default_model": {
-      "provider": "openrouter",
-      "model": "anthropic/claude-sonnet-4"
-    },
-    "version": "2"
-  },
-  "language_models": {
-    "google": {
-      "available_models": [
-        {
-          "name": "gemini-2.5-pro-preview-03-25",
-          "display_name": "Gemini 2.5 Pro",
-          "max_tokens": 1000000
-        }
-      ]
     }
   },
 
