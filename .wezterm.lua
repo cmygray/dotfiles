@@ -27,6 +27,7 @@ local keys = {
 		action = act.ActivateKeyTable({ name = "resize_pane", one_shot = false, replace_current = true }),
 	},
 	{ key = "Escape", mods = "LEADER", action = "PopKeyTable" },
+	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
 }
 
 for i = 1, 9 do
