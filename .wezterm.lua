@@ -2,6 +2,7 @@ local wezterm = require("wezterm")
 local act = wezterm.action
 
 local keys = {
+	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
 	{ key = "Enter", mods = "ALT", action = wezterm.action.DisableDefaultAssignment },
 	{ key = "v", mods = "LEADER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
 	{ key = "s", mods = "LEADER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },

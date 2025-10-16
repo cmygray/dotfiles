@@ -84,6 +84,7 @@ $env.PATH = ($env.PATH | split row (char esep)
     | prepend '/opt/homebrew/opt/postgresql@16/bin'
     | prepend ($nu.home-path | path join '.local' 'bin')
     | prepend ($nu.home-path | path join '.atuin' 'bin')
+    | prepend '/usr/local/bin/zed'
 )
 
 $env.EDITOR = "nvim"
