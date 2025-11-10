@@ -13,13 +13,13 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "bun x ccusage statusline --no-offline",
+    "padding": 0
+  },
+  "alwaysThinkingEnabled": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
-  },
-  "model": "opusplan",
-	"statusLine": {
-		"type": "command",
-		"command": "bun x ccusage statusline --no-offline",
-		"padding": 0
-	}
+  }
 }
