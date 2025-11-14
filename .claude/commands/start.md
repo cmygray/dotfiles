@@ -1,4 +1,4 @@
-# ~/.claude/commands/init.md
+# ~/.claude/commands/start.md
 ---
 $ARGUMENTS를 작업명으로 사용하여:
 

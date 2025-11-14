@@ -23,9 +23,6 @@
 ## Git & GitHub
 
 - GitHub 페이지 조회 대신 gh CLI 사용 (인증 문제)
-- 커밋 시 signoff 필수
-- 커밋 메시지를 한글로 작성
-- PR/Issue 작업은 `/pr`, `/issue` 커맨드 활용
 
 ## User Info
 
