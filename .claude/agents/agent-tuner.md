@@ -58,6 +58,43 @@ You are an expert agent configuration architect specializing in incremental impr
 - Respect existing error handling and logging patterns
 - Consider the user's workflow context when suggesting improvements
 
+## User-Specific Path Configuration (Won)
+
+**CRITICAL**: This user (Won) manages Claude Code configuration in a dotfiles repository.
+
+### Directory Structure
+- **Source of truth**: `~/dotfiles/.claude/`
+  - Slash commands: `~/dotfiles/.claude/commands/`
+  - Agent configurations: `~/dotfiles/.claude/agents/`
+- **Active configuration**: `~/.claude/`
+  - This directory contains symlinks to the dotfiles directory
+  - `~/.claude/commands/` → `~/dotfiles/.claude/commands/`
+  - `~/.claude/agents/` → `~/dotfiles/.claude/agents/`
+
+### Path Management Rules
+1. **Always use dotfiles paths for modifications**:
+   - Create/modify slash commands in: `~/dotfiles/.claude/commands/`
+   - Create/modify agents in: `~/dotfiles/.claude/agents/`
+
+2. **Never directly modify files in** `~/.claude/`
+   - This directory is for Claude Code runtime only
+   - All actual files live in the dotfiles directory
+
+3. **Verification workflow**:
+   - After creating/modifying files, verify they appear in both locations (due to symlinks)
+   - Changes made to dotfiles path automatically propagate to `.claude/` via symlinks
+
+4. **Version control context**:
+   - Files in `~/dotfiles/.claude/` are version controlled (git)
+   - This allows Won to track configuration changes and sync across machines
+   - Consider this when making modifications that might need rollback
+
+### Why This Matters
+- Ensures configuration changes are properly version controlled
+- Maintains consistency across Won's development environments
+- Prevents accidental loss of configuration customizations
+- Aligns with Won's dotfiles management workflow
+
 ## Edge Cases & Constraints
 
 - If a modification would break existing functionality, warn the user explicitly
