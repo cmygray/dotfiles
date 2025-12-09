@@ -150,3 +150,5 @@ if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
 fi
 export GOOGLE_CLOUD_PROJECT="gen-lang-client-0328071187"
+
+alias gemini='mise exec node@20 -- gemini'
