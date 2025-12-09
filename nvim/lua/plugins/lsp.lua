@@ -61,51 +61,48 @@ return {
       "williamboman/mason-lspconfig.nvim",
     },
     config = function()
-      local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
-      
-      -- LSP 공통 on_attach 함수
-      local on_attach = function(client, bufnr)
-        local bufopts = { noremap = true, silent = true, buffer = bufnr }
-        
-        -- LSP 키맵 설정
-        vim.keymap.set("n", "gd", vim.lsp.buf.definition, bufopts)
-        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
-        vim.keymap.set("n", "gu", vim.lsp.buf.references, bufopts)
-        vim.keymap.set("n", "gr", vim.lsp.buf.hover, bufopts)
-        vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename, bufopts)
-        vim.keymap.set("n", "<A-Cr>", vim.lsp.buf.code_action, bufopts)
-        vim.keymap.set("v", "<A-Cr>", vim.lsp.buf.code_action, bufopts)
-        
-        -- 진단 관련 키맵
-        vim.keymap.set("n", "<leader>j", vim.diagnostic.goto_next, bufopts)
-        vim.keymap.set("n", "<leader>k", vim.diagnostic.goto_prev, bufopts)
-        vim.keymap.set("n", "<leader>J", function()
-          vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR })
-        end, bufopts)
-        vim.keymap.set("n", "<leader>K", function()
-          vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR })
-        end, bufopts)
-      end
 
-      -- LSP 서버 설정
+      -- LSP 키맵 설정 (LspAttach autocmd 사용)
+      vim.api.nvim_create_autocmd("LspAttach", {
+        callback = function(args)
+          local bufnr = args.buf
+          local bufopts = { noremap = true, silent = true, buffer = bufnr }
+
+          -- LSP 키맵 설정
+          vim.keymap.set("n", "gd", vim.lsp.buf.definition, bufopts)
+          vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
+          vim.keymap.set("n", "gu", vim.lsp.buf.references, bufopts)
+          vim.keymap.set("n", "gr", vim.lsp.buf.hover, bufopts)
+          vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename, bufopts)
+          vim.keymap.set("n", "<A-Cr>", vim.lsp.buf.code_action, bufopts)
+          vim.keymap.set("v", "<A-Cr>", vim.lsp.buf.code_action, bufopts)
+
+          -- 진단 관련 키맵
+          vim.keymap.set("n", "<leader>j", vim.diagnostic.goto_next, bufopts)
+          vim.keymap.set("n", "<leader>k", vim.diagnostic.goto_prev, bufopts)
+          vim.keymap.set("n", "<leader>J", function()
+            vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR })
+          end, bufopts)
+          vim.keymap.set("n", "<leader>K", function()
+            vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR })
+          end, bufopts)
+        end,
+      })
+
+      -- 일반 LSP 서버 설정
       local servers = { "ts_ls", "yamlls", "pyright", "html", "bashls" }
-      
-      for _, lsp in ipairs(servers) do
-        lspconfig[lsp].setup({
-          on_attach = on_attach,
+      for _, server in ipairs(servers) do
+        vim.lsp.config(server, {
           capabilities = capabilities,
         })
       end
-      
+
       -- JDTLS 특별 설정
-      lspconfig.jdtls.setup({
-        on_attach = on_attach,
+      vim.lsp.config("jdtls", {
         capabilities = capabilities,
         cmd = { "jdtls" },
-        root_dir = function(fname)
-          return require('lspconfig').util.root_pattern('pom.xml', 'build.gradle', 'build.gradle.kts', '.project', '.git')(fname) or vim.fn.getcwd()
-        end,
+        root_markers = { "pom.xml", "build.gradle", "build.gradle.kts", ".project", ".git" },
         settings = {
           java = {
             eclipse = {
@@ -136,19 +133,18 @@ return {
               "org.junit.jupiter.api.Assertions.*",
               "java.util.Objects.requireNonNull",
               "java.util.Objects.requireNonNullElse",
-              "org.mockito.Mockito.*"
+              "org.mockito.Mockito.*",
             },
           },
           contentProvider = { preferred = "fernflower" },
         },
         init_options = {
-          bundles = {}
+          bundles = {},
         },
       })
 
       -- Lua LSP 특별 설정
-      lspconfig.lua_ls.setup({
-        on_attach = on_attach,
+      vim.lsp.config("lua_ls", {
         capabilities = capabilities,
         settings = {
           Lua = {
@@ -167,6 +163,9 @@ return {
           },
         },
       })
+
+      -- 모든 서버 활성화
+      vim.lsp.enable({ "ts_ls", "yamlls", "pyright", "html", "bashls", "jdtls", "lua_ls" })
     end,
   },
   {
