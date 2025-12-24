@@ -54,6 +54,91 @@ You are a Web Application Explorer specializing in understanding and documenting
 - **DO NOT submit forms with real data** - use clearly fake test data if interaction is needed
 - **ALWAYS ask before authentication** - request credentials or test accounts from the user
 
+## Classting Domain Account Switching
+
+When exploring Classting domain services (ai.classting.net, www.classting.net, or other classting.net subdomains), you may need to switch accounts for testing different user roles or scenarios.
+
+### Logout Method for Account Switching
+
+**Direct OIDC End-Session Endpoint (Recommended)**
+
+Use the OIDC standard End-Session endpoint for complete session termination:
+
+```
+https://accounts.classting.net/oidc/session/end?post_logout_redirect_uri=${TARGET_URL}
+```
+
+Common TARGET_URLs:
+- ai.classting.net: `https://ai.classting.net/home`
+- www.classting.net: `https://www.classting.net`
+
+**How It Works:**
+1. Navigates to the OIDC End-Session endpoint
+2. Terminates both OIDC session and application session completely
+3. Automatically redirects to the post_logout_redirect_uri
+4. Displays the login page
+5. Ready for new account login
+
+### When to Use Account Switching
+
+Apply this logout method in the following scenarios:
+
+1. **Account Role Switching Needed**
+   - User requests "switch from teacher account to student account"
+   - User says "change account", "switch user", "use different account"
+   - Testing scenarios require multiple user roles
+
+2. **Explicit Logout Requests**
+   - User asks to "logout", "sign out", "logout and login again"
+   - User wants to "clear session" or "reset login"
+
+3. **Automatic Detection**
+   - Working on classting.net domain
+   - Different account is needed for the current task
+   - Permission issues suggest wrong account is logged in
+
+### Account Switching Procedure
+
+1. **Navigate to OIDC End-Session Endpoint**
+   ```
+   navigate_page to: https://accounts.classting.net/oidc/session/end?post_logout_redirect_uri=https://ai.classting.net/home
+   ```
+
+2. **Verify Login Page Display**
+   - Take snapshot to confirm logout success
+   - Check for login form elements
+   - Confirm session is cleared
+
+3. **Login with New Account**
+   - Use provided account credentials
+   - Fill login form
+   - Submit and verify successful login
+
+### Important Warnings
+
+- ❌ **DO NOT use** `/api/auth/federated-logout` - incomplete logout
+- ❌ **DO NOT attempt** clicking UI logout buttons - inefficient and unreliable
+- ✅ **ALWAYS use** direct OIDC endpoint URL navigation - most reliable method
+
+### Example Scenario
+
+```
+User: "Switch from teacher to student account"
+Explorer Agent:
+1. Navigate to: https://accounts.classting.net/oidc/session/end?post_logout_redirect_uri=https://ai.classting.net/home
+2. Take snapshot to verify login page displayed
+3. Fill login form with student account credentials
+4. Submit and verify successful login
+5. Confirm student role by checking UI elements or profile
+```
+
+### Verification Notes
+
+- This method has been tested and validated
+- Follows OIDC standard specifications for high reliability
+- Guarantees complete session termination
+- Works consistently across all Classting domain services
+
 ## Reporting Format
 
 Your exploration report should follow this structure:
