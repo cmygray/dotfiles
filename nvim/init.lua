@@ -28,9 +28,8 @@ vim.opt.signcolumn = "yes" -- for vim-gitgutter
 -- markdown-preview
 vim.g.mkdp_theme = "dark"
 
-
 -- Keymaps
-vim.keymap.set("v", "//", "y/<C-R>\"<CR>N")
+vim.keymap.set("v", "//", 'y/<C-R>"<CR>N')
 vim.keymap.set("i", "<C-c>", "<Esc>")
 vim.keymap.set("n", "Y", "y$")
 
@@ -56,22 +55,22 @@ vim.keymap.set("n", "<leader>zz", ":!zed %:p<CR>")
 
 -- GitHub commit navigation
 local function open_commit_in_github()
-  local commit_hash = vim.fn.expand('<cword>')
-  local repo_url = vim.fn.system('gh browse -n'):gsub('\n+$', '')
-  local commit_url = repo_url .. '/commit/' .. commit_hash
-  
-  vim.fn.system('start ' .. commit_url)
+	local commit_hash = vim.fn.expand("<cword>")
+	local repo_url = vim.fn.system("gh browse -n"):gsub("\n+$", "")
+	local commit_url = repo_url .. "/commit/" .. commit_hash
+
+	vim.fn.system("start " .. commit_url)
 end
 
 vim.keymap.set("n", "<leader>cc", open_commit_in_github, { desc = "Open commit in GitHub" })
 
 -- Auto-equalize windows on terminal resize
 vim.api.nvim_create_autocmd("VimResized", {
-  pattern = "*",
-  callback = function()
-    vim.cmd("wincmd =")
-  end,
-  desc = "Auto-equalize window sizes when terminal is resized"
+	pattern = "*",
+	callback = function()
+		vim.cmd("wincmd =")
+	end,
+	desc = "Auto-equalize window sizes when terminal is resized",
 })
 
 -- Command aliases
@@ -96,24 +95,47 @@ vim.cmd([[
   command! -nargs=0 Cwd :let @+ = expand('%:p')
 ]])
 
+-- :Point command - copy selected code with file path to clipboard
+vim.api.nvim_create_user_command("Point", function(opts)
+	local file_path = vim.fn.expand("%:p")
+	local start_line = opts.line1
+	local end_line = opts.line2
+	local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+	local code = table.concat(lines, "\n")
+	local result = file_path .. ":" .. start_line .. "-" .. end_line .. "\n" .. code
+	vim.fn.setreg("+", result)
+	vim.notify("Copied to clipboard: " .. file_path .. ":" .. start_line .. "-" .. end_line, vim.log.levels.INFO)
+end, { range = true, desc = "Copy selected code with file path to clipboard" })
+
 -- Load module configurations only when plugins are available
 vim.api.nvim_create_autocmd("User", {
-  pattern = "LazyDone",
-  callback = function()
-    -- Only load modules after lazy.nvim has loaded all plugins
-    local modules_path = vim.fn.stdpath("config") .. "/modules"
-    local modules = vim.fn.globpath(modules_path, "*.vim", false, true)
-    
-    for _, module in ipairs(modules) do
-      -- Skip loading modules that might conflict with lazy.nvim
-      local module_name = vim.fn.fnamemodify(module, ":t:r")
-      if not vim.tbl_contains({
-        "autopairs", "avante", "conform", "diffview", "git-conflict",
-        "kulala", "oil", "render-markdown", 
-        "telescope", "treesitter", "ufo"
-      }, module_name) then
-        vim.cmd("source " .. module)
-      end
-    end
-  end,
+	pattern = "LazyDone",
+	callback = function()
+		-- Only load modules after lazy.nvim has loaded all plugins
+		local modules_path = vim.fn.stdpath("config") .. "/modules"
+		local modules = vim.fn.globpath(modules_path, "*.vim", false, true)
+
+		for _, module in ipairs(modules) do
+			-- Skip loading modules that might conflict with lazy.nvim
+			local module_name = vim.fn.fnamemodify(module, ":t:r")
+			if
+				not vim.tbl_contains({
+					"autopairs",
+					"avante",
+					"conform",
+					"diffview",
+					"git-conflict",
+					"kulala",
+					"oil",
+					"render-markdown",
+					"telescope",
+					"treesitter",
+					"ufo",
+				}, module_name)
+			then
+				vim.cmd("source " .. module)
+			end
+		end
+	end,
 })
+
