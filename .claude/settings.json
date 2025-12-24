@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "haiku",
   "hooks": {
     "Notification": [
       {
@@ -18,7 +19,8 @@
     "command": "bun x ccusage statusline --no-offline",
     "padding": 0
   },
-  "alwaysThinkingEnabled": false,
+  "alwaysThinkingEnabled": true,
+  "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
   }
