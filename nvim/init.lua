@@ -96,7 +96,7 @@ vim.cmd([[
 ]])
 
 -- :Point command - copy selected code with file path to clipboard
-vim.api.nvim_create_user_command("Point", function(opts)
+vim.api.nvim_create_user_command("P", function(opts)
 	local file_path = vim.fn.expand("%:p")
 	local start_line = opts.line1
 	local end_line = opts.line2
@@ -138,4 +138,3 @@ vim.api.nvim_create_autocmd("User", {
 		end
 	end,
 })
-
