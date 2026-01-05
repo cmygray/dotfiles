@@ -1,6 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "model": "haiku",
   "hooks": {
     "Notification": [
       {
@@ -22,11 +21,13 @@
   "enabledPlugins": {
     "serena@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "context7@claude-plugins-official": true
+    "context7@claude-plugins-official": true,
+    "figma@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
   "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
-  }
+  },
+  "model": "sonnet"
 }
