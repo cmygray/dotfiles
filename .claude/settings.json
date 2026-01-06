@@ -23,7 +23,7 @@
     "serena@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
-    "figma@claude-plugins-official": true,
+    "figma@claude-plugins-official": false,
     "Notion@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
