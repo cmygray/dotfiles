@@ -1,7 +1,17 @@
 return {
 	{
 		"coder/claudecode.nvim",
-		dependencies = { "folke/snacks.nvim" },
+		dependencies = {
+			{
+				"folke/snacks.nvim",
+				keys = {
+					{ "<C-w>h", "<cmd>wincmd h<cr>", mode = "t" },
+					{ "<C-w>l", "<cmd>wincmd l<cr>", mode = "t" },
+					{ "<C-w>j", "<cmd>wincmd j<cr>", mode = "t" },
+					{ "<C-w>k", "<cmd>wincmd k<cr>", mode = "t" },
+				},
+			},
+		},
 		opts = {
 			focus_after_send = false,
 			track_selection = true,
