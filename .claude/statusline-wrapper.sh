@@ -29,14 +29,18 @@ cwd=$(echo "$input" | jq -r '.workspace.current_dir // empty' 2>/dev/null || ech
 display_path="${cwd:-$(pwd)}"
 display_path="${display_path/#$HOME/\~}"
 
-# Get git branch (skip optional locks as per CLAUDE.md)
+# Get git branch and dirty status
 branch=$(git -C "${cwd:-$(pwd)}" -c core.useBuiltinFSMonitor=false branch --show-current 2>/dev/null || echo "")
+dirty=""
+if [ -n "$branch" ] && [ -n "$(git -C "${cwd:-$(pwd)}" status --porcelain 2>/dev/null)" ]; then
+    dirty="*"
+fi
 
 # Assemble single-line output
 if [ -n "$branch" ] && [ -n "$context_info" ]; then
-    echo "${model_info} | 📁 ${display_path} | 🌿 ${branch} | ${context_info}"
+    echo "${model_info} | 📁 ${display_path} | 🌿 ${branch}${dirty} | ${context_info}"
 elif [ -n "$branch" ]; then
-    echo "${model_info} | 📁 ${display_path} | 🌿 ${branch}"
+    echo "${model_info} | 📁 ${display_path} | 🌿 ${branch}${dirty}"
 elif [ -n "$context_info" ]; then
     echo "${model_info} | 📁 ${display_path} | ${context_info}"
 else

@@ -16,7 +16,7 @@ return {
 			focus_after_send = false,
 			track_selection = true,
 			terminal = {
-				split_width_percentage = 0.40,
+				split_width_percentage = 0.50,
 				provider = "snacks",
 			},
 		},
