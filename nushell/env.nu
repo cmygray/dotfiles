@@ -3,7 +3,7 @@
 # version = "0.85.0"
 
 def create_left_prompt [] {
-    let home =  $nu.home-path
+    let home =  $nu.home-dir
 
     let dir = ([
         ($env.PWD | str substring 0..($home | str length) | str replace $home "~"),
@@ -79,11 +79,11 @@ $env.PATH = ($env.PATH | split row (char esep)
     | prepend '/opt/homebrew/bin'
     | prepend '/opt/homebrew/sbin'
     | prepend '/opt/homebrew/bin/ffmpeg'
-    | prepend ($nu.home-path | path join '.config' 'git-fuzzy' 'bin')
-    | prepend ($nu.home-path | path join '.krew' 'bin')
+    | prepend ($nu.home-dir | path join '.config' 'git-fuzzy' 'bin')
+    | prepend ($nu.home-dir | path join '.krew' 'bin')
     | prepend '/opt/homebrew/opt/postgresql@16/bin'
-    | prepend ($nu.home-path | path join '.local' 'bin')
-    | prepend ($nu.home-path | path join '.atuin' 'bin')
+    | prepend ($nu.home-dir | path join '.local' 'bin')
+    | prepend ($nu.home-dir | path join '.atuin' 'bin')
     | prepend '/usr/local/bin/zed'
 )
 
@@ -97,7 +97,7 @@ $env.HOMEBREW_REPOSITORY = "/opt/homebrew"
 $env.MANPATH = "/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
 $env.INFOPATH = "/opt/homebrew/share/info:${INFOPATH:-}"
 
-source $"($nu.home-path)/.cargo/env.nu"
+source $"($nu.home-dir)/.cargo/env.nu"
 
 const secrets_file = ($nu.default-config-dir | path join "secrets.nu")
 
