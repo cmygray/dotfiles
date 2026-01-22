@@ -1,4 +1,4 @@
-# Storage Cleanup Workflow
+Storage Cleanup Workflow
 
 ## Execution Instructions
 
