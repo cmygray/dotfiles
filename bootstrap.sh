@@ -67,3 +67,7 @@ if command -v pipx >/dev/null 2>&1; then
         [ -n "$package" ] && pipx install "$package"
     done < $HOME/dotfiles/requirements-pipx.txt
 fi
+
+# Claude Code global settings (symlink settings.global.json, not settings.json)
+mkdir -p "$HOME/.claude"
+[ ! -L "$HOME/.claude/settings.json" ] && ln -nfs $HOME/dotfiles/.claude/settings.global.json "$HOME/.claude/settings.json"

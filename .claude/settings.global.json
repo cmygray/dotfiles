@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "opus",
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/classting-won/dotfiles/.claude/notification-wrapper.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "/Users/classting-won/dotfiles/.claude/statusline-wrapper.sh",
+    "padding": 0
+  },
+  "enabledPlugins": {
+    "hookify@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true
+  },
+  "language": "Korean",
+  "alwaysThinkingEnabled": true,
+  "autoCompact": false,
+  "feedbackSurveyState": {
+    "lastShownTime": 1754195027959
+  }
+}
