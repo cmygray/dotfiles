@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event-storm-dsl-v1.schema.json",
+  "title": "Event Storm DSL",
+  "description": "Event Storming YAML DSL schema for multi-format generation",
+  "type": "object",
+  "required": ["event-storm", "scenarios"],
+  "properties": {
+    "event-storm": {
+      "type": "string",
+      "description": "이벤트 스토밍 제목"
+    },
+    "type": {
+      "enum": ["process_modelling", "software_design"],
+      "description": "이벤트 스토밍 유형"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "scope": { "type": "string" },
+        "purpose": { "type": "string" },
+        "references": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "scenarios": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scenario" },
+      "minItems": 1
+    },
+    "hotspots": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/hotspot" }
+    },
+    "states": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stateEntity" }
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/decision" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "required": ["name", "flows"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "flows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/flowStep" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "stringOrArray": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
+    "flowStep": {
+      "type": "object",
+      "properties": {
+        "actor":       { "type": "string", "description": "행위자 트리거" },
+        "event":       { "type": "string", "description": "이벤트 트리거" },
+        "external":    { "type": "string", "description": "외부 시스템 트리거" },
+
+        "command":     { "type": "string", "description": "실행 커맨드" },
+        "query":       { "type": "string", "description": "조회 (읽기 전용)" },
+
+        "system":      { "type": "string", "description": "처리 시스템" },
+        "via":         { "$ref": "#/$defs/stringOrArray", "description": "경유 시스템/채널" },
+        "endpoint":    { "type": "string", "description": "API 엔드포인트" },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "제약조건 목록"
+        },
+        "after": {
+          "$ref": "#/$defs/stringOrArray",
+          "description": "명시적 의존성 (이벤트/커맨드 이름)"
+        },
+
+        "emits": {
+          "$ref": "#/$defs/stringOrArray",
+          "description": "발생하는 도메인 이벤트"
+        },
+
+        "policy":   { "type": "string", "description": "정책/비즈니스 규칙" },
+        "parallel": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/flowStep" },
+          "description": "병렬 실행 (AND)"
+        },
+        "branch": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/flowStep" },
+          "description": "조건 분기 (XOR)"
+        },
+        "when": { "type": "string", "description": "분기 조건 (branch 내부에서 사용)" },
+
+        "note":    { "$ref": "#/$defs/stringOrArray", "description": "문서화 노트" },
+        "hotspot": { "type": "string", "description": "불확실성/논쟁점" }
+      },
+      "additionalProperties": false
+    },
+    "hotspot": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name":     { "type": "string" },
+        "note":     { "type": "string" },
+        "scenario": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "stateEntity": {
+      "type": "object",
+      "required": ["entity", "transitions"],
+      "properties": {
+        "entity": { "type": "string" },
+        "transitions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stateTransition" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "stateTransition": {
+      "type": "object",
+      "required": ["from", "to", "trigger"],
+      "properties": {
+        "from":    { "type": "string" },
+        "to":      { "type": "string" },
+        "trigger": { "type": "string" },
+        "note":    { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "decision": {
+      "type": "object",
+      "required": ["title", "decision"],
+      "properties": {
+        "title":     { "type": "string" },
+        "decision":  { "type": "string" },
+        "rationale": { "$ref": "#/$defs/stringOrArray" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

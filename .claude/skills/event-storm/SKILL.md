@@ -4,6 +4,8 @@ description: |
   이벤트 스토밍 다이어그램을 대화형으로 생성하는 스킬. 사용자와의 질문-응답을 통해
   Domain Event, Command, System, Actor, Policy 등의 구성요소를 점진적으로 도출하고
   Mermaid flowchart (.md 파일)과 PNG 이미지를 생성한다.
+  YAML DSL (.es.yaml)로 구조화된 이벤트 카탈로그를 관리하고
+  Mermaid, CML, MDSL Flow, JSON 등 다중 포맷으로 변환할 수 있다.
 
   When to use: 도메인 프로세스 분석, 소프트웨어 설계, 비즈니스 플로우 시각화 시 사용.
 ---
@@ -40,9 +42,88 @@ description: |
 
 > 상세 스펙은 `references/component-spec.md` 참조
 
-## 대화형 워크플로우
+## DSL 포맷 (YAML)
 
-### Phase 1: 컨텍스트 파악
+시나리오가 복잡하거나 카탈로그가 방대할 때 YAML DSL(`.es.yaml`)을 사용하여 이벤트 스토밍을 구조화한다.
+
+### Flow Step 구조: `Trigger → Action (+ Context) → Result`
+
+| 역할 | 필드 | 설명 |
+|------|------|------|
+| Trigger | `actor:`, `event:`, `external:` | 시작점 (하나만) |
+| Action | `command:`, `query:` | 실행할 행위 |
+| Context | `system:`, `via:`, `endpoint:`, `constraints:` | 환경/조건 |
+| Result | `emits:` | 발생하는 이벤트 |
+| Flow | `policy:`, `parallel:`, `branch:`, `after:` | 흐름 제어 |
+| Doc | `note:`, `hotspot:` | 문서화 |
+
+### 순서 결정 규칙
+
+1. trigger 필드(`actor:`, `event:`, `external:`)가 있으면 자체 트리거
+2. trigger 없이 `command:`/`query:`만 있으면 배열 순서상 이전 step에 이어짐
+3. `after:` 명시 시 비선형 의존성 (배열 순서 무시)
+
+### DSL 예시
+
+```yaml
+event-storm: "주문 처리"
+type: software_design
+metadata:
+  scope: order-service
+
+scenarios:
+  - name: "주문 생성"
+    flows:
+      - actor: 고객
+        command: CreateOrder
+        system: 주문시스템
+        constraints:
+          - "재고 >= 주문수량"
+        emits: OrderCreated
+
+      - event: OrderCreated
+        policy: "결제 필요 정책"
+        command: ProcessPayment
+        emits: PaymentCompleted
+
+      - external: "결제 게이트웨이"
+        after: PaymentCompleted
+        command: ConfirmPayment
+        emits: PaymentConfirmed
+
+      - event: PaymentConfirmed
+        parallel:
+          - command: UpdateInventory
+            emits: InventoryUpdated
+          - command: SendNotification
+
+states:
+  - entity: Order
+    transitions:
+      - from: "[*]"
+        to: Created
+        trigger: CreateOrder
+      - from: Created
+        to: Paid
+        trigger: ProcessPayment
+
+decisions:
+  - title: "결제 방식"
+    decision: "외부 게이트웨이 연동"
+    rationale: "PG사 의존성 분리"
+
+hotspots:
+  - name: "환불 정책"
+    note: "환불 기준 미정"
+```
+
+> 스키마 상세: `references/dsl-schema.json`
+
+## 워크플로우
+
+### A. 대화형 → Mermaid (단순 프로세스)
+
+#### Phase 1: 컨텍스트 파악
 
 사용자에게 다음 질문을 순차적으로 한다:
 
@@ -71,7 +152,7 @@ description: |
 - 상품이 배송됨
 ```
 
-### Phase 2: 구성요소 도출 (반복)
+#### Phase 2: 구성요소 도출 (반복)
 
 각 Domain Event에 대해 다음 질문을 반복한다:
 
@@ -99,7 +180,7 @@ description: |
 - Policies: 1
 ```
 
-### Phase 3: 연결 관계 확인
+#### Phase 3: 연결 관계 확인
 
 수집된 구성요소 간의 연결 관계를 확인한다:
 
@@ -114,83 +195,85 @@ description: |
 수정이 필요한 항목이 있으면 번호와 함께 알려주세요.
 ```
 
-### Phase 4: 다이어그램 생성
+#### Phase 4: 출력 생성
 
-**Step 1: JSON 데이터 생성**
+사용자에게 출력 형식을 선택하게 한다:
 
-수집된 정보를 JSON 형식으로 정리:
+**옵션 1: DSL 파일 생성 (권장 - 복잡한 도메인)**
 
-```json
-{
-  "title": "주문 처리 프로세스",
-  "type": "process_modelling",
-  "components": [...],
-  "connections": [...]
-}
-```
+수집된 정보를 `.es.yaml` DSL 파일로 출력한다. 이후 `parse_dsl.py`로 다중 포맷 생성 가능.
 
-**Step 2: Mermaid 다이어그램 생성**
+**옵션 2: Mermaid 다이어그램 직접 생성 (단순 프로세스)**
 
 ```bash
-# JSON을 스크립트에 전달하여 Mermaid 파일 생성
 echo '<JSON_DATA>' | python3 ~/.claude/skills/event-storm/scripts/generate_mermaid.py
-
-# PNG 이미지도 함께 생성
 echo '<JSON_DATA>' | python3 ~/.claude/skills/event-storm/scripts/generate_mermaid.py --png
-
-# 출력 파일:
-# - {title}.md (Mermaid 코드가 포함된 Markdown)
-# - {title}.png (PNG 이미지, --png 옵션 사용 시)
 ```
 
-**Step 3: 결과 안내**
+### B. DSL 기반 (복잡한 도메인/카탈로그)
 
+**Step 1: DSL 작성 또는 생성**
+
+대화에서 이벤트 스토밍 후 `.es.yaml` 파일로 출력하거나, 사용자가 직접 작성/편집.
+
+**Step 2: 다중 포맷 생성**
+
+```bash
+# 모든 포맷 생성 (Mermaid + CML + MDSL + JSON)
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml -o ./output
+
+# Mermaid만 + PNG
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml -f mermaid --png
+
+# 특정 포맷
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml -f cml
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml -f mdsl
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml -f json
 ```
-다이어그램이 생성되었습니다!
 
-파일 위치:
-- Markdown: ./주문_처리_프로세스.md
-- PNG 이미지: ./주문_처리_프로세스.png (--png 옵션 사용 시)
+**Step 3: 검증만**
 
-Mermaid 다이어그램은 GitHub, VSCode, Obsidian 등에서 바로 렌더링됩니다.
+```bash
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml --validate-only
 ```
 
 ## 스크립트 사용법
 
-### generate_mermaid.py
+### generate_mermaid.py (레거시)
 
 ```bash
-# 도움말
-python3 ~/.claude/skills/event-storm/scripts/generate_mermaid.py --help
-
-# stdin으로 JSON 입력
 echo '{"title": "test", ...}' | python3 ~/.claude/skills/event-storm/scripts/generate_mermaid.py
-
-# 파일에서 JSON 입력
-python3 ~/.claude/skills/event-storm/scripts/generate_mermaid.py < input.json
-
-# PNG 이미지도 생성 (mermaid-cli 필요)
-echo '...' | python3 ~/.claude/skills/event-storm/scripts/generate_mermaid.py --png
-
-# 출력 디렉토리 지정
-echo '...' | python3 ~/.claude/skills/event-storm/scripts/generate_mermaid.py --output-dir ./diagrams
+python3 ~/.claude/skills/event-storm/scripts/generate_mermaid.py --png < input.json
 ```
 
-### PNG 생성 (수동)
+### parse_dsl.py (신규)
 
 ```bash
-# mermaid-cli를 사용한 PNG 변환
-npx -p @mermaid-js/mermaid-cli mmdc -i diagram.mmd -o diagram.png
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml           # 모든 포맷
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml -f mermaid # Mermaid만
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml -f all --png -o ./out
+python3 ~/.claude/skills/event-storm/scripts/parse_dsl.py input.es.yaml --validate-only
 ```
+
+**출력 포맷:**
+
+| 포맷 | 파일 | 용도 |
+|------|------|------|
+| `mermaid` | `{title}.md` | 시나리오별 flowchart + stateDiagram |
+| `cml` | `{title}.cml` | Context Mapper DDD 도구 연동 |
+| `mdsl` | `{title}.mdsl` | MDSL Flow (API 설계 파이프라인) |
+| `json` | `{title}_{scenario}.json` | 레거시 generate_mermaid.py 호환 |
 
 ## 에러 처리
 
 - **구성요소 누락**: 필수 구성요소(Event, System, Command, Actor)가 하나라도 없으면 다시 질문
 - **순환 의존성 감지**: Policy → Command → System → Event → Policy 순환 시 경고
 - **JSON 파싱 오류**: 스크립트 입력 JSON 형식 오류 시 상세 에러 메시지 출력
+- **DSL 검증 오류**: 필수 필드 누락, 잘못된 YAML 구조 시 상세 에러 메시지
 
 ## 참고사항
 
 - Nushell 문법 사용 (`;` 구분자)
 - 이벤트 이름은 항상 과거형으로 작성
 - Mermaid 노드 형태와 색상은 `references/component-spec.md` 참조
+- DSL 스키마 상세는 `references/dsl-schema.json` 참조
