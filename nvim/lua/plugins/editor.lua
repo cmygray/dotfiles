@@ -148,6 +148,9 @@ return {
 						return name == ".." or name == ".git"
 					end,
 				},
+				preview_win = {
+					preview_method = "load",
+				},
 			})
 
 			vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
@@ -181,6 +184,16 @@ return {
 	},
 	{
 		"chrisbra/csv.vim",
+	},
+	{
+		"3rd/image.nvim",
+		build = false,
+		opts = {
+			processor = "magick_cli",
+			backend = "sixel",
+			max_width_window_percentage = 100,
+			max_height_window_percentage = 100,
+		},
 	},
 	{
 		"simnalamburt/vim-tiny-ime",
