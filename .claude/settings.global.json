@@ -25,9 +25,8 @@
     "claude-md-management@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
-    "slack@claude-plugins-official": true,
-    "greptile@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true
+    "ralph-loop@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true
   },
   "language": "Korean",
   "alwaysThinkingEnabled": true,
