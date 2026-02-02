@@ -63,9 +63,18 @@ description: |
 2. trigger 없이 `command:`/`query:`만 있으면 배열 순서상 이전 step에 이어짐
 3. `after:` 명시 시 비선형 의존성 (배열 순서 무시)
 
+### 에디터 스키마 지원
+
+`.es.yaml` 파일 첫 줄에 다음 modeline을 추가하면 yamlls 기반 에디터에서 자동완성과 검증을 받을 수 있다:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/cmygray/dotfiles/refs/heads/main/.claude/skills/event-storm/references/dsl-schema.json
+```
+
 ### DSL 예시
 
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/cmygray/dotfiles/refs/heads/main/.claude/skills/event-storm/references/dsl-schema.json
 event-storm: "주문 처리"
 type: software_design
 metadata:
