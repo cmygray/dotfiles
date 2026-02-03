@@ -92,11 +92,11 @@ vim.cmd([[
   command TN tabnew
   command TC tabclose
 
-  command! -nargs=0 Cwd :let @+ = expand('%:p')
+  command! -nargs=0 P :let @+ = expand('%:p')
 ]])
 
--- :Point command - copy selected code with file path to clipboard
-vim.api.nvim_create_user_command("P", function(opts)
+-- :PP command - copy selected code with file path to clipboard
+vim.api.nvim_create_user_command("PP", function(opts)
 	local file_path = vim.fn.expand("%:p")
 	local start_line = opts.line1
 	local end_line = opts.line2
