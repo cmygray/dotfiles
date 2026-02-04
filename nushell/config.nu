@@ -923,12 +923,15 @@ alias awsstag = aws-vault exec classting-stag --no-session
 alias awsprod = aws-vault exec classting-prod --no-session
 alias dyu = dy use (dy list | fzf | str trim)
 alias claude = claude --dangerously-skip-permissions
-alias gemini = mise exec node@20 -- gemini --yolo
+alias gemini = gemini --yolo
 alias fcd = cd (fd -t directory -d 1 | fzf)
 alias frm = rm (fd -d 1 | fzf)
 alias serena = claude mcp add serena -- uv run --directory ~/dotfiles/serena/ serena-mcp-server --context ide-assistant --project (pwd)
 alias standup = gh standup -d 1 | gemini -p "translate to KR"
 alias cdq = cd (gwq get)
+def lock [] {
+    swift ~/dotfiles/scripts/lock-screen.swift
+}
 
 # completions
 use ~/dotfiles/nushell/scripts/custom-completions/aws/aws-completions.nu *
