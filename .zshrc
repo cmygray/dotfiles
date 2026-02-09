@@ -152,3 +152,5 @@ fi
 export GOOGLE_CLOUD_PROJECT="gen-lang-client-0328071187"
 
 alias gemini='mise exec node@20 -- gemini'
+alias briefing='~/dotfiles/scripts/daily-briefing.sh'
+alias standup='~/dotfiles/scripts/morning-standup.sh'

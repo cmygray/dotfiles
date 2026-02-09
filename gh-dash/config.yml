@@ -1,36 +1,41 @@
 prSections:
-- title: My PRs
-  filters: is:open author:@me draft:false
-  layout:
-    author:
-      hidden: true
-- title: Drafts
-  filters: is:open author:@me draft:true
-  layout:
-    author:
-      hidden: true
-- title: Merged
-  filters: is:merged author:@me sort:updated
-  limit: 10
-  layout:
-    author:
-      hidden: true
+  - title: Today
+    filters: author:@me updated:>={{ nowModify "0s" }}
+    layout:
+      author:
+        hidden: true
+  - title: My PRs
+    filters: is:open author:@me draft:false
+    layout:
+      author:
+        hidden: true
+  - title: Drafts
+    filters: is:open author:@me draft:true
+    layout:
+      author:
+        hidden: true
+  - title: Merged
+    filters: is:merged author:@me sort:updated
+    limit: 10
+    layout:
+      author:
+        hidden: true
 
 issuesSections:
-- title: Assigned to me
-  filters: is:open assignee:@me
-- title: Authored by me
-  filters: is:open author:@me
-- title: Platform Core
-  filters: is:open project:classtinginc/26
-- title: AI Writing
-  filters: is:open repo:classtinginc/ai-writing
-- title: Minerva API
-  filters: is:open repo:classtinginc/minerva-api
-- title: AI Web
-  filters: is:open repo:classtinginc/ai-web
-- title: GenAI Service
-  filters: is:open repo:classtinginc/generative-ai-service
+  - title: Assigned to me
+    filters: is:open assignee:@me
+  - title: Authored by me
+    filters: is:open author:@me
+  - title: Platform Core
+    filters: is:open project:classtinginc/26
+  - title: AI Writing
+    filters: is:open repo:classtinginc/ai-writing
+  - title: Minerva API
+    filters: is:open repo:classtinginc/minerva-api
+  - title: AI Web
+    filters: is:open repo:classtinginc/ai-web
+  - title: GenAI Service
+    filters: is:open repo:classtinginc/generative-ai-service
 
 defaults:
   preview:
@@ -43,6 +48,8 @@ defaults:
 
 keybindings:
   prs:
+    - key: T
+      command: gh enhance -R {{.RepoName}} {{.PrNumber}}
     - key: N
       command: >
         wezterm cli spawn --new-window -- nu -c 'gh notify'

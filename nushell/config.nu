@@ -927,7 +927,8 @@ alias gemini = gemini --yolo
 alias fcd = cd (fd -t directory -d 1 | fzf)
 alias frm = rm (fd -d 1 | fzf)
 alias serena = claude mcp add serena -- uv run --directory ~/dotfiles/serena/ serena-mcp-server --context ide-assistant --project (pwd)
-alias standup = gh standup -d 1 | gemini -p "translate to KR"
+alias standup = bash ~/dotfiles/scripts/morning-standup.sh
+alias briefing = bash ~/dotfiles/scripts/daily-briefing.sh
 alias cdq = cd (gwq get)
 def lock [] {
     swift ~/dotfiles/scripts/lock-screen.swift
