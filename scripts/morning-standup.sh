@@ -119,11 +119,23 @@ if claude_dir.exists():
         except Exception:
             pass
 
+import re
+done_pattern = re.compile(
+    r'^(ok|done|lgtm|ship it|완료|ㅇㅇ|yes|y|네|commit|push|merge)$'
+    r'|commit.*(push|merge)|push.*remote|git push|pr create|gh pr'
+    r'|이슈.*(생성|등록|작성)|문서.*(작성|완료)',
+    re.IGNORECASE
+)
+
 result = []
 for proj, prompts in projects.items():
     short = proj.replace(str(Path.home()), '~')
     sessions = session_map.get(proj, [])
     resume_ids = [s['sessionId'] for s in sessions if 'sessionId' in s]
+    # Pre-filter: if last prompt matches done pattern, skip
+    last = prompts[-1].split('\n')[0].strip() if prompts else ''
+    if done_pattern.search(last):
+        continue
     result.append({
         'project': short,
         'prompt_count': len(prompts),
@@ -139,33 +151,37 @@ PYEOF
 if [[ -z "$SESSION_RAW" || "$SESSION_RAW" == "[]" ]]; then
   echo -e "  ${DIM}(직전 워킹데이 Claude 세션 없음)${RESET}"
 else
-  echo "$SESSION_RAW" | claude -p --model haiku \
-    "아래 JSON은 직전 워킹데이(${LAST_WORKDAY})에 프로젝트별로 Claude에게 보낸 프롬프트 목록이다.
-first_prompts는 세션 초반, last_prompts는 세션 말미의 프롬프트다.
+  echo "$SESSION_RAW" | claude -p --model sonnet \
+    "TASK: 직전 워킹데이(${LAST_WORKDAY}) Claude 세션에서 미완료 작업만 추출.
 
-오늘 아침 출근해서 이어할 작업을 파악하는 게 목적이다.
-각 프로젝트별로:
-1. 한 줄 요약 (무슨 작업이었는지)
-2. status: done 또는 in-progress (last_prompts 기반 추론)
-3. action: in-progress인 경우 구체적인 다음 액션, done이면 생략
+INPUT: JSON 배열. 각 항목에 project, first_prompts(세션 초반), last_prompts(세션 말미).
 
-done인 프로젝트는 간략히, in-progress인 프로젝트는 상세히 써줘.
+DONE 판단 기준 (하나라도 해당하면 done으로 분류. 관대하게 판단):
+- last_prompts에 commit, push, merge, done, ok, 완료, 확인 등 마무리성 단어 포함
+- PR 생성, 푸시, 이슈 생성, 문서 작성으로 끝남
+- 세션이 자연스럽게 종료된 느낌
+- 애매하면 done으로 처리 (false positive보다 false negative가 나음)
 
-출력 포맷 (plain text, 마크다운/코드블록 사용 금지):
-  [project] — 한줄 요약
-    status: done
-또는
-  [project] — 한줄 요약
-    status: in-progress
+IN-PROGRESS 판단 기준 (명확한 경우만):
+- last_prompts에 명시적으로 "다음에", "내일", "TODO", "아직" 등 미완료 언급
+- 에러/버그 디버깅이 해결 안 된 채 끝남
+- 설계/플래닝 논의가 결론 없이 중단됨
+
+OUTPUT RULES:
+- done은 절대 출력하지 않는다
+- in-progress만 아래 포맷으로 출력
+- 머리말, 설명, 마크다운, 코드블록 절대 금지
+- 첫 줄부터 바로 결과만
+
+FORMAT (plain text only):
+~/project/path — 한줄 요약
     action: 구체적 다음 액션
-    resume: claude -r <session-id> (resume_ids가 있을 때만)
+    resume: claude -r <session-id>
 
-resume_ids가 비어있으면 resume 줄은 생략.
-설명이나 머리말 없이 바로 출력만." 2>/dev/null | \
+- resume_ids가 비어있으면 resume 줄 생략
+- 모든 프로젝트가 done이면 '모든 작업 완료!' 한 줄만 출력" 2>/dev/null | \
   sed -E \
     -e 's|^(~/[^ ]+)|\\033[1m\1\\033[0m|' \
-    -e 's/^    status: done/    \\033[32m✔ done\\033[0m/' \
-    -e 's/^    status: in-progress/    \\033[33m⏳ in-progress\\033[0m/' \
     -e 's/^    action: (.+)/    \\033[33m→ \1\\033[0m/' \
     -e 's/^    resume: (.+)/    \\033[36m↪ \1\\033[0m/' | \
   while IFS= read -r line; do echo -e "$line"; done || \
