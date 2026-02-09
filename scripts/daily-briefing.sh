@@ -6,7 +6,6 @@ set -euo pipefail
 
 DATE="${1:-$(date +%Y-%m-%d)}"
 GH_USER="$(gh api user --jq '.login' 2>/dev/null || echo '')"
-CLAUDE_DIR="$HOME/.claude"
 
 # Colors
 BOLD='\033[1m'
@@ -49,25 +48,28 @@ echo -e "${BOLD}${CYAN}▸ Claude Sessions${RESET}"
 echo ""
 
 # Collect session data from history.jsonl, then summarize with claude -p
-SESSION_RAW=$(python3 -c "
-import json
+SESSION_RAW=$(python3 - "$DATE" <<'PYEOF'
+import json, sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from collections import OrderedDict
 
 kst = timezone(timedelta(hours=9))
-target = datetime.strptime('${DATE}', '%Y-%m-%d').replace(tzinfo=kst)
+target = datetime.strptime(sys.argv[1], '%Y-%m-%d').replace(tzinfo=kst)
 day_start_ms = int(target.timestamp() * 1000)
 day_end_ms = day_start_ms + 86400000
 
 history = Path.home() / '.claude' / 'history.jsonl'
 if not history.exists():
-    exit()
+    sys.exit()
 
 projects = OrderedDict()
 with open(history) as f:
     for line in f:
-        e = json.loads(line)
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
         ts = e.get('timestamp', 0)
         if day_start_ms <= ts < day_end_ms:
             proj = e.get('project', '?')
@@ -83,6 +85,8 @@ claude_dir = Path.home() / '.claude' / 'projects'
 session_map = {}
 if claude_dir.exists():
     for idx_file in claude_dir.rglob('sessions-index.json'):
+        if not idx_file.resolve().is_relative_to(claude_dir.resolve()):
+            continue
         try:
             with open(idx_file) as f:
                 data = json.load(f)
@@ -98,8 +102,6 @@ if claude_dir.exists():
         except Exception:
             pass
 
-# Output structured data for claude -p summarization
-import sys
 result = []
 for proj, prompts in projects.items():
     short = proj.replace(str(Path.home()), '~')
@@ -114,7 +116,8 @@ for proj, prompts in projects.items():
     })
 
 json.dump(result, sys.stdout, ensure_ascii=False)
-" 2>/dev/null)
+PYEOF
+)
 
 if [[ -z "$SESSION_RAW" || "$SESSION_RAW" == "[]" ]]; then
   echo -e "  ${DIM}(오늘 Claude 세션 없음)${RESET}"
@@ -142,13 +145,13 @@ resume_ids가 비어있으면 resume 줄은 생략.
     -e 's/^    resume: (.+)/    \\033[36m↪ \1\\033[0m/' | \
   while IFS= read -r line; do echo -e "$line"; done || \
   # Fallback: claude -p 실패 시 raw 출력
-  python3 -c "
+  echo "$SESSION_RAW" | python3 -c "
 import json, sys
-data = json.loads('''${SESSION_RAW}''')
+data = json.load(sys.stdin)
 for item in data:
     proj = item['project']
     count = item['prompt_count']
-    prompts = item['prompts']
+    prompts = item.get('last_prompts', item.get('first_prompts', []))
     resume_ids = item.get('resume_ids', [])
     print(f'  \033[1m{proj}\033[0m ({count} prompts)')
     for p in prompts[:3]:

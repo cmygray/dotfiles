@@ -6,7 +6,6 @@ set -euo pipefail
 
 TODAY="$(date +%Y-%m-%d)"
 GH_USER="$(gh api user --jq '.login' 2>/dev/null || echo '')"
-CLAUDE_DIR="$HOME/.claude"
 
 # Colors
 BOLD='\033[1m'
@@ -15,26 +14,28 @@ CYAN='\033[36m'
 GREEN='\033[32m'
 YELLOW='\033[33m'
 MAGENTA='\033[35m'
-RED='\033[31m'
 RESET='\033[0m'
 
 # ── Find last working day from history.jsonl ────────────
-LAST_WORKDAY=$(python3 -c "
-import json
+LAST_WORKDAY=$(python3 - "$TODAY" <<'PYEOF'
+import json, sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 kst = timezone(timedelta(hours=9))
-today = datetime.strptime('${TODAY}', '%Y-%m-%d').replace(tzinfo=kst).date()
+today = datetime.strptime(sys.argv[1], '%Y-%m-%d').replace(tzinfo=kst).date()
 
 history = Path.home() / '.claude' / 'history.jsonl'
 if not history.exists():
-    exit(1)
+    sys.exit(1)
 
 days = set()
 with open(history) as f:
     for line in f:
-        e = json.loads(line)
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
         ts = e.get('timestamp', 0)
         dt = datetime.fromtimestamp(ts / 1000, tz=kst).date()
         if dt < today:
@@ -42,7 +43,8 @@ with open(history) as f:
 
 if days:
     print(max(days).isoformat())
-" 2>/dev/null)
+PYEOF
+)
 
 if [[ -z "$LAST_WORKDAY" ]]; then
   echo -e "${DIM}이전 작업 기록 없음${RESET}"
@@ -66,14 +68,14 @@ fi
 echo -e "${BOLD}${CYAN}▸ 미완료 작업 + 액션아이템${RESET}"
 echo ""
 
-SESSION_RAW=$(python3 -c "
-import json
+SESSION_RAW=$(python3 - "$LAST_WORKDAY" <<'PYEOF'
+import json, sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from collections import OrderedDict
 
 kst = timezone(timedelta(hours=9))
-target = datetime.strptime('${LAST_WORKDAY}', '%Y-%m-%d').replace(tzinfo=kst)
+target = datetime.strptime(sys.argv[1], '%Y-%m-%d').replace(tzinfo=kst)
 day_start_ms = int(target.timestamp() * 1000)
 day_end_ms = day_start_ms + 86400000
 
@@ -81,7 +83,10 @@ history = Path.home() / '.claude' / 'history.jsonl'
 projects = OrderedDict()
 with open(history) as f:
     for line in f:
-        e = json.loads(line)
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
         ts = e.get('timestamp', 0)
         if day_start_ms <= ts < day_end_ms:
             proj = e.get('project', '?')
@@ -97,6 +102,8 @@ claude_dir = Path.home() / '.claude' / 'projects'
 session_map = {}
 if claude_dir.exists():
     for idx_file in claude_dir.rglob('sessions-index.json'):
+        if not idx_file.resolve().is_relative_to(claude_dir.resolve()):
+            continue
         try:
             with open(idx_file) as f:
                 data = json.load(f)
@@ -112,7 +119,6 @@ if claude_dir.exists():
         except Exception:
             pass
 
-import sys
 result = []
 for proj, prompts in projects.items():
     short = proj.replace(str(Path.home()), '~')
@@ -127,7 +133,8 @@ for proj, prompts in projects.items():
     })
 
 json.dump(result, sys.stdout, ensure_ascii=False)
-" 2>/dev/null)
+PYEOF
+)
 
 if [[ -z "$SESSION_RAW" || "$SESSION_RAW" == "[]" ]]; then
   echo -e "  ${DIM}(직전 워킹데이 Claude 세션 없음)${RESET}"
@@ -162,9 +169,10 @@ resume_ids가 비어있으면 resume 줄은 생략.
     -e 's/^    action: (.+)/    \\033[33m→ \1\\033[0m/' \
     -e 's/^    resume: (.+)/    \\033[36m↪ \1\\033[0m/' | \
   while IFS= read -r line; do echo -e "$line"; done || \
-  python3 -c "
+  # Fallback: claude -p 실패 시 raw 출력
+  echo "$SESSION_RAW" | python3 -c "
 import json, sys
-data = json.loads('''${SESSION_RAW}''')
+data = json.load(sys.stdin)
 for item in data:
     proj = item['project']
     prompts = item.get('last_prompts', [])
