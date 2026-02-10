@@ -13,8 +13,12 @@ function get_frame()
 			right_h = 0,
 		}
 
-		local left_frame = hs.screen.allScreens()[1]:frame()
-		local right_frame = hs.screen.allScreens()[2]:frame()
+		local screens = hs.screen.allScreens()
+		table.sort(screens, function(a, b)
+			return a:frame().x < b:frame().x
+		end)
+		local left_frame = screens[1]:frame()
+		local right_frame = screens[2]:frame()
 
 		frame.x = left_frame.x
 		frame.y = left_frame.y
