@@ -1,5 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "PLANNOTATOR_PORT": "19432"
+  },
   "model": "opus",
   "hooks": {
     "Notification": [
@@ -26,7 +29,11 @@
     "feature-dev@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": true,
-    "plugin-dev@claude-plugins-official": true
+    "plugin-dev@claude-plugins-official": true,
+    "clarify@superct": true,
+    "verify@superct": true,
+    "plannotator@plannotator": true,
+    "classting-token@superct": true
   },
   "language": "Korean",
   "alwaysThinkingEnabled": true,
