@@ -4,6 +4,7 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "PLANNOTATOR_PORT": "19432"
   },
+  "model": "opusplan",
   "hooks": {
     "Notification": [
       {
