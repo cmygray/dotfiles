@@ -12,7 +12,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/classting-won/dotfiles/.claude/notification-wrapper.sh"
+            "command": "sh -c '$HOME/dotfiles/.claude/notification-wrapper.sh'"
           }
         ]
       }
@@ -20,7 +20,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "/Users/classting-won/dotfiles/.claude/statusline-wrapper.sh",
+    "command": "sh -c '$HOME/dotfiles/.claude/statusline-wrapper.sh'",
     "padding": 0
   },
   "enabledPlugins": {
