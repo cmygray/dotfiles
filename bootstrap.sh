@@ -7,26 +7,17 @@ if ! command -v brew >/dev/null 2>&1; then
 fi
 
 brew update
-brew tap homebrew/bundle
 brew bundle --file=$HOME/dotfiles/Brewfile
 brew cleanup
-
-# Install oh-my-zsh only if not already installed
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-fi
-
-# Create symlinks only if they don't exist or point to wrong location
-[ ! -L "$HOME/Brewfile" ] && ln -nfs $HOME/dotfiles/Brewfile $HOME/Brewfile
 
 # Ensure .config directory exists
 mkdir -p "$HOME/.config"
 [ ! -L "$HOME/.config/starship.toml" ] && ln -nfs $HOME/dotfiles/starship.toml $HOME/.config/starship.toml
+[ ! -L "$HOME/.config/nvim" ] && ln -nfs $HOME/dotfiles/nvim $HOME/.config/nvim
 
 [ ! -L "$HOME/.gitconfig" ] && ln -nfs $HOME/dotfiles/.gitconfig $HOME/.gitconfig
 [ ! -L "$HOME/.gitignore" ] && ln -nfs $HOME/dotfiles/.gitignore $HOME/.gitignore
 
-mkdir -p "$HOME/.config"
 [ ! -L "$HOME/.config/gh-dash" ] && ln -nfs $HOME/dotfiles/gh-dash $HOME/.config/gh-dash
 
 [ ! -L "$HOME/.hammerspoon" ] && ln -nfs $HOME/dotfiles/.hammerspoon $HOME/.hammerspoon
