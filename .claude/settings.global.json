@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "PLANNOTATOR_PORT": "19432"
   },
-  "model": "opus",
   "hooks": {
     "Notification": [
       {
@@ -33,7 +33,6 @@
     "clarify@superct": true,
     "verify@superct": true,
     "plannotator@plannotator": true,
-    "classting-token@superct": true,
     "typescript-lsp@claude-plugins-official": true,
     "Notion@claude-plugins-official": true
   },

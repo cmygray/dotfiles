@@ -190,7 +190,7 @@ return {
 		build = false,
 		opts = {
 			processor = "magick_cli",
-			backend = "sixel",
+			backend = "kitty",
 			max_width_window_percentage = 100,
 			max_height_window_percentage = 100,
 		},
