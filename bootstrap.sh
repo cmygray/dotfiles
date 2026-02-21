@@ -42,6 +42,10 @@ if command -v pipx >/dev/null 2>&1; then
     done < $HOME/dotfiles/requirements-pipx.txt
 fi
 
-# Claude Code global settings (symlink settings.global.json, not settings.json)
+# Claude Code global settings
 mkdir -p "$HOME/.claude"
-[ ! -L "$HOME/.claude/settings.json" ] && ln -nfs $HOME/dotfiles/.claude/settings.global.json "$HOME/.claude/settings.json"
+[ ! -L "$HOME/.claude/settings.json" ] && ln -nfs $HOME/dotfiles/claude/settings.json "$HOME/.claude/settings.json"
+[ ! -L "$HOME/.claude/CLAUDE.md" ] && ln -nfs $HOME/dotfiles/claude/CLAUDE.md "$HOME/.claude/CLAUDE.md"
+[ ! -L "$HOME/.claude/agents" ] && ln -nfs $HOME/dotfiles/claude/agents "$HOME/.claude/agents"
+[ ! -L "$HOME/.claude/commands" ] && ln -nfs $HOME/dotfiles/claude/commands "$HOME/.claude/commands"
+[ ! -L "$HOME/.claude/skills" ] && ln -nfs $HOME/dotfiles/claude/skills "$HOME/.claude/skills"

@@ -105,7 +105,7 @@ source $ZSH/oh-my-zsh.sh
 eval "$(atuin init zsh)"
 
 # =====================================================================
-# Environment Variables (from nushell dotfiles)
+# Environment Variables
 # =====================================================================
 
 # Editor

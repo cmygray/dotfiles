@@ -10,10 +10,9 @@ Brewfile.lock.json
 .env*
 !.env.test
 !.env.example
-secrets.nu
 mise.toml
 .http
 .serena
-.claude/**/*.local.*
-.claude/config/notification_states.json
+claude/**/*.local.*
+claude/config/notification_states.json
 __pycache__/
