@@ -153,3 +153,5 @@ export GOOGLE_CLOUD_PROJECT="gen-lang-client-0328071187"
 
 alias briefing='~/dotfiles/scripts/daily-briefing.sh'
 alias standup='~/dotfiles/scripts/morning-standup.sh'
+alias claude='claude --dangerously-skip-permissions'
+alias lock='swift ~/dotfiles/scripts/lock-screen.swift'
