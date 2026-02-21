@@ -119,7 +119,7 @@ export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
 export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
 
 # PATH additions
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/Users/won/.config/git-fuzzy/bin:$PATH"
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.config/git-fuzzy/bin:$HOME/.local/bin:$PATH"
 
 # Chamber (AWS SSM)
 export CHAMBER_KMS_KEY_ALIAS="aws/ssm"
@@ -153,5 +153,4 @@ export GOOGLE_CLOUD_PROJECT="gen-lang-client-0328071187"
 
 alias briefing='~/dotfiles/scripts/daily-briefing.sh'
 alias standup='~/dotfiles/scripts/morning-standup.sh'
-alias claude='claude --dangerously-skip-permissions'
 alias lock='swift ~/dotfiles/scripts/lock-screen.swift'
