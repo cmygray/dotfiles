@@ -31,26 +31,9 @@ mkdir -p "$HOME/.config/zed"
 mkdir -p "$HOME/.config/karabiner"
 [ ! -L "$HOME/.config/karabiner/karabiner.json" ] && ln -nfs $HOME/dotfiles/karabiner/karabiner.json $HOME/.config/karabiner/karabiner.json
 
-# Nushell configuration symlinks
-if command -v nu >/dev/null 2>&1; then
-    NUSHELL_CONFIG_DIR=$(nu -c '$nu.default-config-dir')
-    mkdir -p "$NUSHELL_CONFIG_DIR"
-    [ ! -L "$NUSHELL_CONFIG_DIR/config.nu" ] && ln -nfs $HOME/dotfiles/nushell/config.nu "$NUSHELL_CONFIG_DIR/config.nu"
-    [ ! -L "$NUSHELL_CONFIG_DIR/env.nu" ] && ln -nfs $HOME/dotfiles/nushell/env.nu "$NUSHELL_CONFIG_DIR/env.nu"
-
-    # Add nushell to shells and set as default only if not already done
-    if ! grep -q "$(which nu)" /etc/shells; then
-        sudo sh -c "echo $(which nu) >> /etc/shells"
-    fi
-    
-    if [ "$SHELL" != "$(which nu)" ]; then
-        chsh -s $(which nu)
-    fi
-    
-    # Initialize nushell/scripts sparse checkout
-    echo "Initializing nushell/scripts..."
-    nu $HOME/dotfiles/init-nushell-scripts.nu
-fi
+# zsh configuration symlinks
+[ ! -L "$HOME/.zshrc" ] && ln -nfs $HOME/dotfiles/.zshrc $HOME/.zshrc
+[ ! -L "$HOME/.zshenv" ] && ln -nfs $HOME/dotfiles/.zshenv $HOME/.zshenv
 
 # Install pipx packages
 if command -v pipx >/dev/null 2>&1; then

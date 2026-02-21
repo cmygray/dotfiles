@@ -141,9 +141,9 @@ if command -v mise &> /dev/null; then
 fi
 
 # Initialize starship prompt
-# if command -v starship &> /dev/null; then
-#     eval "$(starship init zsh)"
-# fi
+if command -v starship &> /dev/null; then
+    eval "$(starship init zsh)"
+fi
 
 # Initialize zoxide if available
 if command -v zoxide &> /dev/null; then
