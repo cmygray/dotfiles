@@ -1,51 +1,52 @@
 #!/bin/sh
 
-# Install packages only if not already installed
+DOTFILES="$HOME/dotfiles"
+
+# Helper: create symlink unconditionally (force-replaces files and broken symlinks)
+link() {
+    src="$DOTFILES/$1"
+    dst="$2"
+    mkdir -p "$(dirname "$dst")"
+    ln -nfs "$src" "$dst"
+    echo "  $dst -> $src"
+}
+
+# Install packages
 if ! command -v brew >/dev/null 2>&1; then
     echo "Homebrew not found, please install it first"
     exit 1
 fi
 
 brew update
-brew bundle --file=$HOME/dotfiles/Brewfile
+brew bundle --file="$DOTFILES/Brewfile"
 brew cleanup
 
-# Ensure .config directory exists
-mkdir -p "$HOME/.config"
-[ ! -L "$HOME/.config/starship.toml" ] && ln -nfs $HOME/dotfiles/starship.toml $HOME/.config/starship.toml
-[ ! -L "$HOME/.config/nvim" ] && ln -nfs $HOME/dotfiles/nvim $HOME/.config/nvim
+# Symlinks
+echo "Linking dotfiles..."
+link .zshrc             "$HOME/.zshrc"
+link .zshenv            "$HOME/.zshenv"
+link .gitconfig         "$HOME/.gitconfig"
+link .gitignore         "$HOME/.gitignore"
+link .wezterm.lua       "$HOME/.wezterm.lua"
+link .hammerspoon       "$HOME/.hammerspoon"
+link starship.toml      "$HOME/.config/starship.toml"
+link nvim               "$HOME/.config/nvim"
+link gh-dash            "$HOME/.config/gh-dash"
+link zed/keymap.json    "$HOME/.config/zed/keymap.json"
+link zed/settings.json  "$HOME/.config/zed/settings.json"
+link karabiner/karabiner.json "$HOME/.config/karabiner/karabiner.json"
 
-[ ! -L "$HOME/.gitconfig" ] && ln -nfs $HOME/dotfiles/.gitconfig $HOME/.gitconfig
-[ ! -L "$HOME/.gitignore" ] && ln -nfs $HOME/dotfiles/.gitignore $HOME/.gitignore
-
-[ ! -L "$HOME/.config/gh-dash" ] && ln -nfs $HOME/dotfiles/gh-dash $HOME/.config/gh-dash
-
-[ ! -L "$HOME/.hammerspoon" ] && ln -nfs $HOME/dotfiles/.hammerspoon $HOME/.hammerspoon
-
-[ ! -L "$HOME/.wezterm.lua" ] && ln -nfs $HOME/dotfiles/.wezterm.lua $HOME/.wezterm.lua
-
-mkdir -p "$HOME/.config/zed"
-[ ! -L "$HOME/.config/zed/keymap.json" ] && ln -nfs $HOME/dotfiles/zed/keymap.json $HOME/.config/zed/keymap.json
-[ ! -L "$HOME/.config/zed/settings.json" ] && ln -nfs $HOME/dotfiles/zed/settings.json $HOME/.config/zed/settings.json
-
-mkdir -p "$HOME/.config/karabiner"
-[ ! -L "$HOME/.config/karabiner/karabiner.json" ] && ln -nfs $HOME/dotfiles/karabiner/karabiner.json $HOME/.config/karabiner/karabiner.json
-
-# zsh configuration symlinks
-[ ! -L "$HOME/.zshrc" ] && ln -nfs $HOME/dotfiles/.zshrc $HOME/.zshrc
-[ ! -L "$HOME/.zshenv" ] && ln -nfs $HOME/dotfiles/.zshenv $HOME/.zshenv
+echo "Linking Claude Code settings..."
+mkdir -p "$HOME/.claude"
+link claude/settings.json  "$HOME/.claude/settings.json"
+link claude/CLAUDE.md      "$HOME/.claude/CLAUDE.md"
+link claude/agents         "$HOME/.claude/agents"
+link claude/commands       "$HOME/.claude/commands"
+link claude/skills         "$HOME/.claude/skills"
 
 # Install pipx packages
 if command -v pipx >/dev/null 2>&1; then
     while read package; do
         [ -n "$package" ] && pipx install "$package"
-    done < $HOME/dotfiles/requirements-pipx.txt
+    done < "$DOTFILES/requirements-pipx.txt"
 fi
-
-# Claude Code global settings
-mkdir -p "$HOME/.claude"
-[ ! -L "$HOME/.claude/settings.json" ] && ln -nfs $HOME/dotfiles/claude/settings.json "$HOME/.claude/settings.json"
-[ ! -L "$HOME/.claude/CLAUDE.md" ] && ln -nfs $HOME/dotfiles/claude/CLAUDE.md "$HOME/.claude/CLAUDE.md"
-[ ! -L "$HOME/.claude/agents" ] && ln -nfs $HOME/dotfiles/claude/agents "$HOME/.claude/agents"
-[ ! -L "$HOME/.claude/commands" ] && ln -nfs $HOME/dotfiles/claude/commands "$HOME/.claude/commands"
-[ ! -L "$HOME/.claude/skills" ] && ln -nfs $HOME/dotfiles/claude/skills "$HOME/.claude/skills"
