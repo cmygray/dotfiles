@@ -7,7 +7,7 @@ local prompt_and_spawn_tab = act.PromptInputLine({
 	description = "Enter tab name:",
 	action = wezterm.action_callback(function(window, pane, line)
 		if line and line ~= "" then
-			local tab, _, _ = window:mux_window():spawn_tab({ domain = "CurrentPaneDomain" })
+			local tab, _, _ = window:mux_window():spawn_tab({ cwd = wezterm.home_dir })
 			tab:set_title(line)
 		end
 	end),
@@ -43,6 +43,8 @@ end)
 local keys = {
 	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
 	{ key = "Enter", mods = "ALT", action = wezterm.action.DisableDefaultAssignment },
+	-- New window from home directory (CMD + n)
+	{ key = "n", mods = "SUPER", action = act.SpawnCommandInNewWindow({ cwd = wezterm.home_dir }) },
 	-- New tab with name prompt (LEADER + c or CMD + t)
 	{ key = "c", mods = "LEADER", action = prompt_and_spawn_tab },
 	{ key = "t", mods = "SUPER", action = prompt_and_spawn_tab },
@@ -97,7 +99,7 @@ end
 return {
 	automatically_reload_config = true,
 	window_decorations = "RESIZE",
-	default_cwd = wezterm.home_dir .. "/Workspace",
+	default_cwd = wezterm.home_dir,
 	color_scheme = "nord",
 
 	font = wezterm.font_with_fallback({
