@@ -100,8 +100,6 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-eval "$(atuin init zsh)"
-
 # =====================================================================
 # Environment Variables
 # =====================================================================
@@ -146,6 +144,11 @@ fi
 # Initialize zoxide if available
 if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
+fi
+
+# Initialize atuin if available
+if command -v atuin &> /dev/null; then
+    eval "$(atuin init zsh)"
 fi
 export GOOGLE_CLOUD_PROJECT="gen-lang-client-0328071187"
 
