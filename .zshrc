@@ -153,6 +153,11 @@ if command -v atuin &> /dev/null; then
 fi
 export GOOGLE_CLOUD_PROJECT="gen-lang-client-0328071187"
 
+alf() {
+  local selected
+  selected=$(alias | fzf | cut -d'=' -f1)
+  [[ -n "$selected" ]] && print -z "$selected"
+}
 alias briefing='~/dotfiles/scripts/daily-briefing.sh'
 alias standup='~/dotfiles/scripts/morning-standup.sh'
 alias lock='swift ~/dotfiles/scripts/lock-screen.swift'
