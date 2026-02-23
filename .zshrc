@@ -162,3 +162,4 @@ alf() {
 alias briefing='~/dotfiles/scripts/daily-briefing.sh'
 alias standup='~/dotfiles/scripts/morning-standup.sh'
 alias lock='swift ~/dotfiles/scripts/lock-screen.swift'
+alias ddb='~/dotfiles/scripts/ddb/ddb.sh'

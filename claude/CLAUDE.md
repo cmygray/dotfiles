@@ -93,3 +93,19 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - 직접 AWS CLI 사용 금지
 - 예시: `aws-vault exec my-profile -- aws s3 ls`
 
+### DynamoDB 조회
+- DynamoDB 데이터 조회가 필요하면 `ddb` 명령어 사용 (읽기 전용, 쓰기 차단)
+- 반드시 `ddb context` 를 먼저 실행해 스키마(테이블명·키 패턴·GSI)를 파악한 후 쿼리
+- 환경: `dev` 또는 `stag` 지정 필수
+- 테이블명 패턴: `{service}-{env}` (예: `classroom-service-dev`)
+- 사용 예시:
+  ```
+  ddb context                                          # 스키마 전체 출력
+  ddb context classroom-service                        # 특정 서비스 스키마만 출력
+  ddb dev list                                         # 테이블 목록
+  ddb dev desc -t classroom-service-dev                # 테이블 스키마
+  ddb dev get -t classroom-service-dev "Classroom#<id>" "Post#<id>"
+  ddb dev query -t classroom-service-dev -p "Channel#<id>" -i gsi-1
+  ddb stag query -t writing-service-stag -p "Topic#<id>" -i GSI2
+  ```
+
