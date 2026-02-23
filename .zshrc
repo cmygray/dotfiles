@@ -126,7 +126,8 @@ alias ll="ls -l"
 alias awsdev="aws-vault exec classting-dev --no-session"
 alias awsstag="aws-vault exec classting-stag --no-session"
 alias awsprod="aws-vault exec classting-prod --no-session"
-alias ccc="claude --dangerously-skip-permissions"
+alias ccc="claude --dangerously-skip-permissions --continue"
+alias cc="claude --dangerously-skip-permissions"
 
 # =====================================================================
 # Tool Initialization
