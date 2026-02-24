@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+# cs - Claude Code Session Conductor
+#
+# Single entry point for managing Claude Code sessions.
+# Everything lives inside one tmux session as windows.
+# When Claude exits, you return to the picker.
+#
+# Usage:
+#   cs              → enter conductor (outside tmux) or open picker (inside)
+#   cs new [name]   → create new worktree session directly
+#   cs _list        → (internal) output window list for fzf reload
+
+set -euo pipefail
+
+WORKSPACE="${WORKSPACE:-$HOME/Workspace}"
+SESSION="conductor"
+SELF="$(realpath "$0")"
+
+# ── Helpers ──────────────────────────────────────────────
+
+_git_info() {
+  local dir="$1"
+  local branch
+  branch=$(git -C "$dir" branch --show-current 2>/dev/null || echo "-")
+  if [[ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]]; then
+    branch+="*"
+  fi
+  echo "$branch"
+}
+
+# Resolve worktree path from window name (format: "project/wt-name" or "project")
+_resolve_worktree_path() {
+  local win_name="$1"
+  local project="${win_name%%/*}"
+  local wt_name="${win_name#*/}"
+  local project_dir="$WORKSPACE/$project"
+
+  if [[ "$wt_name" != "$win_name" && -n "$wt_name" ]]; then
+    local wt_dir="$project_dir/.claude/worktrees/$wt_name"
+    if [[ -d "$wt_dir" ]]; then
+      echo "$wt_dir"
+      return
+    fi
+  fi
+  echo "$project_dir"
+}
+
+# List Claude windows (skip hub) - used by fzf and fzf reload
+_list_windows() {
+  tmux list-windows -t "$SESSION" -F '#{window_name}|#{pane_pid}' 2>/dev/null \
+    | while IFS='|' read -r name pid; do
+        [[ "$name" == "hub" ]] && continue
+        local active="○"
+        if pgrep -P "$pid" -f "claude" >/dev/null 2>&1; then
+          active="●"
+        fi
+        local wt_path
+        wt_path=$(_resolve_worktree_path "$name")
+        local git_info
+        git_info=$(_git_info "$wt_path")
+        printf "%s  %-25s  🌿 %s\n" "$active" "$name" "$git_info"
+      done
+}
+
+# ── Picker ──────────────────────────────────────────────
+
+_picker() {
+  local windows
+  windows=$(_list_windows)
+
+  if [[ -z "$windows" ]]; then
+    return 1  # no sessions
+  fi
+
+  local selected
+  selected=$(echo "$windows" | fzf \
+    --prompt="Claude > " \
+    --header="Enter=switch  n=new  ctrl-r=refresh  Esc=quit" \
+    --reverse --border \
+    --bind="ctrl-r:reload($SELF _list)" \
+    --bind="n:abort" \
+    --expect="n" \
+    --ansi) || return $?  # 130=Esc/Ctrl-C, 1=empty
+
+  local key
+  key=$(echo "$selected" | sed -n '1p')
+  local line
+  line=$(echo "$selected" | sed -n '2p')
+
+  if [[ "$key" == "n" ]]; then
+    return 1  # signal: create new
+  fi
+
+  local win_name
+  win_name=$(echo "$line" | awk '{print $2}')
+  if [[ -n "$win_name" ]]; then
+    tmux select-window -t "${SESSION}:${win_name}"
+  fi
+}
+
+# ── Hub loop (runs inside hub window) ───────────────────
+
+_hub() {
+  while true; do
+    clear
+    if _picker; then
+      :  # switched to session, loop will show picker again when we return
+    else
+      local exit_code=$?
+      if [[ $exit_code -eq 1 ]]; then
+        # No sessions or user pressed 'n' → create new
+        _create_session ""
+      else
+        # Esc/Ctrl-C → just re-show picker
+        :
+      fi
+    fi
+    sleep 0.1
+  done
+}
+
+# ── Create session ──────────────────────────────────────
+
+_create_session() {
+  local wt_name="${1:-}"
+
+  local projects
+  projects=$(find "$WORKSPACE" -maxdepth 1 -mindepth 1 -type d \
+    ! -name '*__worktrees' ! -name '.*' ! -name 'scripts' \
+    -exec basename {} \; | sort)
+
+  local project
+  project=$(echo "$projects" | fzf \
+    --prompt="Project > " \
+    --header="Select project for new Claude session" \
+    --preview="git -C '$WORKSPACE'/{} log --oneline -5 2>/dev/null || ls '$WORKSPACE'/{}" \
+    --reverse --border) || return 0
+
+  local project_dir="$WORKSPACE/$project"
+
+  if ! git -C "$project_dir" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Error: $project is not a git repository"
+    sleep 2
+    return 1
+  fi
+
+  if [[ -z "$wt_name" ]]; then
+    printf "Worktree name (empty=auto): "
+    read -r wt_name
+  fi
+
+  local win_name="$project"
+  if [[ -n "$wt_name" ]]; then
+    win_name="${project}/${wt_name}"
+  fi
+
+  local claude_cmd="claude --dangerously-skip-permissions --worktree"
+  if [[ -n "$wt_name" ]]; then
+    claude_cmd+=" ${wt_name}"
+  fi
+
+  tmux new-window -t "$SESSION" -n "$win_name" -c "$project_dir" \
+    "$claude_cmd; tmux select-window -t ${SESSION}:hub"
+}
+
+# ── Entry point ─────────────────────────────────────────
+
+_enter() {
+  if [[ -n "${TMUX:-}" ]]; then
+    local current_session
+    current_session=$(tmux display-message -p '#S')
+    if [[ "$current_session" == "$SESSION" ]]; then
+      if [[ "${1:-}" == "new" ]]; then
+        _create_session "${2:-}"
+      else
+        _picker
+      fi
+    else
+      tmux switch-client -t "$SESSION" 2>/dev/null || {
+        echo "Conductor not running. Start cs from outside tmux first."
+        return 1
+      }
+    fi
+    return
+  fi
+
+  # Outside tmux: create or attach
+  if tmux has-session -t "$SESSION" 2>/dev/null; then
+    tmux attach-session -t "$SESSION"
+    return
+  fi
+
+  # Create conductor session, hub runs the loop directly
+  tmux new-session -d -s "$SESSION" -n "hub" -c "$HOME"
+  tmux send-keys -t "${SESSION}:hub" "$SELF _hub" Enter
+  tmux attach-session -t "$SESSION"
+}
+
+# ── Main ─────────────────────────────────────────────────
+
+case "${1:-}" in
+  new)
+    if [[ -n "${TMUX:-}" ]]; then
+      _create_session "${2:-}"
+    else
+      echo "Run 'cs' first to enter the conductor."
+      exit 1
+    fi
+    ;;
+  _hub)   _hub ;;
+  _list)  _list_windows ;;
+  help|-h|--help)
+    cat <<'EOF'
+cs - Claude Code Session Conductor
+
+Start:
+  cs                    Enter the conductor (or show picker if inside)
+
+Inside picker:
+  Enter                 Switch to selected session
+  n                     Create new worktree session
+  Ctrl-R                Refresh session list
+  Esc                   Stay in hub
+
+From any window:
+  Ctrl+\ f              Picker popup
+  Ctrl+\ N              New session popup
+  Ctrl+\ 0              Return to hub
+
+When Claude exits, you return to the picker automatically.
+EOF
+    ;;
+  *)
+    _enter "$@"
+    ;;
+esac
