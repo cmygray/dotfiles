@@ -72,6 +72,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Git & GitHub
 - GitHub 페이지 조회 대신 gh CLI 사용 (인증 문제)
+- PR 생성 시 반드시 해당 프로젝트의 `.github/PULL_REQUEST_TEMPLATE.md` 템플릿을 따를 것
 
 ## User Info
 

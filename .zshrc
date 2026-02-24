@@ -115,7 +115,7 @@ export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:"
 export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
 
 # PATH additions
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.config/git-fuzzy/bin:$HOME/.local/bin:$PATH"
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.config/git-fuzzy/bin:$HOME/.local/bin:$HOME/dotfiles/scripts:$PATH"
 
 # Chamber (AWS SSM)
 export CHAMBER_KMS_KEY_ALIAS="aws/ssm"
