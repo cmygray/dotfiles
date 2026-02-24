@@ -44,6 +44,11 @@ link claude/agents         "$HOME/.claude/agents"
 link claude/commands       "$HOME/.claude/commands"
 link claude/skills         "$HOME/.claude/skills"
 
+# Git filters (dotfiles repo)
+echo "Configuring git filters..."
+git -C "$DOTFILES" config filter.strip-claude-model.clean "jq 'del(.model)'"
+git -C "$DOTFILES" config filter.strip-claude-model.smudge "cat"
+
 # Install pipx packages
 if command -v pipx >/dev/null 2>&1; then
     while read package; do
