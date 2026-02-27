@@ -8,7 +8,9 @@
 # Usage:
 #   cs              → enter conductor (outside tmux) or open picker (inside)
 #   cs new [name]   → create new worktree session directly
-#   cs _list        → (internal) output window list for fzf reload
+#   cs _list        → (internal) output worktree list for fzf reload
+#   cs _open <win>  → (internal) open or restart a session
+#   cs _remove <win>→ (internal) remove a worktree
 
 set -euo pipefail
 
@@ -28,59 +30,98 @@ _git_info() {
   echo "$branch"
 }
 
-# Resolve worktree path from window name (format: "project/wt-name" or "project")
-_resolve_worktree_path() {
-  local win_name="$1"
+# ── List all worktrees (active + inactive) ───────────────
+
+_list_all() {
+  local active_wins
+  active_wins=$(tmux list-windows -t "$SESSION" -F '#{window_name}|#{pane_pid}' 2>/dev/null || echo "")
+
+  for project_dir in "$WORKSPACE"/*/; do
+    [[ ! -d "$project_dir/.claude/worktrees" ]] && continue
+    local project
+    project=$(basename "$project_dir")
+
+    for wt_dir in "$project_dir/.claude/worktrees"/*/; do
+      [[ ! -d "$wt_dir" ]] && continue
+      local wt_name
+      wt_name=$(basename "$wt_dir")
+      local win_name="${project}/${wt_name}"
+
+      local active="○"
+      local pid
+      pid=$(echo "$active_wins" | awk -F'|' -v w="$win_name" '$1==w {print $2}')
+      if [[ -n "$pid" ]] && pgrep -P "$pid" -f "claude" >/dev/null 2>&1; then
+        active="●"
+      fi
+
+      local git_info
+      git_info=$(_git_info "$wt_dir")
+      printf "%s  %-30s  🌿 %s\n" "$active" "$win_name" "$git_info"
+    done
+  done
+}
+
+# ── Open or restart a session ────────────────────────────
+
+_open_session() {
+  local win_name="${1:-}"
+  [[ -z "$win_name" ]] && return 1
+
   local project="${win_name%%/*}"
   local wt_name="${win_name#*/}"
   local project_dir="$WORKSPACE/$project"
 
-  if [[ "$wt_name" != "$win_name" && -n "$wt_name" ]]; then
-    local wt_dir="$project_dir/.claude/worktrees/$wt_name"
-    if [[ -d "$wt_dir" ]]; then
-      echo "$wt_dir"
-      return
-    fi
+  # If window already exists, switch to it
+  if tmux list-windows -t "$SESSION" -F '#{window_name}' 2>/dev/null | grep -qxF "$win_name"; then
+    tmux select-window -t "${SESSION}:${win_name}"
+    return
   fi
-  echo "$project_dir"
+
+  # Restart Claude in project root, pointing to existing worktree
+  tmux new-window -t "$SESSION" -n "$win_name" -c "$project_dir" \
+    "claude --dangerously-skip-permissions --worktree ${wt_name}; tmux select-window -t ${SESSION}:hub"
 }
 
-# List Claude windows (skip hub) - used by fzf and fzf reload
-_list_windows() {
-  tmux list-windows -t "$SESSION" -F '#{window_name}|#{pane_pid}' 2>/dev/null \
-    | while IFS='|' read -r name pid; do
-        [[ "$name" == "hub" ]] && continue
-        local active="○"
-        if pgrep -P "$pid" -f "claude" >/dev/null 2>&1; then
-          active="●"
-        fi
-        local wt_path
-        wt_path=$(_resolve_worktree_path "$name")
-        local git_info
-        git_info=$(_git_info "$wt_path")
-        printf "%s  %-25s  🌿 %s\n" "$active" "$name" "$git_info"
-      done
+# ── Remove a worktree ────────────────────────────────────
+
+_remove_worktree() {
+  local win_name="${1:-}"
+  [[ -z "$win_name" ]] && return 1
+
+  local project="${win_name%%/*}"
+  local wt_name="${win_name#*/}"
+  local project_dir="$WORKSPACE/$project"
+
+  # Kill tmux window if active
+  if tmux list-windows -t "$SESSION" -F '#{window_name}' 2>/dev/null | grep -qxF "$win_name"; then
+    tmux kill-window -t "${SESSION}:${win_name}"
+  fi
+
+  # Remove git worktree (fallback to rm if not a proper worktree)
+  git -C "$project_dir" worktree remove ".claude/worktrees/$wt_name" --force 2>/dev/null \
+    || rm -rf "$project_dir/.claude/worktrees/$wt_name"
 }
 
 # ── Picker ──────────────────────────────────────────────
 
 _picker() {
-  local windows
-  windows=$(_list_windows)
+  local worktrees
+  worktrees=$(_list_all)
 
-  if [[ -z "$windows" ]]; then
-    return 1  # no sessions
+  if [[ -z "$worktrees" ]]; then
+    return 1  # no worktrees
   fi
 
   local selected
-  selected=$(echo "$windows" | fzf \
+  selected=$(echo "$worktrees" | fzf \
     --prompt="Claude > " \
-    --header="Enter=switch  n=new  ctrl-r=refresh  Esc=quit" \
+    --header="Enter=open/restart  d=delete  n=new  ctrl-r=refresh  Esc=quit" \
     --reverse --border \
     --bind="ctrl-r:reload($SELF _list)" \
+    --bind="d:execute-silent($SELF _remove {2})+reload($SELF _list)" \
     --bind="n:abort" \
     --expect="n" \
-    --ansi) || return $?  # 130=Esc/Ctrl-C, 1=empty
+    --ansi) || return $?
 
   local key
   key=$(echo "$selected" | sed -n '1p')
@@ -94,7 +135,7 @@ _picker() {
   local win_name
   win_name=$(echo "$line" | awk '{print $2}')
   if [[ -n "$win_name" ]]; then
-    tmux select-window -t "${SESSION}:${win_name}"
+    _open_session "$win_name"
   fi
 }
 
@@ -104,15 +145,20 @@ _hub() {
   while true; do
     clear
     if _picker; then
-      :  # switched to session, loop will show picker again when we return
+      :  # switched/opened session, loop resumes when we return
     else
       local exit_code=$?
       if [[ $exit_code -eq 1 ]]; then
-        # No sessions or user pressed 'n' → create new
+        # No worktrees or user pressed 'n' → create new
         _create_session ""
-      else
-        # Esc/Ctrl-C → just re-show picker
-        :
+      elif [[ $exit_code -eq 130 ]]; then
+        # ESC or Ctrl-C → confirm quit
+        printf "Quit conductor? [y/N] "
+        read -r ans
+        if [[ "$ans" =~ ^[Yy]$ ]]; then
+          tmux kill-session -t "$SESSION" 2>/dev/null
+          exit 0
+        fi
       fi
     fi
     sleep 0.1
@@ -207,8 +253,10 @@ case "${1:-}" in
       exit 1
     fi
     ;;
-  _hub)   _hub ;;
-  _list)  _list_windows ;;
+  _hub)    _hub ;;
+  _list)   _list_all ;;
+  _open)   _open_session "${2:-}" ;;
+  _remove) _remove_worktree "${2:-}" ;;
   help|-h|--help)
     cat <<'EOF'
 cs - Claude Code Session Conductor
@@ -217,15 +265,16 @@ Start:
   cs                    Enter the conductor (or show picker if inside)
 
 Inside picker:
-  Enter                 Switch to selected session
+  Enter                 Open or restart selected session
+  d                     Delete worktree
   n                     Create new worktree session
   Ctrl-R                Refresh session list
   Esc                   Stay in hub
 
 From any window:
-  Ctrl+\ f              Picker popup
-  Ctrl+\ N              New session popup
-  Ctrl+\ 0              Return to hub
+  Ctrl+/ f              Picker popup
+  Ctrl+/ N              New session popup
+  Ctrl+/ 0              Return to hub
 
 When Claude exits, you return to the picker automatically.
 EOF

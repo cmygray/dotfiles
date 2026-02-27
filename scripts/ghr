@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+# ghr - GitHub Releases Dashboard
+#
+# Shows recent releases from your organization's repositories.
+#
+# Usage:
+#   ghr              → interactive dashboard (fzf)
+#   ghr <query>      → filter repos by name
+
+set -euo pipefail
+
+ORG="classtinginc"
+SELF="$(realpath "$0")"
+LIMIT=10
+
+# ── Colors ──────────────────────────────────────────────
+
+GREEN='\033[32m'
+RED='\033[31m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+CYAN='\033[36m'
+DIM='\033[2m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# ── Helpers ─────────────────────────────────────────────
+
+_tag_color() {
+  local tag="$1"
+  local t_lower
+  t_lower=$(echo "$tag" | tr '[:upper:]' '[:lower:]')
+  if [[ "$t_lower" == *"rc"* || "$t_lower" == *"beta"* || "$t_lower" == *"alpha"* ]]; then
+    printf "${YELLOW}%s${RESET}" "$tag"
+  else
+    printf "${GREEN}%s${RESET}" "$tag"
+  fi
+}
+
+_relative_time() {
+  local created="$1"
+  local now ts diff
+  now=$(date +%s)
+  if date -j -f "%Y-%m-%dT%H:%M:%SZ" "$created" +%s >/dev/null 2>&1; then
+    ts=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$created" +%s 2>/dev/null || echo "$now")
+  else
+    ts=$(date -d "$created" +%s 2>/dev/null || echo "$now")
+  fi
+  diff=$(( now - ts ))
+  if (( diff < 60 )); then
+    echo "${diff}s ago"
+  elif (( diff < 3600 )); then
+    echo "$(( diff / 60 ))m ago"
+  elif (( diff < 86400 )); then
+    echo "$(( diff / 3600 ))h ago"
+  else
+    echo "$(( diff / 86400 ))d ago"
+  fi
+}
+
+# ── Fetch releases ──────────────────────────────────────
+
+_fetch_releases() {
+  local repo_filter="${1:-}"
+  local repos
+  local since
+  since=$(date -v-90d +%Y-%m-%d 2>/dev/null || date -d '90 days ago' +%Y-%m-%d)
+  repos=$(gh repo list "$ORG" --limit 200 --json name,pushedAt \
+    --jq "[.[] | select(.pushedAt >= \"${since}\")] | .[].name")
+
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  local pids=()
+
+  for repo in $repos; do
+    if [[ -n "$repo_filter" ]] && ! echo "$repo" | grep -qi "$repo_filter"; then
+      continue
+    fi
+    (
+      gh api "repos/${ORG}/${repo}/releases?per_page=${LIMIT}" \
+        --jq ".[] | \"${repo}\t\" + .tag_name + \"\t\" + .name + \"\t\" + (if .draft then .created_at else .published_at end) + \"\t\" + (if .draft then \"draft\" elif .prerelease then \"prerelease\" else \"release\" end) + \"\t\" + .html_url" \
+        2>/dev/null > "${tmpdir}/${repo}" || true
+    ) &
+    pids+=($!)
+  done
+
+  for pid in "${pids[@]}"; do
+    wait "$pid" 2>/dev/null || true
+  done
+
+  cat "${tmpdir}"/* 2>/dev/null | sort -t$'\t' -k4 -r | while IFS=$'\t' read -r repo tag name published kind url; do
+    [[ -z "$repo" ]] && continue
+
+    local time_ago icon
+    time_ago=$(_relative_time "$published")
+
+    case "$kind" in
+      draft)      icon=$(printf "${DIM}◌${RESET}") ;;
+      prerelease) icon=$(printf "${YELLOW}●${RESET}") ;;
+      release)    icon=$(printf "${GREEN}✓${RESET}") ;;
+    esac
+
+    local tag_display
+    tag_display=$(_tag_color "$tag")
+
+    # Truncate name
+    if (( ${#name} > 50 )); then
+      name="${name:0:47}..."
+    fi
+
+    printf "%b  %-20s  %b  %-50s  ${DIM}%-8s${RESET}\t%s\n" \
+      "$icon" "$repo" "$tag_display" "$name" "$time_ago" "$url"
+  done
+
+  rm -rf "$tmpdir"
+}
+
+# ── Dashboard ───────────────────────────────────────────
+
+_dashboard() {
+  local repo_filter="${1:-}"
+
+  local header="GitHub Releases Dashboard"
+  if [[ -n "$repo_filter" ]]; then
+    header+=" [${repo_filter}]"
+  fi
+  header+="  │  Enter=open  ctrl-r=refresh  /=filter  Esc=quit"
+
+  local releases
+  releases=$(_fetch_releases "$repo_filter")
+
+  if [[ -z "$releases" ]]; then
+    echo "No releases found in ${ORG}."
+    return 0
+  fi
+
+  local selected
+  echo "$releases" | fzf \
+    --ansi \
+    --prompt="ghr > " \
+    --header="$header" \
+    --reverse --border \
+    --bind="enter:execute-silent(open {-1} 2>/dev/null || xdg-open {-1} 2>/dev/null)" \
+    --bind="ctrl-r:reload($SELF _fetch ${repo_filter})" \
+    --preview-window=hidden \
+    --delimiter='\t' \
+  || true
+}
+
+# ── Main ────────────────────────────────────────────────
+
+case "${1:-}" in
+  _fetch)   _fetch_releases "${2:-}" ;;
+  help|-h|--help)
+    cat <<'EOF'
+ghr - GitHub Releases Dashboard
+
+Usage:
+  ghr              Interactive dashboard
+  ghr <query>      Filter repos by name
+
+Inside dashboard:
+  Enter            Open release in browser
+  Ctrl-R           Refresh
+  Esc              Quit
+EOF
+    ;;
+  *)  _dashboard "${1:-}" ;;
+esac

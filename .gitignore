@@ -18,3 +18,4 @@ claude/config/notification_states.json
 __pycache__/
 scripts/**/secrets/*
 !scripts/**/secrets/*.example
+.dmux/

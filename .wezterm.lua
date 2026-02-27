@@ -102,7 +102,7 @@ return {
 	default_cwd = wezterm.home_dir,
 	color_scheme = "nord",
 
-	font = wezterm.font_with_fallback({
+font = wezterm.font_with_fallback({
 		"JetBrainsMono NF",
 		"JetBrains Mono",
 	}),

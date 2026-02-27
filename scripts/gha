@@ -1,0 +1,262 @@
+#!/usr/bin/env bash
+# gha - GitHub Actions Dashboard
+#
+# Shows workflow runs from your organization, filtered to your activity.
+# Supports environment filtering (dev/stag/prod) and failed run rerun.
+#
+# Usage:
+#   gha              → interactive dashboard (fzf)
+#   gha dev          → filter by dev environment
+#   gha stag         → filter by staging environment
+#   gha prod         → filter by production environment
+#   gha all          → show all environments
+
+set -euo pipefail
+
+ORG="classtinginc"
+USER=$(gh api user --jq '.login' 2>/dev/null)
+SELF="$(realpath "$0")"
+LIMIT=15
+
+# ── Colors ──────────────────────────────────────────────
+
+GREEN='\033[32m'
+RED='\033[31m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+CYAN='\033[36m'
+DIM='\033[2m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# ── Helpers ─────────────────────────────────────────────
+
+_status_icon() {
+  local status="$1" conclusion="$2"
+  case "$status" in
+    completed)
+      case "$conclusion" in
+        success)    printf "${GREEN}✓${RESET}" ;;
+        failure)    printf "${RED}✗${RESET}" ;;
+        cancelled)  printf "${DIM}⊘${RESET}" ;;
+        skipped)    printf "${DIM}⊘${RESET}" ;;
+        *)          printf "${DIM}?${RESET}" ;;
+      esac
+      ;;
+    in_progress)    printf "${YELLOW}●${RESET}" ;;
+    queued)         printf "${BLUE}◌${RESET}" ;;
+    waiting)        printf "${BLUE}◌${RESET}" ;;
+    requested)      printf "${BLUE}◌${RESET}" ;;
+    pending)        printf "${BLUE}◌${RESET}" ;;
+    *)              printf "${DIM}?${RESET}" ;;
+  esac
+}
+
+_env_tag() {
+  local workflow="$1"
+  local wf_lower
+  wf_lower=$(echo "$workflow" | tr '[:upper:]' '[:lower:]')
+  if [[ "$wf_lower" == *"dev"* ]]; then
+    printf "${CYAN}dev ${RESET}"
+  elif [[ "$wf_lower" == *"stag"* ]]; then
+    printf "${YELLOW}stag${RESET}"
+  elif [[ "$wf_lower" == *"prod"* || "$wf_lower" == *"release"* ]]; then
+    printf "${RED}prod${RESET}"
+  else
+    printf "${DIM} -- ${RESET}"
+  fi
+}
+
+_env_match() {
+  local workflow="$1" filter="$2"
+  [[ -z "$filter" || "$filter" == "all" ]] && return 0
+  local wf_lower
+  wf_lower=$(echo "$workflow" | tr '[:upper:]' '[:lower:]')
+  case "$filter" in
+    dev)  [[ "$wf_lower" == *"dev"* ]] ;;
+    stag) [[ "$wf_lower" == *"stag"* ]] ;;
+    prod) [[ "$wf_lower" == *"prod"* || "$wf_lower" == *"release"* ]] ;;
+    *)    return 0 ;;
+  esac
+}
+
+_relative_time() {
+  local created="$1"
+  local now ts diff
+  now=$(date +%s)
+  # macOS date
+  if date -j -f "%Y-%m-%dT%H:%M:%SZ" "$created" +%s >/dev/null 2>&1; then
+    ts=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$created" +%s 2>/dev/null || echo "$now")
+  else
+    ts=$(date -d "$created" +%s 2>/dev/null || echo "$now")
+  fi
+  diff=$(( now - ts ))
+  if (( diff < 60 )); then
+    echo "${diff}s ago"
+  elif (( diff < 3600 )); then
+    echo "$(( diff / 60 ))m ago"
+  elif (( diff < 86400 )); then
+    echo "$(( diff / 3600 ))h ago"
+  else
+    echo "$(( diff / 86400 ))d ago"
+  fi
+}
+
+# ── Fetch runs ──────────────────────────────────────────
+
+_fetch_runs() {
+  local env_filter="${1:-}"
+  local repos
+  # Only query repos pushed in the last 30 days to avoid hitting rate limits
+  local since
+  since=$(date -v-30d +%Y-%m-%d 2>/dev/null || date -d '30 days ago' +%Y-%m-%d)
+  repos=$(gh repo list "$ORG" --limit 200 --json name,pushedAt \
+    --jq "[.[] | select(.pushedAt >= \"${since}\")] | .[].name")
+
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  local pids=()
+
+  for repo in $repos; do
+    (
+      gh run list --repo "${ORG}/${repo}" --user "$USER" --limit "$LIMIT" \
+        --json 'workflowName,status,conclusion,displayTitle,headBranch,createdAt,databaseId,url,event' \
+        --jq ".[] | \"${repo}\t\" + .workflowName + \"\t\" + .status + \"\t\" + .conclusion + \"\t\" + .displayTitle + \"\t\" + .headBranch + \"\t\" + .createdAt + \"\t\" + (.databaseId|tostring) + \"\t\" + .url + \"\t\" + .event" \
+        2>/dev/null > "${tmpdir}/${repo}" || true
+    ) &
+    pids+=($!)
+  done
+
+  for pid in "${pids[@]}"; do
+    wait "$pid" 2>/dev/null || true
+  done
+
+  # Merge, sort by createdAt (field 7), filter by env
+  cat "${tmpdir}"/* 2>/dev/null | sort -t$'\t' -k7 -r | while IFS=$'\t' read -r repo workflow status conclusion title branch created run_id url event; do
+    [[ -z "$repo" ]] && continue
+    _env_match "$workflow" "$env_filter" || continue
+
+    local icon env_tag time_ago
+    icon=$(_status_icon "$status" "$conclusion")
+    env_tag=$(_env_tag "$workflow")
+    time_ago=$(_relative_time "$created")
+
+    # Truncate title
+    if (( ${#title} > 50 )); then
+      title="${title:0:47}..."
+    fi
+
+    printf "%b  %b  %-20s  %-30s  %-50s  ${DIM}%-8s${RESET}  %s\t%s\t%s\n" \
+      "$icon" "$env_tag" "$repo" "$workflow" "$title" "$time_ago" "$branch" "$run_id" "$url"
+  done
+
+  rm -rf "$tmpdir"
+}
+
+# ── Rerun failed ────────────────────────────────────────
+
+_rerun_failed() {
+  local repo="$1" run_id="$2"
+  echo "Rerunning failed jobs for run $run_id in ${ORG}/${repo}..."
+  gh run rerun "$run_id" --repo "${ORG}/${repo}" --failed 2>&1
+}
+
+# ── Internal commands (for fzf) ─────────────────────────
+
+_internal_rerun() {
+  local line="$1"
+  local repo run_id
+  repo=$(echo "$line" | awk '{print $3}')
+  run_id=$(echo "$line" | awk -F'\t' '{print $(NF-1)}')
+  _rerun_failed "$repo" "$run_id"
+}
+
+_internal_open() {
+  local line="$1"
+  local url
+  url=$(echo "$line" | awk -F'\t' '{print $NF}')
+  open "$url" 2>/dev/null || xdg-open "$url" 2>/dev/null || echo "$url"
+}
+
+# ── Dashboard ───────────────────────────────────────────
+
+_dashboard() {
+  local env_filter="${1:-}"
+
+  local header="GitHub Actions Dashboard"
+  if [[ -n "$env_filter" && "$env_filter" != "all" ]]; then
+    header+=" [${env_filter}]"
+  fi
+  header+="  │  Enter=open  r=rerun-failed  ctrl-r=refresh  1=dev 2=stag 3=prod 0=all"
+
+  local runs
+  runs=$(_fetch_runs "$env_filter")
+
+  if [[ -z "$runs" ]]; then
+    echo "No workflow runs found for user ${USER} in ${ORG}."
+    return 0
+  fi
+
+  local selected
+  selected=$(echo "$runs" | fzf \
+    --ansi \
+    --prompt="gha > " \
+    --header="$header" \
+    --reverse --border \
+    --expect="r,1,2,3,0" \
+    --bind="enter:execute-silent(echo {-1} | awk -F'\t' '{print \$NF}' | xargs open 2>/dev/null)" \
+    --bind="ctrl-r:reload($SELF _fetch ${env_filter})" \
+    --preview-window=hidden \
+    --delimiter='\t' \
+  ) || return 0
+
+  local key
+  key=$(echo "$selected" | sed -n '1p')
+  local line
+  line=$(echo "$selected" | sed -n '2p')
+
+  case "$key" in
+    r)
+      local repo run_id
+      repo=$(echo "$line" | awk '{print $3}')
+      run_id=$(echo "$line" | awk -F'\t' '{print $(NF-1)}')
+      _rerun_failed "$repo" "$run_id"
+      echo ""
+      echo "Press enter to return..."
+      read -r
+      _dashboard "$env_filter"
+      ;;
+    1) _dashboard "dev" ;;
+    2) _dashboard "stag" ;;
+    3) _dashboard "prod" ;;
+    0) _dashboard "all" ;;
+    *)  ;; # Enter is handled by execute-silent above
+  esac
+}
+
+# ── Main ────────────────────────────────────────────────
+
+case "${1:-}" in
+  _fetch)   _fetch_runs "${2:-}" ;;
+  dev|stag|prod|all)  _dashboard "$1" ;;
+  help|-h|--help)
+    cat <<'EOF'
+gha - GitHub Actions Dashboard
+
+Usage:
+  gha              Interactive dashboard
+  gha dev          Filter by dev environment
+  gha stag         Filter by staging environment
+  gha prod         Filter by production environment
+  gha all          Show all environments
+
+Inside dashboard:
+  Enter            Open run in browser
+  r                Rerun failed jobs
+  1/2/3/0          Switch to dev/stag/prod/all
+  Ctrl-R           Refresh
+  Esc              Quit
+EOF
+    ;;
+  *)  _dashboard "" ;;
+esac
