@@ -131,5 +131,6 @@ font = wezterm.font_with_fallback({
 	quick_select_patterns = {
 		"[a-zA-Z0-9]{27}",
 		"[a-zA-Z0-9]{21}",
+		"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
 	},
 }
