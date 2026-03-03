@@ -40,6 +40,32 @@ wezterm.on("gui-startup", function(cmd)
 	end)
 end)
 
+-- Highlight tab when Claude Code is waiting for input
+wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_width)
+	local claude_idle = false
+	for _, p in ipairs(panes) do
+		if p.user_vars and p.user_vars.claude_status == "idle" then
+			claude_idle = true
+			break
+		end
+	end
+
+	if not claude_idle or tab.is_active then
+		return nil
+	end
+
+	local title = tab.tab_title
+	if #title == 0 then
+		title = tab.active_pane.title
+	end
+
+	return {
+		{ Background = { Color = "#bf616a" } },
+		{ Foreground = { Color = "#eceff4" } },
+		{ Text = " ⏳ " .. title .. " " },
+	}
+end)
+
 local keys = {
 	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
 	{ key = "Enter", mods = "ALT", action = wezterm.action.DisableDefaultAssignment },

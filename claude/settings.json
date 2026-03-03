@@ -6,6 +6,15 @@
   "hooks": {
     "Notification": [
       {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c '$HOME/dotfiles/claude/wezterm-tab-highlight.sh idle'"
+          }
+        ]
+      },
+      {
         "matcher": "",
         "hooks": [
           {
@@ -30,6 +39,24 @@
           {
             "type": "command",
             "command": "sh -c '$HOME/dotfiles/claude/hooks/ddb-readonly-gate.sh'"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c '$HOME/dotfiles/claude/wezterm-tab-highlight.sh active'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c '$HOME/dotfiles/claude/wezterm-tab-highlight.sh clear'"
           }
         ]
       }

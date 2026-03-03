@@ -18,9 +18,9 @@ last_user_msg=""
 if [[ -n "$session_id" ]]; then
   jsonl_file=$(find ~/.claude/projects -name "${session_id}.jsonl" -type f 2>/dev/null | head -1)
   if [[ -n "$jsonl_file" ]]; then
-    # Get the last external user message, take first line, truncate to 80 chars
+    # Get the last external user text message (filter out tool_result arrays), truncate to 80 chars
     last_user_msg=$(tail -100 "$jsonl_file" \
-      | jq -r 'select(.type == "user" and .userType == "external") | (.message.content // .message // "")' 2>/dev/null \
+      | jq -r 'select(.type == "user" and .userType == "external" and (.message.content | type) == "string") | .message.content' 2>/dev/null \
       | tail -1 \
       | head -1 \
       | cut -c1-80)
