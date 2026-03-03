@@ -187,7 +187,7 @@ _dashboard() {
   if [[ -n "$env_filter" && "$env_filter" != "all" ]]; then
     header+=" [${env_filter}]"
   fi
-  header+="  │  Enter=open  r=rerun-failed  ctrl-r=refresh  1=dev 2=stag 3=prod 0=all"
+  header+="  │  Enter=open  y=yank-url  r=rerun-failed  ctrl-r=refresh  1=dev 2=stag 3=prod 0=all"
 
   local runs
   runs=$(_fetch_runs "$env_filter")
@@ -203,7 +203,7 @@ _dashboard() {
     --prompt="gha > " \
     --header="$header" \
     --reverse --border \
-    --expect="r,1,2,3,0" \
+    --expect="r,y,1,2,3,0" \
     --bind="enter:execute-silent(echo {-1} | awk -F'\t' '{print \$NF}' | xargs open 2>/dev/null)" \
     --bind="ctrl-r:reload($SELF _fetch ${env_filter})" \
     --preview-window=hidden \
@@ -216,6 +216,12 @@ _dashboard() {
   line=$(echo "$selected" | sed -n '2p')
 
   case "$key" in
+    y)
+      local url
+      url=$(echo "$line" | grep -oE 'https://github\.com/[^ ]+')
+      printf '%s' "$url" | pbcopy
+      _dashboard "$env_filter"
+      ;;
     r)
       local repo run_id
       repo=$(echo "$line" | awk '{print $3}')
@@ -252,6 +258,7 @@ Usage:
 
 Inside dashboard:
   Enter            Open run in browser
+  y                Copy URL to clipboard
   r                Rerun failed jobs
   1/2/3/0          Switch to dev/stag/prod/all
   Ctrl-R           Refresh
