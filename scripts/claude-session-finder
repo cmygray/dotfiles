@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# Claude Session Finder — browse and resume Claude Code sessions
+
+CLAUDE_DIR="$HOME/.claude/projects"
+CLAUDE_BIN="$HOME/.local/bin/claude"
+SEP=$'\x1f'
+MAX_SESSIONS=${CCF_MAX:-100}
+WORKSPACE="${WORKSPACE:-$HOME/Workspace}"
+
+_HOME_SLUG=$(echo "$HOME" | /usr/bin/tr '/' '-')
+_WS_SLUG=$(echo "$WORKSPACE" | /usr/bin/tr '/' '-')
+
+command -v fzf &>/dev/null || { echo "fzf required: brew install fzf" >&2; exit 1; }
+
+# ── Build session list ──────────────────────────────────────
+list_file=$(/usr/bin/mktemp)
+now=$(/bin/date +%s)
+
+/usr/bin/find "$CLAUDE_DIR" -name '*.jsonl' -not -path '*/subagents/*' \
+  -exec /usr/bin/stat -f '%m %N' {} + 2>/dev/null \
+  | /usr/bin/sort -rn \
+  | /usr/bin/head -n "$MAX_SESSIONS" \
+  | while read -r mtime path; do
+
+  dir_name=$(/usr/bin/basename "$(/usr/bin/dirname "$path")")
+  if [[ "$dir_name" == "${_WS_SLUG}-"* ]]; then
+    project="${dir_name#"${_WS_SLUG}-"}"
+  elif [[ "$dir_name" == "${_HOME_SLUG}-"* ]]; then
+    project="~/${dir_name#"${_HOME_SLUG}-"}"
+  else
+    project="$dir_name"
+  fi
+
+  session_id=$(/usr/bin/basename "$path" .jsonl)
+
+  # Last user message + branch + cwd in one jq call
+  user_data=$(/usr/bin/tail -300 "$path" 2>/dev/null \
+    | /usr/bin/grep '"type":"user"' \
+    | /usr/bin/grep -v '"tool_result"' \
+    | /usr/bin/tail -1 \
+    | jq -r '[
+        (.gitBranch // ""),
+        (.cwd // ""),
+        (if .message.content | type == "string" then .message.content
+         elif .message.content | type == "array" then
+           [.message.content[] | select(type == "object" and .type == "text")] | .[0].text // ""
+         else "" end | gsub("\n"; " ") | .[0:120])
+      ] | join("\t")' 2>/dev/null) || true
+
+  branch="" cwd="" msg=""
+  if [[ -n "${user_data:-}" ]]; then
+    IFS=$'\t' read -r branch cwd msg <<< "$user_data"
+  fi
+
+  # Relative time
+  diff=$(( now - mtime ))
+  if   [[ $diff -lt 60 ]]; then rel="${diff}s"
+  elif [[ $diff -lt 3600 ]]; then rel="$((diff / 60))m"
+  elif [[ $diff -lt 86400 ]]; then rel="$((diff / 3600))h"
+  elif [[ $diff -lt 604800 ]]; then rel="$((diff / 86400))d"
+  elif [[ $diff -lt 2592000 ]]; then rel="$((diff / 604800))w"
+  else rel="$((diff / 2592000))mo"
+  fi
+  date_str=$(/bin/date -r "$mtime" '+%m/%d' 2>/dev/null || echo "")
+
+  [[ ${#msg} -gt 100 ]] && msg="${msg:0:97}..."
+
+  printf "Claude Code  %-24s  %-100s  %18s  %s · %s${SEP}%s${SEP}%s${SEP}%s\n" \
+    "$project" "${msg:-}" "${branch:-}" "$rel" "$date_str" \
+    "$session_id" "${cwd:-}" "$project"
+
+done > "$list_file"
+
+# ── FZF selection ───────────────────────────────────────────
+selection=$(fzf \
+  --prompt='> ' \
+  --delimiter="$SEP" \
+  --with-nth=1 \
+  --no-sort \
+  --reverse \
+  --height=90% \
+  --border=rounded \
+  --info=inline-right \
+  --bind='ctrl-d:half-page-down,ctrl-u:half-page-up' \
+  < "$list_file")
+
+rm -f "$list_file"
+[[ -z "$selection" ]] && exit 0
+
+IFS="$SEP" read -r _ session_id cwd project <<< "$selection"
+
+# ── Action menu ─────────────────────────────────────────────
+header="──────────────────────────────────────────────────────────
+ Claude Code │ ${project:-} │ ${cwd:-}
+──────────────────────────────────────────────────────────"
+
+choice=$(printf '%s\n' \
+  "Resume session" \
+  "Resume (bypass perms)" \
+  "Copy resume command" \
+  "Copy session ID" \
+  | fzf --prompt="${project:-session} > " \
+      --header="$header" \
+      --no-sort --no-multi --reverse \
+      --height=10 --border=rounded)
+
+[[ -z "$choice" ]] && exec "$0"
+
+case "$choice" in
+  "Resume session") exec "$CLAUDE_BIN" --resume "$session_id" ;;
+  "Resume (bypass perms)") exec "$CLAUDE_BIN" --dangerously-skip-permissions --resume "$session_id" ;;
+  "Copy resume command") printf '%s' "claude --resume '$session_id'" | pbcopy; echo "Copied!" ;;
+  "Copy session ID") printf '%s' "$session_id" | pbcopy; echo "Copied!" ;;
+esac

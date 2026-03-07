@@ -1,0 +1,294 @@
+#!/usr/bin/env bash
+# Claude Agent Dashboard — monitors all Claude Code panes in WezTerm
+set -uo pipefail
+
+REFRESH=2
+CURSOR=0
+
+# Colors
+BOLD="\033[1m"
+DIM="\033[2m"
+RESET="\033[0m"
+CYAN="\033[36m"
+YELLOW="\033[33m"
+INV="\033[7m"
+CLR="\033[K"
+
+# Column widths (computed dynamically per render based on data)
+W_NUM=3
+W_CTX=5
+W_ST=2
+
+PANE_IDS=()
+PANE_COUNT=0
+TMPDIR_DASH=$(mktemp -d)
+TAB_TITLES=()
+PROJECTS=()
+
+# Terminal setup — guard stty for non-tty
+ORIG_STTY=""
+if [[ -t 0 ]]; then
+  ORIG_STTY=$(stty -g 2>/dev/null || true)
+  stty -echo -icanon min 0 time 0 2>/dev/null || true
+fi
+
+cleanup() {
+  [[ -n "$ORIG_STTY" ]] && stty "$ORIG_STTY" 2>/dev/null
+  printf "\033[?25h\033[J"
+  rm -rf "$TMPDIR_DASH"
+  exit 0
+}
+trap cleanup INT TERM EXIT
+
+printf "\033[?25l"
+clear
+
+# Display width: pure bash, no subshells
+# CJK chars are 3+ bytes in UTF-8 → 2 columns, ASCII → 1 column
+_dw=0  # result stored here to avoid subshell
+display_width() {
+  local str="$1" chars=${#1}
+  local lc_all_bak="${LC_ALL:-}" && LC_ALL=C
+  local bytes=${#1}
+  LC_ALL="$lc_all_bak"
+  _dw=$(( chars + (bytes - chars) / 2 ))
+}
+
+trunc() {
+  local str="$1" max="$2"
+  display_width "$str"
+  if [[ $_dw -le $max ]]; then
+    printf '%s' "$str"
+    return
+  fi
+  # Estimate cut point from ratio, then adjust
+  local chars=${#str}
+  local cut=$(( (max - 1) * chars / (_dw + 1) ))
+  [[ $cut -ge $chars ]] && cut=$((chars - 1))
+  display_width "${str:0:$cut}"
+  while [[ $_dw -gt $((max - 1)) && $cut -gt 0 ]]; do
+    cut=$((cut - 1))
+    display_width "${str:0:$cut}"
+  done
+  printf '%s…' "${str:0:$cut}"
+}
+
+pad() {
+  local str="$1" width="$2"
+  display_width "$str"
+  local padding=$((width - _dw))
+  printf '%s' "$str"
+  [[ $padding -gt 0 ]] && printf "%${padding}s" ""
+}
+
+parse_pane_file() {
+  local pane_id="$1" outfile="$2"
+  local text
+  local SEP=$'\x1f'
+  text=$(wezterm cli get-text --pane-id "$pane_id" 2>/dev/null) || { printf "?${SEP}${SEP}${SEP}" > "$outfile"; return; }
+
+  # Search entire text for status bar info (not just tail)
+  local status="?"
+  if echo "$text" | grep -qF -- "-- INSERT --"; then
+    status="⏳"
+  elif echo "$text" | tail -3 | grep -qE '[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏✳]'; then
+    status="⚡"
+  fi
+
+  local branch=""
+  branch=$(echo "$text" | sed -n 's/.*🌿 *\([^ ]*\).*/\1/p' | tail -1) || true
+
+  local ctx=""
+  ctx=$(echo "$text" | sed -n 's/.*🧠 *\([0-9]*%\).*/\1/p' | tail -1) || true
+
+  local activity=""
+  activity=$(echo "$text" | grep '⏺' | tail -1 | sed 's/^.*⏺ *//' | tr -d '\t' | head -c 200) || true
+
+  printf "%s${SEP}%s${SEP}%s${SEP}%s" "$status" "$branch" "$ctx" "$activity" > "$outfile"
+}
+
+fetch_data() {
+  local panes_json
+  panes_json=$(wezterm cli list --format json 2>/dev/null | jq -r '[.[] | select(.title | test("[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠂✳]|Claude"))]')
+
+  PANE_COUNT=$(echo "$panes_json" | jq 'length')
+  PANE_IDS=()
+  TAB_TITLES=()
+  PROJECTS=()
+
+  local pids=()
+
+  for i in $(seq 0 $((PANE_COUNT - 1))); do
+    local pane_id tab_title cwd project
+    pane_id=$(echo "$panes_json" | jq -r ".[$i].pane_id")
+    tab_title=$(echo "$panes_json" | jq -r ".[$i].tab_title // .[$i].title")
+    cwd=$(echo "$panes_json" | jq -r ".[$i].cwd // \"\"")
+    project=$(basename "$cwd" 2>/dev/null || echo "?")
+
+    PANE_IDS+=("$pane_id")
+    TAB_TITLES+=("$tab_title")
+    PROJECTS+=("$project")
+
+    parse_pane_file "$pane_id" "$TMPDIR_DASH/$i" &
+    pids+=($!)
+  done
+
+  for pid in "${pids[@]+"${pids[@]}"}"; do
+    wait "$pid" 2>/dev/null || true
+  done
+}
+
+render() {
+  if [[ $PANE_COUNT -gt 0 && $CURSOR -ge $PANE_COUNT ]]; then
+    CURSOR=$((PANE_COUNT - 1))
+  fi
+
+  # Compute column widths from actual data
+  local W_TAB=3 W_PRJ=7 W_BR=6  # minimum: header text length
+  for i in $(seq 0 $((PANE_COUNT - 1))); do
+    local len
+    len=${#TAB_TITLES[$i]}; [[ $len -gt $W_TAB ]] && W_TAB=$len
+    len=${#PROJECTS[$i]};  [[ $len -gt $W_PRJ ]] && W_PRJ=$len
+    if [[ -f "$TMPDIR_DASH/$i" ]]; then
+      local _s="" _b="" _c="" _a=""
+      IFS=$'\x1f' read -r _s _b _c _a < "$TMPDIR_DASH/$i" || true
+      len=${#_b}; [[ $len -gt $W_BR ]] && W_BR=$len
+    fi
+  done
+  # Add padding
+  W_TAB=$((W_TAB + 2))
+  W_PRJ=$((W_PRJ + 2))
+  W_BR=$((W_BR + 2))
+
+  local cols
+  # tput often returns wrong value; use stty or COLUMNS as fallback
+  cols=$(stty size 2>/dev/null | awk '{print $2}')
+  [[ -z "$cols" || "$cols" -le 0 ]] 2>/dev/null && cols=${COLUMNS:-0}
+  [[ "$cols" -le 0 ]] 2>/dev/null && cols=$(tput cols 2>/dev/null || echo 120)
+  [[ "$cols" -le 0 ]] 2>/dev/null && cols=120
+  local fixed_w=$((1 + W_NUM + 1 + W_TAB + 1 + W_PRJ + 1 + W_BR + 1 + W_CTX + 1 + W_ST + 2))
+  local w_act=$((cols - fixed_w))
+  [[ $w_act -lt 10 ]] && w_act=10
+
+  printf "\033[H"
+  printf "${BOLD}${CYAN} Claude Agent Dashboard${RESET}${DIM}  j/k: nav  enter: focus  1-9: jump  q: quit${RESET}${CLR}\n"
+  printf "${DIM} %-${W_NUM}s ${BOLD}%-${W_TAB}s %-${W_PRJ}s %-${W_BR}s %-${W_CTX}s %-${W_ST}s  %s${RESET}${CLR}\n" \
+    "#" "TAB" "PROJECT" "BRANCH" "CTX" "ST" "ACTIVITY"
+
+  for i in $(seq 0 $((PANE_COUNT - 1))); do
+    local status="" branch="" ctx="" activity=""
+    if [[ -f "$TMPDIR_DASH/$i" ]]; then
+      IFS=$'\x1f' read -r status branch ctx activity < "$TMPDIR_DASH/$i" || true
+    fi
+
+    local t_tab t_prj t_br t_act
+    t_tab=$(trunc "${TAB_TITLES[$i]}" $W_TAB)
+    t_prj=$(trunc "${PROJECTS[$i]}" $W_PRJ)
+    t_br=$(trunc "$branch" $W_BR)
+    t_act=$(trunc "$activity" $w_act)
+    local num=$((i + 1))
+
+    if [[ $i -eq $CURSOR ]]; then
+      printf "${INV} %-${W_NUM}s $(pad "$t_tab" $W_TAB) $(pad "$t_prj" $W_PRJ) $(pad "$t_br" $W_BR) %-${W_CTX}s %-${W_ST}s  %s${RESET}${CLR}\n" \
+        "$num" "$ctx" "$status" "$t_act"
+    else
+      printf " ${YELLOW}%-${W_NUM}s${RESET} $(pad "$t_tab" $W_TAB) $(pad "$t_prj" $W_PRJ) $(pad "$t_br" $W_BR) %-${W_CTX}s %-${W_ST}s  ${DIM}%s${RESET}${CLR}\n" \
+        "$num" "$ctx" "$status" "$t_act"
+    fi
+  done
+
+  if [[ $PANE_COUNT -eq 0 ]]; then
+    printf " ${DIM}(no Claude panes found)${RESET}${CLR}\n"
+  fi
+
+  printf "\033[J"
+}
+
+drain_input() {
+  local delta=0 action=""
+  while true; do
+    local ch=""
+    read -rsn1 -t 0.01 ch 2>/dev/null || true
+    [[ -z "$ch" ]] && break
+    case "$ch" in
+      j) delta=$((delta + 1)) ;;
+      k) delta=$((delta - 1)) ;;
+      "") action="focus" ;;
+      [1-9]) action="jump:$ch" ;;
+      q) action="quit" ;;
+      $'\x1b')
+        local seq=""
+        read -rsn2 -t 0.01 seq 2>/dev/null || true
+        case "$seq" in
+          '[A') delta=$((delta - 1)) ;;
+          '[B') delta=$((delta + 1)) ;;
+        esac
+        ;;
+    esac
+  done
+
+  if [[ $PANE_COUNT -gt 0 && $delta -ne 0 ]]; then
+    CURSOR=$(( (CURSOR + delta % PANE_COUNT + PANE_COUNT) % PANE_COUNT ))
+  fi
+
+  echo "$action"
+}
+
+focus_pane() {
+  local idx=$1
+  if [[ $idx -ge 0 && $idx -lt ${#PANE_IDS[@]} ]]; then
+    wezterm cli activate-pane --pane-id "${PANE_IDS[$idx]}" 2>/dev/null
+  fi
+}
+
+# Process a single key, set ACTION global
+handle_key() {
+  ACTION=""
+  local key="$1"
+  case "$key" in
+    j) [[ $PANE_COUNT -gt 0 ]] && CURSOR=$(( (CURSOR + 1) % PANE_COUNT )) ;;
+    k) [[ $PANE_COUNT -gt 0 ]] && CURSOR=$(( (CURSOR - 1 + PANE_COUNT) % PANE_COUNT )) ;;
+    "") ACTION="focus" ;;
+    [1-9]) ACTION="jump:$key" ;;
+    q) cleanup ;;
+    $'\x1b')
+      seq=""
+      read -rsn2 -t 0.1 seq 2>/dev/null || true
+      case "$seq" in
+        '[A') [[ $PANE_COUNT -gt 0 ]] && CURSOR=$(( (CURSOR - 1 + PANE_COUNT) % PANE_COUNT )) ;;
+        '[B') [[ $PANE_COUNT -gt 0 ]] && CURSOR=$(( (CURSOR + 1) % PANE_COUNT )) ;;
+      esac
+      ;;
+  esac
+}
+
+# Input loop: handle keys instantly without re-fetching data
+process_input() {
+  while true; do
+    key=""
+    if read -rsn1 -t "$REFRESH" key 2>/dev/null; then
+      handle_key "$key"
+
+      # Drain queued keys (drain_input modifies CURSOR directly too)
+      drain_action=$(drain_input)
+      [[ -n "$drain_action" ]] && ACTION="$drain_action"
+
+      case "$ACTION" in
+        focus) focus_pane "$CURSOR" ;;
+        jump:*) focus_pane $(( ${ACTION#jump:} - 1 )) ;;
+        quit) cleanup ;;
+      esac
+
+      render
+    else
+      return
+    fi
+  done
+}
+
+# Main loop
+while true; do
+  fetch_data
+  render
+  process_input
+done
