@@ -74,6 +74,8 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 
+source $(brew --prefix)/opt/zsh-vi-mode/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
+
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
@@ -99,6 +101,11 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+
+# =====================================================================
+# Secrets (not committed to dotfiles repo)
+# =====================================================================
+[[ -f ~/dotfiles/.zshsecrets ]] && source ~/dotfiles/.zshsecrets
 
 # =====================================================================
 # Environment Variables
@@ -153,7 +160,6 @@ fi
 if command -v atuin &> /dev/null; then
     eval "$(atuin init zsh)"
 fi
-export GOOGLE_CLOUD_PROJECT="gen-lang-client-0328071187"
 
 alf() {
   local selected
@@ -164,3 +170,5 @@ alias briefing='~/dotfiles/scripts/daily-briefing.sh'
 alias standup='~/dotfiles/scripts/morning-standup.sh'
 alias lock='swift ~/dotfiles/scripts/lock-screen.swift'
 alias ddb='~/dotfiles/scripts/ddb/ddb.sh'
+alias ccd='~/dotfiles/scripts/claude-dashboard'
+alias ccf='~/dotfiles/scripts/claude-session-finder'

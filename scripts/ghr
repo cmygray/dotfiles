@@ -88,7 +88,7 @@ _fetch_releases() {
     wait "$pid" 2>/dev/null || true
   done
 
-  cat "${tmpdir}"/* 2>/dev/null | sort -t$'\t' -k4 -r | while IFS=$'\t' read -r repo tag name published kind url; do
+  cat "${tmpdir}"/* 2>/dev/null | sort -t$'\t' -k4 -r | head -30 | while IFS=$'\t' read -r repo tag name published kind url; do
     [[ -z "$repo" ]] && continue
 
     local time_ago icon

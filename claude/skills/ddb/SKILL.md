@@ -18,13 +18,13 @@ allowed-tools: Bash(ddb *)
 ## 명령어
 
 ```
-ddb context                                          # 스키마 전체 출력
-ddb context classroom-service                        # 특정 서비스 스키마만
-ddb [dev|stag] list                                  # 테이블 목록
-ddb [dev|stag] desc -t <table>                       # 테이블 스키마 상세
-ddb [dev|stag] get -t <table> <pk> [<sk>]            # 아이템 조회
-ddb [dev|stag] query -t <table> -p <pk> [-i <gsi>]   # 쿼리
-ddb [dev|stag] scan -t <table> [options]             # 스캔
+ddb context                                            # 스키마 전체 출력
+ddb context classroom-service                          # 특정 서비스 스키마만
+ddb [dev|stag] list                                    # 테이블 목록
+ddb [dev|stag] desc -t <table>                         # 테이블 스키마 상세
+ddb [dev|stag] get -t <table> <pk> [<sk>]              # 아이템 조회
+ddb [dev|stag] query -t <table> <pk> [-i <gsi>] [-s <sk_condition>]  # 쿼리
+ddb [dev|stag] scan -t <table> [options]               # 스캔
 ```
 
 ## 테이블명 패턴
@@ -34,7 +34,22 @@ ddb [dev|stag] scan -t <table> [options]             # 스캔
 ## dy 주요 옵션
 
 - `-t, --table <name>` — 테이블명 (필수)
-- `-p, --partition-key <value>` — 파티션 키 값
-- `-s, --sort-key <value>` — 소트 키 값 또는 begins_with 프리픽스
+- `<pk>` — 파티션 키 값 (query/get의 **위치 인자**, `-p` 아님!)
+- `-s, --sort-key <expr>` — 소트 키 조건 (예: `'begins_with Contract#'`, `'= Member#abc'`)
 - `-i, --index <name>` — GSI 이름 (예: gsi-1, GSI1)
+- `-a, --attributes <cols>` — 출력할 속성 (쉼표 구분, 예: `id,orgId,status`)
+- `--keys-only` — PK/SK만 출력
 - `--filter <expression>` — 필터 표현식
+
+## query 예시
+
+```bash
+# GSI-3으로 계정의 멤버 목록 조회
+ddb stag query -t organization-service-stag -i gsi-3 'Account#15089337373340913'
+
+# GSI-1로 멤버의 라이센스 조회 (SK begins_with)
+ddb stag query -t organization-service-stag -i gsi-1 'Member#abc123' -s 'begins_with Contract#'
+
+# 특정 속성만 출력
+ddb stag query -t organization-service-stag -i gsi-1 'Contract#xyz' -a 'id,orgId,licenses,variants'
+```

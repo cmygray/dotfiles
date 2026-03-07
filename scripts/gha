@@ -132,7 +132,7 @@ _fetch_runs() {
   done
 
   # Merge, sort by createdAt (field 7), filter by env
-  cat "${tmpdir}"/* 2>/dev/null | sort -t$'\t' -k7 -r | while IFS=$'\t' read -r repo workflow status conclusion title branch created run_id url event; do
+  cat "${tmpdir}"/* 2>/dev/null | sort -t$'\t' -k7 -r | head -30 | while IFS=$'\t' read -r repo workflow status conclusion title branch created run_id url event; do
     [[ -z "$repo" ]] && continue
     _env_match "$workflow" "$env_filter" || continue
 

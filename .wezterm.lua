@@ -2,6 +2,94 @@ local wezterm = require("wezterm")
 local act = wezterm.action
 local mux = wezterm.mux
 
+local WORKSPACE = os.getenv("WORKSPACE") or (wezterm.home_dir .. "/Workspace")
+local CLAUDE = wezterm.home_dir .. "/.local/bin/claude"
+
+-- Action: Select project → enter task name → spawn Claude worktree session
+local claude_tab = wezterm.action_callback(function(window, pane)
+	local choices = {}
+	local handle = io.popen('ls -1 "' .. WORKSPACE .. '"')
+	if handle then
+		for dir in handle:lines() do
+			table.insert(choices, { id = dir, label = dir })
+		end
+		handle:close()
+	end
+
+	if #choices == 0 then return end
+
+	window:perform_action(act.InputSelector({
+		title = "Select project",
+		fuzzy = true,
+		choices = choices,
+		action = wezterm.action_callback(function(win, p, id, label)
+			if not id then return end
+			win:perform_action(act.PromptInputLine({
+				description = "Task name (e.g. fix-login-bug):",
+				action = wezterm.action_callback(function(win2, p2, line)
+					if not line or line == "" then return end
+					local project_dir = WORKSPACE .. "/" .. id
+					local cmd = "cd " .. wezterm.shell_quote_arg(project_dir)
+						.. " && " .. wezterm.shell_quote_arg(CLAUDE)
+						.. " --dangerously-skip-permissions --worktree " .. wezterm.shell_quote_arg(line)
+					local tab, _, _ = win2:mux_window():spawn_tab({
+						cwd = project_dir,
+						args = { "zsh", "-lic", cmd },
+					})
+					tab:set_title(line)
+				end),
+			}), p)
+		end),
+	}), pane)
+end)
+
+-- Action: Resume existing Claude worktree session
+local resume_worktree = wezterm.action_callback(function(window, pane)
+	local handle = io.popen(
+		'find "' .. WORKSPACE .. '" -path "*/.claude/worktrees/*" -type d -maxdepth 4 -mindepth 4 2>/dev/null'
+	)
+	if not handle then return end
+
+	local choices = {}
+	for line in handle:lines() do
+		-- line: /path/to/Workspace/project/.claude/worktrees/wt-name
+		local project = line:match(WORKSPACE .. "/([^/]+)/")
+		local wt_name = line:match("/worktrees/([^/]+)$")
+		if project and wt_name then
+			table.insert(choices, {
+				id = project .. "\t" .. wt_name,
+				label = project .. "/" .. wt_name,
+			})
+		end
+	end
+	handle:close()
+
+	if #choices == 0 then
+		window:toast_notification("worktree", "No worktrees found", nil, 3000)
+		return
+	end
+
+	window:perform_action(act.InputSelector({
+		title = "Resume worktree",
+		fuzzy = true,
+		choices = choices,
+		action = wezterm.action_callback(function(win, p, id, label)
+			if not id then return end
+			local project, wt_name = id:match("^(.+)\t(.+)$")
+			if not project or not wt_name then return end
+			local project_dir = WORKSPACE .. "/" .. project
+			local cmd = "cd " .. wezterm.shell_quote_arg(project_dir)
+				.. " && " .. wezterm.shell_quote_arg(CLAUDE)
+				.. " --dangerously-skip-permissions --worktree " .. wezterm.shell_quote_arg(wt_name)
+			local tab, _, _ = win:mux_window():spawn_tab({
+				cwd = project_dir,
+				args = { "zsh", "-lic", cmd },
+			})
+			tab:set_title(wt_name)
+		end),
+	}), pane)
+end)
+
 -- Action: Prompt for tab name, then spawn tab with that name
 local prompt_and_spawn_tab = act.PromptInputLine({
 	description = "Enter tab name:",
@@ -40,31 +128,6 @@ wezterm.on("gui-startup", function(cmd)
 	end)
 end)
 
--- Highlight tab when Claude Code is waiting for input
-wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_width)
-	local claude_idle = false
-	for _, p in ipairs(panes) do
-		if p.user_vars and p.user_vars.claude_status == "idle" then
-			claude_idle = true
-			break
-		end
-	end
-
-	if not claude_idle or tab.is_active then
-		return nil
-	end
-
-	local title = tab.tab_title
-	if #title == 0 then
-		title = tab.active_pane.title
-	end
-
-	return {
-		{ Background = { Color = "#bf616a" } },
-		{ Foreground = { Color = "#eceff4" } },
-		{ Text = " ⏳ " .. title .. " " },
-	}
-end)
 
 local keys = {
 	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
@@ -72,8 +135,10 @@ local keys = {
 	-- New window from home directory (CMD + n)
 	{ key = "n", mods = "SUPER", action = act.SpawnCommandInNewWindow({ cwd = wezterm.home_dir }) },
 	-- New tab with name prompt (LEADER + c or CMD + t)
-	{ key = "c", mods = "LEADER", action = prompt_and_spawn_tab },
-	{ key = "t", mods = "SUPER", action = prompt_and_spawn_tab },
+	{ key = "t", mods = "SUPER|SHIFT", action = prompt_and_spawn_tab },
+	{ key = "t", mods = "SUPER", action = claude_tab },
+	-- Resume existing worktree (CMD + SHIFT + r)
+	{ key = "r", mods = "SUPER|SHIFT", action = resume_worktree },
 	-- Rename current tab (LEADER + ,)
 	{
 		key = ",",
