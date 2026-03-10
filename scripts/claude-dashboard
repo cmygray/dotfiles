@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Agent Dashboard — monitors all Claude Code panes in WezTerm
+# Claude Agent Dashboard — monitors all Claude Code panes in Zellij
 set -uo pipefail
 
 REFRESH=2
@@ -16,14 +16,14 @@ CLR="\033[K"
 
 # Column widths (computed dynamically per render based on data)
 W_NUM=3
-W_CTX=5
 W_ST=2
 
-PANE_IDS=()
 PANE_COUNT=0
-TMPDIR_DASH=$(mktemp -d)
-TAB_TITLES=()
+TAB_NAMES=()
 PROJECTS=()
+CWDS=()
+STATUSES=()
+TMPDIR_DASH=$(mktemp -d)
 
 # Terminal setup — guard stty for non-tty
 ORIG_STTY=""
@@ -81,61 +81,93 @@ pad() {
   [[ $padding -gt 0 ]] && printf "%${padding}s" ""
 }
 
-parse_pane_file() {
-  local pane_id="$1" outfile="$2"
-  local text
-  local SEP=$'\x1f'
-  text=$(wezterm cli get-text --pane-id "$pane_id" 2>/dev/null) || { printf "?${SEP}${SEP}${SEP}" > "$outfile"; return; }
-
-  # Search entire text for status bar info (not just tail)
-  local status="?"
-  if echo "$text" | grep -qF -- "-- INSERT --"; then
-    status="⏳"
-  elif echo "$text" | tail -3 | grep -qE '[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏✳]'; then
-    status="⚡"
-  fi
-
-  local branch=""
-  branch=$(echo "$text" | sed -n 's/.*🌿 *\([^ ]*\).*/\1/p' | tail -1) || true
-
-  local ctx=""
-  ctx=$(echo "$text" | sed -n 's/.*🧠 *\([0-9]*%\).*/\1/p' | tail -1) || true
-
-  local activity=""
-  activity=$(echo "$text" | grep '⏺' | tail -1 | sed 's/^.*⏺ *//' | tr -d '\t' | head -c 200) || true
-
-  printf "%s${SEP}%s${SEP}%s${SEP}%s" "$status" "$branch" "$ctx" "$activity" > "$outfile"
+# Build a set of CWDs with running claude processes
+declare -A RUNNING_CWDS=()
+build_running_set() {
+  RUNNING_CWDS=()
+  local pids
+  pids=$(ps -eo pid=,command= 2>/dev/null \
+    | grep -E '(^|/| )claude ' \
+    | grep -v 'grep\|statusline\|fzf\|dashboard\|snapshot' \
+    | awk '{print $1}') || true
+  for pid in $pids; do
+    local cwd
+    cwd=$(lsof -p "$pid" -Fn 2>/dev/null | awk '/^n\//{print substr($0,2); exit}') || true
+    [[ -n "$cwd" ]] && RUNNING_CWDS["$cwd"]=1
+  done
 }
 
+# Parse dump-layout KDL to find tabs with command="claude" panes
 fetch_data() {
-  local panes_json
-  panes_json=$(wezterm cli list --format json 2>/dev/null | jq -r '[.[] | select(.title | test("[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠂✳]|Claude"))]')
+  local layout
+  layout=$(zellij action dump-layout 2>/dev/null) || return
 
-  PANE_COUNT=$(echo "$panes_json" | jq 'length')
-  PANE_IDS=()
-  TAB_TITLES=()
+  PANE_COUNT=0
+  TAB_NAMES=()
   PROJECTS=()
+  CWDS=()
+  STATUSES=()
 
-  local pids=()
+  # Extract base cwd from layout root
+  local base_cwd=""
+  base_cwd=$(echo "$layout" | sed -n 's/^[[:space:]]*cwd "\(.*\)"/\1/p' | head -1)
 
-  for i in $(seq 0 $((PANE_COUNT - 1))); do
-    local pane_id tab_title cwd project
-    pane_id=$(echo "$panes_json" | jq -r ".[$i].pane_id")
-    tab_title=$(echo "$panes_json" | jq -r ".[$i].tab_title // .[$i].title")
-    cwd=$(echo "$panes_json" | jq -r ".[$i].cwd // \"\"")
-    project=$(basename "$cwd" 2>/dev/null || echo "?")
+  build_running_set
 
-    PANE_IDS+=("$pane_id")
-    TAB_TITLES+=("$tab_title")
-    PROJECTS+=("$project")
+  local cur_tab="" in_claude=0 claude_cwd=""
+  local depth=0
 
-    parse_pane_file "$pane_id" "$TMPDIR_DASH/$i" &
-    pids+=($!)
-  done
+  while IFS= read -r line; do
+    local opens="${line//[^\{]/}"
+    local closes="${line//[^\}]/}"
 
-  for pid in "${pids[@]+"${pids[@]}"}"; do
-    wait "$pid" 2>/dev/null || true
-  done
+    # Only match real tabs at depth 1 (direct children of layout{})
+    if [[ $depth -eq 1 && "$line" =~ ^[[:space:]]*tab[[:space:]] ]]; then
+      # Emit previous tab if it had claude
+      if [[ -n "$cur_tab" && $in_claude -eq 1 ]]; then
+        _emit_entry "$cur_tab" "$claude_cwd" "$base_cwd"
+      fi
+      cur_tab=""
+      in_claude=0
+      claude_cwd=""
+      if [[ "$line" =~ name=\"([^\"]+)\" ]]; then
+        cur_tab="${BASH_REMATCH[1]}"
+      fi
+    fi
+
+    # Inside a tab, detect claude pane
+    if [[ -n "$cur_tab" && "$line" =~ command=\"claude\" ]]; then
+      in_claude=1
+      if [[ "$line" =~ cwd=\"([^\"]+)\" ]]; then
+        claude_cwd="${BASH_REMATCH[1]}"
+      fi
+    fi
+
+    depth=$(( depth + ${#opens} - ${#closes} ))
+  done <<< "$layout"
+
+  # Handle last tab
+  if [[ -n "$cur_tab" && $in_claude -eq 1 ]]; then
+    _emit_entry "$cur_tab" "$claude_cwd" "$base_cwd"
+  fi
+}
+
+_emit_entry() {
+  local tab="$1" cwd="$2" base="$3"
+  local full_cwd="$cwd"
+  [[ -n "$full_cwd" && "$full_cwd" != /* ]] && full_cwd="$base/$full_cwd"
+  [[ -z "$full_cwd" ]] && full_cwd="$base"
+
+  TAB_NAMES+=("$tab")
+  CWDS+=("$full_cwd")
+  PROJECTS+=("$(basename "$full_cwd" 2>/dev/null || echo "?")")
+
+  if [[ -n "${RUNNING_CWDS[$full_cwd]+_}" ]]; then
+    STATUSES+=("⚡")
+  else
+    STATUSES+=("⏸")
+  fi
+  PANE_COUNT=$((PANE_COUNT + 1))
 }
 
 render() {
@@ -144,56 +176,39 @@ render() {
   fi
 
   # Compute column widths from actual data
-  local W_TAB=3 W_PRJ=7 W_BR=6  # minimum: header text length
+  local W_TAB=3 W_PRJ=7  # minimum: header text length
   for i in $(seq 0 $((PANE_COUNT - 1))); do
     local len
-    len=${#TAB_TITLES[$i]}; [[ $len -gt $W_TAB ]] && W_TAB=$len
+    len=${#TAB_NAMES[$i]}; [[ $len -gt $W_TAB ]] && W_TAB=$len
     len=${#PROJECTS[$i]};  [[ $len -gt $W_PRJ ]] && W_PRJ=$len
-    if [[ -f "$TMPDIR_DASH/$i" ]]; then
-      local _s="" _b="" _c="" _a=""
-      IFS=$'\x1f' read -r _s _b _c _a < "$TMPDIR_DASH/$i" || true
-      len=${#_b}; [[ $len -gt $W_BR ]] && W_BR=$len
-    fi
   done
   # Add padding
   W_TAB=$((W_TAB + 2))
   W_PRJ=$((W_PRJ + 2))
-  W_BR=$((W_BR + 2))
 
   local cols
-  # tput often returns wrong value; use stty or COLUMNS as fallback
   cols=$(stty size 2>/dev/null | awk '{print $2}')
   [[ -z "$cols" || "$cols" -le 0 ]] 2>/dev/null && cols=${COLUMNS:-0}
   [[ "$cols" -le 0 ]] 2>/dev/null && cols=$(tput cols 2>/dev/null || echo 120)
   [[ "$cols" -le 0 ]] 2>/dev/null && cols=120
-  local fixed_w=$((1 + W_NUM + 1 + W_TAB + 1 + W_PRJ + 1 + W_BR + 1 + W_CTX + 1 + W_ST + 2))
-  local w_act=$((cols - fixed_w))
-  [[ $w_act -lt 10 ]] && w_act=10
 
   printf "\033[H"
   printf "${BOLD}${CYAN} Claude Agent Dashboard${RESET}${DIM}  j/k: nav  enter: focus  1-9: jump  q: quit${RESET}${CLR}\n"
-  printf "${DIM} %-${W_NUM}s ${BOLD}%-${W_TAB}s %-${W_PRJ}s %-${W_BR}s %-${W_CTX}s %-${W_ST}s  %s${RESET}${CLR}\n" \
-    "#" "TAB" "PROJECT" "BRANCH" "CTX" "ST" "ACTIVITY"
+  printf "${DIM} %-${W_NUM}s ${BOLD}%-${W_TAB}s %-${W_PRJ}s %-${W_ST}s${RESET}${CLR}\n" \
+    "#" "TAB" "PROJECT" "ST"
 
   for i in $(seq 0 $((PANE_COUNT - 1))); do
-    local status="" branch="" ctx="" activity=""
-    if [[ -f "$TMPDIR_DASH/$i" ]]; then
-      IFS=$'\x1f' read -r status branch ctx activity < "$TMPDIR_DASH/$i" || true
-    fi
-
-    local t_tab t_prj t_br t_act
-    t_tab=$(trunc "${TAB_TITLES[$i]}" $W_TAB)
+    local t_tab t_prj
+    t_tab=$(trunc "${TAB_NAMES[$i]}" $W_TAB)
     t_prj=$(trunc "${PROJECTS[$i]}" $W_PRJ)
-    t_br=$(trunc "$branch" $W_BR)
-    t_act=$(trunc "$activity" $w_act)
     local num=$((i + 1))
 
     if [[ $i -eq $CURSOR ]]; then
-      printf "${INV} %-${W_NUM}s $(pad "$t_tab" $W_TAB) $(pad "$t_prj" $W_PRJ) $(pad "$t_br" $W_BR) %-${W_CTX}s %-${W_ST}s  %s${RESET}${CLR}\n" \
-        "$num" "$ctx" "$status" "$t_act"
+      printf "${INV} %-${W_NUM}s $(pad "$t_tab" $W_TAB) $(pad "$t_prj" $W_PRJ) %-${W_ST}s${RESET}${CLR}\n" \
+        "$num" "${STATUSES[$i]}"
     else
-      printf " ${YELLOW}%-${W_NUM}s${RESET} $(pad "$t_tab" $W_TAB) $(pad "$t_prj" $W_PRJ) $(pad "$t_br" $W_BR) %-${W_CTX}s %-${W_ST}s  ${DIM}%s${RESET}${CLR}\n" \
-        "$num" "$ctx" "$status" "$t_act"
+      printf " ${YELLOW}%-${W_NUM}s${RESET} $(pad "$t_tab" $W_TAB) $(pad "$t_prj" $W_PRJ) %-${W_ST}s${RESET}${CLR}\n" \
+        "$num" "${STATUSES[$i]}"
     fi
   done
 
@@ -234,10 +249,10 @@ drain_input() {
   echo "$action"
 }
 
-focus_pane() {
+focus_tab() {
   local idx=$1
-  if [[ $idx -ge 0 && $idx -lt ${#PANE_IDS[@]} ]]; then
-    wezterm cli activate-pane --pane-id "${PANE_IDS[$idx]}" 2>/dev/null
+  if [[ $idx -ge 0 && $idx -lt ${#TAB_NAMES[@]} ]]; then
+    zellij action go-to-tab-name "${TAB_NAMES[$idx]}" 2>/dev/null
   fi
 }
 
@@ -274,8 +289,8 @@ process_input() {
       [[ -n "$drain_action" ]] && ACTION="$drain_action"
 
       case "$ACTION" in
-        focus) focus_pane "$CURSOR" ;;
-        jump:*) focus_pane $(( ${ACTION#jump:} - 1 )) ;;
+        focus) focus_tab "$CURSOR" ;;
+        jump:*) focus_tab $(( ${ACTION#jump:} - 1 )) ;;
         quit) cleanup ;;
       esac
 

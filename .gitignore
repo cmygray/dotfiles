@@ -19,3 +19,4 @@ __pycache__/
 scripts/**/secrets/*
 !scripts/**/secrets/*.example
 .dmux/
+.claude/worktrees

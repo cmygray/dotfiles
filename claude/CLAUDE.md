@@ -95,5 +95,5 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - 예시: `aws-vault exec my-profile -- aws s3 ls`
 
 ### DynamoDB 조회
-- DynamoDB 조회 시 `/ddb` skill 사용 (`ddb` 래퍼만 허용, dy/aws dynamodb 직접 호출은 hook으로 차단됨)
+- DynamoDB 조회 시 `/dynamodb` skill 사용 (dy 읽기 명령만 허용, 쓰기/aws dynamodb 직접 호출은 hook으로 차단됨)
 

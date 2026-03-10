@@ -27,6 +27,8 @@ vim.opt.signcolumn = "yes" -- for vim-gitgutter
 
 -- markdown-preview
 vim.g.mkdp_theme = "dark"
+vim.g.mkdp_open_to_the_world = 1
+vim.g.mkdp_port = "8689"
 
 -- Keymaps
 vim.keymap.set("v", "//", 'y/<C-R>"<CR>N')
@@ -59,7 +61,7 @@ local function open_commit_in_github()
 	local repo_url = vim.fn.system("gh browse -n"):gsub("\n+$", "")
 	local commit_url = repo_url .. "/commit/" .. commit_hash
 
-	vim.fn.system("start " .. commit_url)
+	vim.fn.system("open " .. commit_url)
 end
 
 vim.keymap.set("n", "<leader>cc", open_commit_in_github, { desc = "Open commit in GitHub" })

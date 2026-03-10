@@ -151,6 +151,11 @@ if command -v starship &> /dev/null; then
     eval "$(starship init zsh)"
 fi
 
+# Initialize direnv if available
+if command -v direnv &> /dev/null; then
+    eval "$(direnv hook zsh)"
+fi
+
 # Initialize zoxide if available
 if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
