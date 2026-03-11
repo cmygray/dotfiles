@@ -10,29 +10,50 @@ cd ~/dotfiles
 ./bootstrap.sh
 ```
 
+> Homebrew가 먼저 설치되어 있어야 합니다.
+
 ## 자동 설정되는 항목
 
 ### 🔗 심볼릭 링크 설정
-- `~/Brewfile` → Homebrew 패키지 목록
-- `~/.gitconfig` → Git 전역 설정
-- `~/.gitignore` → Git 전역 ignore 패턴
-- `~/.hammerspoon/` → Hammerspoon 자동화 스크립트
-- `~/.wezterm.lua` → WezTerm 터미널 설정
-- `~/.config/starship.toml` → Starship 프롬프트 설정
-- `~/.config/gh-dash/` → GitHub Dashboard 설정
-- `~/.config/zed/` → Zed 에디터 설정 (keymap, settings)
-- Nushell 설정 (`config.nu`, `env.nu`)
+
+| 소스 | 대상 |
+|------|------|
+| `.zshrc` | `~/.zshrc` |
+| `.zshenv` | `~/.zshenv` |
+| `.gitconfig` | `~/.gitconfig` |
+| `.gitignore` | `~/.gitignore` |
+| `.wezterm.lua` | `~/.wezterm.lua` |
+| `.hammerspoon/` | `~/.hammerspoon/` |
+| `starship.toml` | `~/.config/starship.toml` |
+| `nvim/` | `~/.config/nvim/` |
+| `gh-dash/` | `~/.config/gh-dash/` |
+| `zed/keymap.json` | `~/.config/zed/keymap.json` |
+| `zed/settings.json` | `~/.config/zed/settings.json` |
+| `karabiner/karabiner.json` | `~/.config/karabiner/karabiner.json` |
+| `claude/settings.json` | `~/.claude/settings.json` |
+| `claude/CLAUDE.md` | `~/.claude/CLAUDE.md` |
+| `claude/agents/` | `~/.claude/agents/` |
+| `claude/commands/` | `~/.claude/commands/` |
+| `claude/skills/` | `~/.claude/skills/` |
 
 ### 📦 자동 설치
-- **Homebrew 패키지**: Brewfile 기반 일괄 설치
-- **Oh My Zsh**: 미설치 시에만 자동 설치
-- **Nushell**: 기본 쉘로 설정 (설치되어 있을 경우)
+
+- **Homebrew 패키지**: `Brewfile` 기반 일괄 설치
+- **pipx 패키지**: `requirements-pipx.txt` 기반 설치
+- **gh 확장**: `gh-extensions.txt` 기반 설치
+
+### ⚙️ Git 필터
+
+Claude Code `settings.json`에서 `model` 필드를 커밋 시 자동 제거합니다.
+
+```
+filter.strip-claude-model.clean = jq 'del(.model)'
+```
 
 ## TODO
 
-- [ ] sync karabiner
-- [ ] sync gh extensions
-- [ ] GPG 설정 자동화
+- [x] sync gh extensions (`gh-extensions.txt`)
+- [x] zellij 설정 링크 추가
 
 직접 설치할 앱들:
 

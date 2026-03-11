@@ -57,5 +57,6 @@
   "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
-  }
+  },
+  "effortLevel": "high"
 }

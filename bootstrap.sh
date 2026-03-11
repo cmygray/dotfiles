@@ -35,6 +35,7 @@ link gh-dash            "$HOME/.config/gh-dash"
 link zed/keymap.json    "$HOME/.config/zed/keymap.json"
 link zed/settings.json  "$HOME/.config/zed/settings.json"
 link karabiner/karabiner.json "$HOME/.config/karabiner/karabiner.json"
+link zellij/config.kdl       "$HOME/.config/zellij/config.kdl"
 
 echo "Linking Claude Code settings..."
 mkdir -p "$HOME/.claude"
@@ -54,4 +55,11 @@ if command -v pipx >/dev/null 2>&1; then
     while read package; do
         [ -n "$package" ] && pipx install "$package"
     done < "$DOTFILES/requirements-pipx.txt"
+fi
+
+# Install gh extensions
+if command -v gh >/dev/null 2>&1; then
+    while read ext; do
+        [ -n "$ext" ] && gh extension install "$ext" 2>/dev/null || true
+    done < "$DOTFILES/gh-extensions.txt"
 fi

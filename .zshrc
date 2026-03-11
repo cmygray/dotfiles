@@ -171,8 +171,9 @@ alf() {
   selected=$(alias | fzf | cut -d'=' -f1)
   [[ -n "$selected" ]] && print -z "$selected"
 }
-alias briefing='~/dotfiles/scripts/daily-briefing.sh'
-alias standup='~/dotfiles/scripts/morning-standup.sh'
+#alias briefing='~/dotfiles/scripts/daily-briefing.sh'
+#alias standup='~/dotfiles/scripts/morning-standup.sh'
+alias standup='cc --model haiku -p "translate this: $(gh standup)"'
 alias lock='swift ~/dotfiles/scripts/lock-screen.swift'
 alias ddb='~/dotfiles/scripts/ddb/ddb.sh'
 alias ccd='~/dotfiles/scripts/claude-dashboard'
