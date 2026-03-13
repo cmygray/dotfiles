@@ -11,17 +11,7 @@ link() {
     echo "  $dst -> $src"
 }
 
-# Install packages
-if ! command -v brew >/dev/null 2>&1; then
-    echo "Homebrew not found, please install it first"
-    exit 1
-fi
-
-brew update
-brew bundle --file="$DOTFILES/Brewfile"
-brew cleanup
-
-# Symlinks
+# Symlinks (run before Homebrew — safe over SSH without Homebrew)
 echo "Linking dotfiles..."
 link .zshrc             "$HOME/.zshrc"
 link .zshenv            "$HOME/.zshenv"
@@ -36,6 +26,7 @@ link zed/keymap.json    "$HOME/.config/zed/keymap.json"
 link zed/settings.json  "$HOME/.config/zed/settings.json"
 link karabiner/karabiner.json "$HOME/.config/karabiner/karabiner.json"
 link zellij/config.kdl       "$HOME/.config/zellij/config.kdl"
+link scripts/pbcopy          "$HOME/.local/bin/pbcopy"
 
 echo "Linking Claude Code settings..."
 mkdir -p "$HOME/.claude"
@@ -49,6 +40,16 @@ link claude/skills         "$HOME/.claude/skills"
 echo "Configuring git filters..."
 git -C "$DOTFILES" config filter.strip-claude-model.clean "jq 'del(.model)'"
 git -C "$DOTFILES" config filter.strip-claude-model.smudge "cat"
+
+# Install packages
+if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew not found, please install it first"
+    exit 1
+fi
+
+brew update
+brew bundle --file="$DOTFILES/Brewfile"
+brew cleanup
 
 # Install pipx packages
 if command -v pipx >/dev/null 2>&1; then
