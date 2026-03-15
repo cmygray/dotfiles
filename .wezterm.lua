@@ -191,6 +191,7 @@ return {
 	window_decorations = "RESIZE",
 	default_cwd = wezterm.home_dir,
 	color_scheme = "nord",
+	send_composed_key_when_right_alt_is_pressed = false,
 
 font = wezterm.font_with_fallback({
 		"JetBrainsMono NF",
