@@ -4,6 +4,19 @@ vim.g.mapleader = " "
 -- Setup lazy.nvim
 require("config.lazy")
 
+-- OSC 52 clipboard (works over SSH/Zellij/tmux via terminal)
+vim.g.clipboard = {
+	name = "OSC 52",
+	copy = {
+		["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+		["*"] = require("vim.ui.clipboard.osc52").copy("*"),
+	},
+	paste = {
+		["+"] = require("vim.ui.clipboard.osc52").paste("+"),
+		["*"] = require("vim.ui.clipboard.osc52").paste("*"),
+	},
+}
+
 -- General settings
 vim.cmd("set encoding=utf-8")
 vim.cmd("set title")
