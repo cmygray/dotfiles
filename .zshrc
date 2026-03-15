@@ -136,6 +136,17 @@ alias awsprod="aws-vault exec classting-prod --no-session"
 alias cc="claude --dangerously-skip-permissions"
 alias ccr="claude --dangerously-skip-permissions --resume"
 alias ccc="claude --dangerously-skip-permissions --continue"
+alias zj=zellij
+
+# =====================================================================
+# SSH Session
+# =====================================================================
+
+# Unlock macOS login keychain for CLI tools (gh, claude, etc.)
+if [[ -n "$SSH_CONNECTION" && -z "$KEYCHAIN_UNLOCKED" ]]; then
+    security unlock-keychain ~/Library/Keychains/login.keychain-db
+    export KEYCHAIN_UNLOCKED=true
+fi
 
 # =====================================================================
 # Tool Initialization
@@ -178,3 +189,4 @@ alias lock='swift ~/dotfiles/scripts/lock-screen.swift'
 alias ddb='~/dotfiles/scripts/ddb/ddb.sh'
 alias ccd='~/dotfiles/scripts/claude-dashboard'
 alias ccf='~/dotfiles/scripts/claude-session-finder'
+alias codex='codex --no-alt-screen'
