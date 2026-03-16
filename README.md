@@ -47,7 +47,7 @@ cd ~/dotfiles
 Claude Code `settings.json`에서 `model` 필드를 커밋 시 자동 제거합니다.
 
 ```
-filter.strip-claude-model.clean = jq 'del(.model)'
+filter.strip-claude-local.clean = jq 'del(.model, .effortLevel)'
 ```
 
 ## TODO

@@ -38,8 +38,8 @@ link claude/skills         "$HOME/.claude/skills"
 
 # Git filters (dotfiles repo)
 echo "Configuring git filters..."
-git -C "$DOTFILES" config filter.strip-claude-model.clean "jq 'del(.model)'"
-git -C "$DOTFILES" config filter.strip-claude-model.smudge "cat"
+git -C "$DOTFILES" config filter.strip-claude-local.clean "jq 'del(.model, .effortLevel)'"
+git -C "$DOTFILES" config filter.strip-claude-local.smudge "cat"
 
 # Install packages
 if ! command -v brew >/dev/null 2>&1; then

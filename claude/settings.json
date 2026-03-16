@@ -67,9 +67,7 @@
   },
   "language": "Korean",
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
-  "voiceEnabled": true,
   "skipDangerousModePermissionPrompt": true,
   "autoCompact": false,
   "feedbackSurveyState": {
