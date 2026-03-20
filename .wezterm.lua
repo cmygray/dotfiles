@@ -156,6 +156,8 @@ local keys = {
 	{ key = "s", mods = "LEADER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
 	{ key = "T", mods = "LEADER", action = wezterm.action.ActivateTabRelative(-1) },
 	{ key = "t", mods = "LEADER", action = wezterm.action.ActivateTabRelative(1) },
+	{ key = "h", mods = "SUPER|ALT", action = wezterm.action.ActivateTabRelative(-1) },
+	{ key = "l", mods = "SUPER|ALT", action = wezterm.action.ActivateTabRelative(1) },
 	{ key = "<", mods = "LEADER", action = act.MoveTabRelative(-1) },
 	{ key = ">", mods = "LEADER", action = act.MoveTabRelative(1) },
 	{
