@@ -74,7 +74,8 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 
-source $(brew --prefix)/opt/zsh-vi-mode/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
+# Kaku forces emacs mode and its line-pre-redraw hook conflicts with zvm
+[[ "${TERM_PROGRAM:-}" != "Kaku" ]] && source $(brew --prefix)/opt/zsh-vi-mode/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 
 # User configuration
 
@@ -190,3 +191,12 @@ alias ddb='~/dotfiles/scripts/ddb/ddb.sh'
 alias ccd='~/dotfiles/scripts/claude-dashboard'
 alias ccf='~/dotfiles/scripts/claude-session-finder'
 alias codex='codex --no-alt-screen'
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/classting-won/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/classting-won/Downloads/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/classting-won/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/classting-won/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
+
+[[ ":$PATH:" != *":$HOME/.config/kaku/zsh/bin:"* ]] && export PATH="$HOME/.config/kaku/zsh/bin:$PATH" # Kaku PATH Integration
+[[ "${TERM_PROGRAM:-}" == "Kaku" && -f "$HOME/.config/kaku/zsh/kaku.zsh" ]] && source "$HOME/.config/kaku/zsh/kaku.zsh" # Kaku Shell Integration
