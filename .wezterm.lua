@@ -90,17 +90,6 @@ local resume_worktree = wezterm.action_callback(function(window, pane)
 	}), pane)
 end)
 
--- Action: Prompt for tab name, then spawn tab with that name
-local prompt_and_spawn_tab = act.PromptInputLine({
-	description = "Enter tab name:",
-	action = wezterm.action_callback(function(window, pane, line)
-		if line and line ~= "" then
-			local tab, _, _ = window:mux_window():spawn_tab({ cwd = wezterm.home_dir })
-			tab:set_title(line)
-		end
-	end),
-})
-
 -- Event: Strip close button from fancy tab bar
 wezterm.on("format-tab-title", function(tab)
 	local title = tab.tab_title
@@ -110,40 +99,13 @@ wezterm.on("format-tab-title", function(tab)
 	return " " .. title .. " "
 end)
 
--- Event: When clicking the + button in tab bar
-wezterm.on("new-tab-button-click", function(window, pane, button, default_action)
-	if button == "Left" then
-		window:perform_action(prompt_and_spawn_tab, pane)
-		return false -- prevent default action (avoid duplicate tab)
-	end
-end)
-
--- Event: When GUI first starts, prompt for initial tab name
-wezterm.on("gui-startup", function(cmd)
-	local tab, pane, window = mux.spawn_window(cmd or {})
-	-- Use a slight delay to ensure window is ready
-	wezterm.time.call_after(0.1, function()
-		window:gui_window():perform_action(
-			act.PromptInputLine({
-				description = "Enter tab name:",
-				action = wezterm.action_callback(function(win, p, line)
-					if line and line ~= "" then
-						win:active_tab():set_title(line)
-					end
-				end),
-			}),
-			pane
-		)
-	end)
-end)
-
 
 local keys = {
 	{ key = "Enter", mods = "ALT", action = wezterm.action.DisableDefaultAssignment },
 	-- New window from home directory (CMD + n)
 	{ key = "n", mods = "SUPER", action = act.SpawnCommandInNewWindow({ cwd = wezterm.home_dir }) },
 	-- New tab with name prompt (LEADER + c or CMD + t)
-	{ key = "t", mods = "SUPER|SHIFT", action = prompt_and_spawn_tab },
+	{ key = "t", mods = "SUPER|SHIFT", action = act.SpawnTab("CurrentPaneDomain") },
 	{ key = "t", mods = "SUPER", action = claude_tab },
 	-- Resume existing worktree (CMD + SHIFT + r)
 	{ key = "r", mods = "SUPER|SHIFT", action = resume_worktree },
