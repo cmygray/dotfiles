@@ -208,7 +208,6 @@ return {
 	show_new_tab_button_in_tab_bar = false,
 	tab_bar_at_bottom = true,
 	show_tab_index_in_tab_bar = false,
-	show_close_tab_button_in_tabs = false,
 	enable_scroll_bar = false,
 	window_padding = { left = 0, right = 0, top = 0, bottom = 0 },
 
