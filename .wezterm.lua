@@ -101,6 +101,15 @@ local prompt_and_spawn_tab = act.PromptInputLine({
 	end),
 })
 
+-- Event: Strip close button from fancy tab bar
+wezterm.on("format-tab-title", function(tab)
+	local title = tab.tab_title
+	if #title == 0 then
+		title = tab.active_pane.title
+	end
+	return " " .. title .. " "
+end)
+
 -- Event: When clicking the + button in tab bar
 wezterm.on("new-tab-button-click", function(window, pane, button, default_action)
 	if button == "Left" then
@@ -130,7 +139,6 @@ end)
 
 
 local keys = {
-	{ key = "Enter", mods = "SHIFT", action = wezterm.action({ SendString = "\x1b\r" }) },
 	{ key = "Enter", mods = "ALT", action = wezterm.action.DisableDefaultAssignment },
 	-- New window from home directory (CMD + n)
 	{ key = "n", mods = "SUPER", action = act.SpawnCommandInNewWindow({ cwd = wezterm.home_dir }) },
@@ -152,8 +160,8 @@ local keys = {
 			end),
 		}),
 	},
-	{ key = "v", mods = "LEADER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
-	{ key = "s", mods = "LEADER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
+	{ key = "r", mods = "LEADER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+	{ key = "d", mods = "LEADER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
 	{ key = "T", mods = "LEADER", action = wezterm.action.ActivateTabRelative(-1) },
 	{ key = "t", mods = "LEADER", action = wezterm.action.ActivateTabRelative(1) },
 	{ key = "h", mods = "SUPER|ALT", action = wezterm.action.ActivateTabRelative(-1) },
@@ -168,13 +176,13 @@ local keys = {
 		end),
 	},
 	{
-		key = "d",
+		key = "x",
 		mods = "LEADER",
 		action = act.CloseCurrentPane({ confirm = true }),
 	},
 	{
-		key = "r",
-		mods = "LEADER",
+		key = "R",
+		mods = "LEADER|SHIFT",
 		action = act.ActivateKeyTable({ name = "resize_pane", one_shot = false, replace_current = true }),
 	},
 	{ key = "Escape", mods = "LEADER", action = "PopKeyTable" },
@@ -190,10 +198,19 @@ end
 
 return {
 	automatically_reload_config = true,
+	enable_kitty_keyboard = true,
 	window_decorations = "RESIZE",
 	default_cwd = wezterm.home_dir,
 	color_scheme = "nord",
 	send_composed_key_when_right_alt_is_pressed = false,
+	hide_tab_bar_if_only_one_tab = true,
+	use_fancy_tab_bar = true,
+	show_new_tab_button_in_tab_bar = false,
+	tab_bar_at_bottom = true,
+	show_tab_index_in_tab_bar = false,
+	show_close_tab_button_in_tabs = false,
+	enable_scroll_bar = false,
+	window_padding = { left = 0, right = 0, top = 0, bottom = 0 },
 
 font = wezterm.font_with_fallback({
 		"JetBrainsMono NF",
@@ -218,6 +235,15 @@ font = wezterm.font_with_fallback({
 			{ key = "j", action = act.AdjustPaneSize({ "Down", 1 }) },
 			{ key = "k", action = act.AdjustPaneSize({ "Up", 1 }) },
 			{ key = "l", action = act.AdjustPaneSize({ "Right", 1 }) },
+		},
+	},
+
+	ssh_domains = {
+		{
+			name = "SSHMUX:home",
+			remote_address = "home",
+			username = "won",
+			remote_wezterm_path = "/opt/homebrew/bin/wezterm",
 		},
 	},
 

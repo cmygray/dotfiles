@@ -38,7 +38,7 @@ ZSH_THEME="robbyrussell"
 # DISABLE_LS_COLORS="true"
 
 # Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
+DISABLE_AUTO_TITLE="true"
 
 # Uncomment the following line to enable command auto-correction.
 # ENABLE_CORRECTION="true"
@@ -73,9 +73,6 @@ ZSH_THEME="robbyrussell"
 plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
-
-# Kaku forces emacs mode and its line-pre-redraw hook conflicts with zvm
-[[ "${TERM_PROGRAM:-}" != "Kaku" ]] && source $(brew --prefix)/opt/zsh-vi-mode/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 
 # User configuration
 
@@ -198,5 +195,10 @@ if [ -f '/Users/classting-won/Downloads/google-cloud-sdk/path.zsh.inc' ]; then .
 # The next line enables shell command completion for gcloud.
 if [ -f '/Users/classting-won/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/classting-won/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
 
-[[ ":$PATH:" != *":$HOME/.config/kaku/zsh/bin:"* ]] && export PATH="$HOME/.config/kaku/zsh/bin:$PATH" # Kaku PATH Integration
-[[ "${TERM_PROGRAM:-}" == "Kaku" && -f "$HOME/.config/kaku/zsh/kaku.zsh" ]] && source "$HOME/.config/kaku/zsh/kaku.zsh" # Kaku Shell Integration
+# Ctrl+G: edit command line in $EDITOR (nvim)
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^G' edit-command-line
+
+# agf - AI Agent Session Finder
+eval "$(agf init zsh)"
