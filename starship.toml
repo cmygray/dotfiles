@@ -1,5 +1,5 @@
 format = """
-${nodejs}${aws}${custom.dynein}${custom.temp_env}
+${nodejs}${aws}${gcloud}${custom.dynein}${custom.temp_env}
 ${all}${jobs}${character}
 """
 
@@ -10,6 +10,9 @@ format = "[ ($profile) ($region)]($style)"
 us-east-1 = "Virginia"
 ap-northeast-2 = "Seoul"
 ap-northeast-1 = "Tokyo"
+
+[gcloud]
+format = "[ ($account)(@$domain) ($project)]($style)"
 
 [cmd_duration]
 disabled = true

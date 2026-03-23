@@ -186,6 +186,14 @@ local keys = {
 		action = act.ActivateKeyTable({ name = "resize_pane", one_shot = false, replace_current = true }),
 	},
 	{ key = "Escape", mods = "LEADER", action = "PopKeyTable" },
+	-- Jump to next Claude notification (Leader + ')
+	{
+		key = "'",
+		mods = "LEADER",
+		action = wezterm.action_callback(function()
+			wezterm.run_child_process({ "/bin/bash", "-l", wezterm.home_dir .. "/dotfiles/claude/jump-to-notification.sh" })
+		end),
+	},
 }
 
 for i = 1, 9 do

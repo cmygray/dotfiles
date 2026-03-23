@@ -271,6 +271,7 @@ plugins {
 // eg. "file:/path/to/my-plugin.wasm"
 // eg. "https://example.com/my-plugin.wasm"
 load_plugins {
+    "file:~/dotfiles/zellij/plugins/zellij-focus/target/wasm32-wasip1/release/zellij-focus.wasm"
 }
 web_client {
     font "monospace"

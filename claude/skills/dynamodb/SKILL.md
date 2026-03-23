@@ -2,7 +2,7 @@
 name: dynamodb
 model: sonnet
 description: DynamoDB 자연어 조회. "DynamoDB에서 조회", "테이블 확인", "dynamodb", "ddb" 등의 요청에 반응.
-allowed-tools: Bash(dy *), Bash(aws-vault exec * -- dy *), Bash(aws-vault list), Read, Glob, Grep
+allowed-tools: Bash(dy get *), Bash(dy query *), Bash(dy scan *), Bash(dy list *), Bash(dy desc *), Bash(dy help *), Bash(dy * --help), Bash(aws-vault exec * -- dy get *), Bash(aws-vault exec * -- dy query *), Bash(aws-vault exec * -- dy scan *), Bash(aws-vault exec * -- dy list *), Bash(aws-vault exec * -- dy desc *), Bash(aws-vault list), Read, Glob, Grep
 ---
 
 # DynamoDB 자연어 조회
@@ -22,6 +22,7 @@ allowed-tools: Bash(dy *), Bash(aws-vault exec * -- dy *), Bash(aws-vault list),
 |------|-----------|------|
 | dev  | `aws-vault exec classting-dev` | 개발 환경 |
 | stag | `aws-vault exec classting-stag` | 스테이징 환경 |
+| prod | `aws-vault exec classting-prod` | 운영 환경 |
 
 사용자가 환경을 명시하지 않으면 반드시 확인할 것.
 
@@ -55,16 +56,30 @@ dy scan -t <table> [--limit N]
 
 put, del, upd, bwrite, admin, bootstrap, import, export, backup, restore — 쓰기/관리 명령은 절대 실행하지 않는다.
 
-## dy 주요 옵션
+## dy 서브커맨드별 옵션
 
+### 공통 옵션
 - `-t, --table <name>` — 테이블명 (필수)
-- `<pk>` — 파티션 키 값 (query/get의 **위치 인자**)
+- `<pk>` — 파티션 키 값 (위치 인자)
+- `-o, --output <format>` — 출력 형식 (json, yaml, raw)
+
+### dy get 옵션
+- `[sk]` — 소트 키 값 (위치 인자)
+- `--consistent-read` — 강력한 일관된 읽기
+- **주의: `-a`/`--attributes` 미지원. 전체 아이템이 반환됨.**
+
+### dy query 옵션
 - `-s, --sort-key <expr>` — 소트 키 조건 (예: `'begins_with Contract#'`, `'= Member#abc'`)
 - `-i, --index <name>` — GSI 이름 (예: gsi-1, GSI1)
-- `-a, --attributes <cols>` — 출력할 속성 (쉼표 구분)
+- `-a, --attributes <cols>` — 출력할 속성 (쉼표 구분, **query 전용**)
 - `--keys-only` — PK/SK만 출력
 - `--filter <expression>` — 필터 표현식
 - `--limit <N>` — 결과 수 제한
+
+### dy upd 옵션 (쓰기 — 에이전트 직접 실행 차단, 명령어 제시용)
+- `--set <expr>` — 속성 수정/추가 (예: `--set 'name = "Alice"'`)
+- `--remove <attrs>` — 속성 제거 (예: `--remove 'Category, Rank'`)
+- `--atomic-counter <attr>` — 숫자 속성 +1 증가
 
 ## 테이블명 패턴
 
