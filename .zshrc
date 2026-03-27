@@ -125,6 +125,9 @@ export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
 # PATH additions
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.config/git-fuzzy/bin:$HOME/.local/bin:$HOME/dotfiles/scripts:$HOME/.bun/bin:$PATH"
 
+# GitHub Packages authentication (via gh CLI)
+export GITHUB_TOKEN=$(gh auth token)
+
 # Chamber (AWS SSM)
 export CHAMBER_KMS_KEY_ALIAS="aws/ssm"
 
@@ -191,6 +194,12 @@ alias ddb='~/dotfiles/scripts/ddb/ddb.sh'
 alias ccd='~/dotfiles/scripts/claude-dashboard'
 alias ccf='~/dotfiles/scripts/claude-session-finder'
 alias codex='codex --no-alt-screen'
+
+# Ctrl+G: edit command line in $EDITOR (nvim)
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^G' edit-command-line
+
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/classting-won/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/classting-won/Downloads/google-cloud-sdk/path.zsh.inc'; fi
