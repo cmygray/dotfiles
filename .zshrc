@@ -74,8 +74,6 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 
-# Kaku forces emacs mode and its line-pre-redraw hook conflicts with zvm
-[[ "${TERM_PROGRAM:-}" != "Kaku" ]] && source $(brew --prefix)/opt/zsh-vi-mode/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 
 # User configuration
 
