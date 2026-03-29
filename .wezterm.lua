@@ -6,6 +6,7 @@ local WORKSPACE = os.getenv("WORKSPACE") or (wezterm.home_dir .. "/Workspace")
 local CLAUDE = wezterm.home_dir .. "/.local/bin/claude"
 
 -- Action: Select project → enter task name → spawn Claude worktree session
+-- Task name을 비우면 worktree 없이 일반 세션으로 시작
 local claude_tab = wezterm.action_callback(function(window, pane)
 	local choices = {}
 	local handle = io.popen('ls -1 "' .. WORKSPACE .. '"')
@@ -25,18 +26,24 @@ local claude_tab = wezterm.action_callback(function(window, pane)
 		action = wezterm.action_callback(function(win, p, id, label)
 			if not id then return end
 			win:perform_action(act.PromptInputLine({
-				description = "Task name (e.g. fix-login-bug):",
+				description = "Task name (empty = shell only):",
 				action = wezterm.action_callback(function(win2, p2, line)
-					if not line or line == "" then return end
+					if not line then return end
 					local project_dir = WORKSPACE .. "/" .. id
-					local cmd = "cd " .. wezterm.shell_quote_arg(project_dir)
-						.. " && " .. wezterm.shell_quote_arg(CLAUDE)
-						.. " --dangerously-skip-permissions --worktree " .. wezterm.shell_quote_arg(line)
-					local tab, _, _ = win2:mux_window():spawn_tab({
-						cwd = project_dir,
-						args = { "zsh", "-lic", cmd },
-					})
-					tab:set_title(line)
+					if line == "" then
+						local tab, _, _ = win2:mux_window():spawn_tab({ cwd = project_dir })
+						tab:set_title(id)
+					else
+						local cmd = "cd " .. wezterm.shell_quote_arg(project_dir)
+							.. " && " .. wezterm.shell_quote_arg(CLAUDE)
+							.. " --dangerously-skip-permissions"
+							.. " --worktree " .. wezterm.shell_quote_arg(line)
+						local tab, _, _ = win2:mux_window():spawn_tab({
+							cwd = project_dir,
+							args = { "zsh", "-lic", cmd },
+						})
+						tab:set_title(line)
+					end
 				end),
 			}), p)
 		end),

@@ -18,16 +18,7 @@
     "UserPromptSubmit": [
       {
         "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh -c '$HOME/dotfiles/claude/hooks/worktree-branch-rename.sh'"
-          },
-          {
-            "type": "command",
-            "command": "sh -c '$HOME/dotfiles/claude/hooks/zellij-worktree-pane.sh'"
-          }
-        ]
+        "hooks": []
       }
     ],
     "PreToolUse": [

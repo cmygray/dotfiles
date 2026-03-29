@@ -271,7 +271,6 @@ plugins {
 // eg. "file:/path/to/my-plugin.wasm"
 // eg. "https://example.com/my-plugin.wasm"
 load_plugins {
-    "file:~/dotfiles/zellij/plugins/zellij-focus/target/wasm32-wasip1/release/zellij-focus.wasm"
 }
 web_client {
     font "monospace"
@@ -452,7 +451,7 @@ web_client {
 // (Requires restart)
 // Default: true (if the host terminal supports it)
 // 
-// support_kitty_keyboard_protocol false
+support_kitty_keyboard_protocol false
 // Whether to make sure a local web server is running when a new Zellij session starts.
 // This web server will allow creating new sessions and attaching to existing ones that have
 // opted in to being shared in the browser.

@@ -193,7 +193,7 @@ alias lock='swift ~/dotfiles/scripts/lock-screen.swift'
 alias ddb='~/dotfiles/scripts/ddb/ddb.sh'
 alias ccd='~/dotfiles/scripts/claude-dashboard'
 alias ccf='~/dotfiles/scripts/claude-session-finder'
-alias codex='codex --no-alt-screen'
+alias codex='codex --no-alt-screen --dangerously-bypass-approvals-and-sandbox'
 
 # Ctrl+G: edit command line in $EDITOR (nvim)
 autoload -Uz edit-command-line
