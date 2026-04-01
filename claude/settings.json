@@ -1,7 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "FIGMA_TOKEN": "__REDACTED__",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "ANTHROPIC_API_KEY": "__REDACTED__"
   },
   "hooks": {
     "Notification": [
@@ -18,7 +20,12 @@
     "UserPromptSubmit": [
       {
         "matcher": "",
-        "hooks": []
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c '$HOME/dotfiles/claude/hooks/log-english-prompt.sh'"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -50,7 +57,8 @@
     "security-guidance@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "claude-hud@claude-hud": true,
-    "notion@claude-plugins-official": true
+    "notion@claude-plugins-official": true,
+    "codex@openai-codex": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -63,6 +71,12 @@
       "source": {
         "source": "github",
         "repo": "jarrodwatts/claude-hud"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
       }
     }
   },
