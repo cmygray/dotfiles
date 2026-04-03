@@ -58,7 +58,8 @@
     "typescript-lsp@claude-plugins-official": true,
     "claude-hud@claude-hud": true,
     "notion@claude-plugins-official": true,
-    "codex@openai-codex": true
+    "codex@openai-codex": true,
+    "plannotator@plannotator": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -77,6 +78,12 @@
       "source": {
         "source": "github",
         "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "plannotator": {
+      "source": {
+        "source": "github",
+        "repo": "backnotprop/plannotator"
       }
     }
   },
