@@ -58,7 +58,8 @@
     "claude-hud@claude-hud": true,
     "notion@claude-plugins-official": true,
     "codex@openai-codex": true,
-    "plannotator@plannotator": true
+    "plannotator@plannotator": true,
+    "slack@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
