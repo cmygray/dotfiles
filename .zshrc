@@ -193,6 +193,16 @@ alias ccd='~/dotfiles/scripts/claude-dashboard'
 alias ccf='~/dotfiles/scripts/claude-session-finder'
 alias codex='codex --dangerously-bypass-approvals-and-sandbox'
 
+# ccw: create claude worktree from free-text description or issue URL
+ccw() {
+  local input="${*:?usage: ccw <description or issue URL>}"
+  local name
+  name=$(cc -p "Output ONLY a valid git branch name. ASCII letters/digits/hyphens/slashes only. No backticks, no markdown, no explanation. Input: $input" --model haiku | tr -cd 'a-zA-Z0-9/_.-')
+  [[ -z "$name" ]] && echo "failed to generate branch name" && return 1
+  echo "worktree: $name"
+  cc -w "$name"
+}
+
 # Ctrl+G: edit command line in $EDITOR (nvim)
 autoload -Uz edit-command-line
 zle -N edit-command-line
