@@ -97,3 +97,4 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ### DynamoDB 조회
 - DynamoDB 조회 시 `/dynamodb` skill 사용 (dy 읽기 명령만 허용, 쓰기/aws dynamodb 직접 호출은 hook으로 차단됨)
 
+@RTK.md

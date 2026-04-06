@@ -56,10 +56,8 @@
     "security-guidance@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "claude-hud@claude-hud": true,
-    "notion@claude-plugins-official": true,
     "codex@openai-codex": true,
-    "plannotator@plannotator": true,
-    "slack@claude-plugins-official": true
+    "plannotator@plannotator": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
