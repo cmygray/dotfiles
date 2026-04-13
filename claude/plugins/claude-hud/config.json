@@ -1,0 +1,23 @@
+{
+  "lineLayout": "expanded",
+  "showSeparators": false,
+  "elementOrder": ["project", "context", "usage", "environment", "tools", "agents", "todos"],
+  "display": {
+    "showTools": true,
+    "showAgents": true,
+    "showTodos": true,
+    "showDuration": true,
+    "showConfigCounts": true,
+    "showSessionName": true,
+    "showProject": true,
+    "showTokenBreakdown": true,
+    "showUsage": true,
+    "sevenDayThreshold": 80
+  },
+  "gitStatus": {
+    "enabled": true,
+    "showDirty": true,
+    "showAheadBehind": false,
+    "showFileStats": true
+  }
+}
