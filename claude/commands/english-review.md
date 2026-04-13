@@ -3,7 +3,7 @@ Review the user's recent English prompts logged in `~/.claude/english-prompts.lo
 ## Output destination
 
 Append the review to a single Obsidian note:
-- Path: `/Users/classting-won/Library/Mobile Documents/iCloud~md~obsidian/Documents/English Reviews.md`
+- Path: `/Users/classting-won/Library/Mobile Documents/iCloud~md~obsidian/Documents/agent/English Reviews.md`
 - If the file doesn't exist, create it with the header `# English Reviews`.
 - Append each review session as a new date section at the end of the file.
 

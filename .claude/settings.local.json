@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Notion__notion-fetch",
+      "Bash(mkdir -p /Users/classting-won/dotfiles/claude/plugins/claude-hud)",
+      "Bash(cp ~/.claude/plugins/claude-hud/config.json /Users/classting-won/dotfiles/claude/plugins/claude-hud/config.json)",
+      "Bash(rm ~/.claude/plugins/claude-hud/config.json)",
+      "Bash(ln -s /Users/classting-won/dotfiles/claude/plugins/claude-hud/config.json ~/.claude/plugins/claude-hud/config.json)"
+    ]
+  }
+}

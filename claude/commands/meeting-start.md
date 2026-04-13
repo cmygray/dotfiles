@@ -8,24 +8,40 @@
 - 회의 주제와 목표
 - 참고할 컨텍스트 (파일 경로, 링크, 또는 구두 설명)
 - 회의에서 다뤄야 할 안건이 있다면 공유 요청
+- 종료 후 공유할 Slack 채널 (예: `#proj-writing`. 없으면 생략 가능)
 
 컨텍스트가 파일이면 읽어서 내용을 파악하세요. 링크라면 WebFetch로 가져오세요.
 
-## 2단계: ttstt-meeting 실행
+Slack 채널을 받은 경우, 즉시 `slack_search_channels`로 채널 ID를 조회해 기억해두세요. 종료 시 지연을 방지하기 위해 이 단계에서 미리 확보합니다.
 
-회의 시작이 확정되면 아래 커맨드를 **백그라운드**로 실행하세요:
+## 2단계: 회의 모드 시작
+
+회의 시작이 확정되면 실행 중인 tst 앱에 SIGUSR1 신호를 보내 회의 모드를 토글하세요:
 
 ```
-uv run ttstt-meeting
+kill -USR1 $(cat /tmp/tst.lock)
 ```
 
-실행 시 stdout에 출력되는 정보를 기록하세요:
-- `출력:` 뒤의 파일 경로 → 전사 파일 경로 (예: `~/.local/share/ttstt/meetings/2026-04-03_140000.md`)
-- `PID:` 뒤의 숫자 → 종료 시 사용
+신호 전송 후 1~2초 대기한 뒤, 전사 파일 경로를 탐지하세요:
+```
+ls -t ~/Library/Application\ Support/tst/meetings/*.md | head -1
+```
 
-전사 파일 경로에서 디렉토리와 타임스탬프를 추출하여 라이브 노트 경로를 결정하세요:
-- 전사 파일: `<meetings_dir>/<timestamp>.md`
-- 라이브 노트: `<meetings_dir>/<timestamp>_notes.md`
+그 다음 `meeting_notes_live.md`를 초기화하세요. Write 도구 사용 전 Read가 필요하므로, 파일 존재 여부와 무관하게 Read를 먼저 실행한 뒤 새 내용으로 덮어씁니다.
+
+### mdgate 연동 (optional)
+
+tst-meeting이 시작되고 전사 파일 경로를 확보한 뒤, mdgate가 설치되어 있으면 라이브 노트를 모바일에서 볼 수 있도록 서빙합니다.
+
+1. mdgate 존재 여부 확인: `which mdgate`
+2. 있으면 전사 파일과 라이브 노트를 `--share` 옵션으로 서빙 (zrok 공개 URL 생성):
+   ```
+   mdgate --share <전사 파일 경로>
+   mdgate --share meeting_notes_live.md
+   ```
+   mdgate 서버가 이미 실행 중이면 자동으로 파일만 등록됩니다 (register API).
+3. 출력된 zrok URL을 사용자에게 안내 (인터넷 어디서든 접근 가능)
+4. mdgate가 없으면 스킵하고, 사용자에게 "mdgate가 설치되면 모바일에서 라이브 노트를 볼 수 있습니다"라고 간단히 안내
 
 ## 3단계: 모니터링 & 라이브 노트 작성
 
@@ -34,9 +50,9 @@ uv run ttstt-meeting
 새 청크가 감지되면:
 1. 전사 내용을 분석
 2. 대화 컨텍스트(1단계에서 파악한 정보)를 참조하여 관련 정보 매칭
-3. 라이브 노트 마크다운 파일을 작성/갱신 (전사 파일과 같은 디렉토리)
+3. 라이브 노트 마크다운 파일을 프로젝트 루트에 작성/갱신
 
-라이브 노트 파일: 전사 파일과 같은 디렉토리에 `<timestamp>_notes.md` 형식으로 생성
+라이브 노트 파일: `meeting_notes_live.md`
 
 라이브 노트 형식:
 ```markdown
@@ -63,9 +79,39 @@ uv run ttstt-meeting
 ## 4단계: 회의 종료
 
 사용자가 회의 종료를 요청하면:
-1. ttstt-meeting 프로세스를 종료: `kill <PID>`
+1. SIGUSR1 신호를 다시 보내 회의 모드 종료: `kill -USR1 $(cat /tmp/tst.lock)`
 2. 마지막 전사 파일을 읽고 남은 청크 처리
 3. 라이브 노트에 회의 종료 시각과 전체 요약 추가
+4. 전사본과 라이브 노트를 Obsidian으로 보존:
+   - 파일명 패턴: `<YYYY-MM-DD>-meeting-<주제-kebab-case>.md` (예: `2026-04-01-meeting-eng-biweekly.md`)
+   - 저장 경로: `$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/wiki/raw/transcripts/`
+   - **전사본** (`<timestamp>.md`): 아래 프론트매터 삽입 후 저장
+   - **라이브 노트** (`meeting_notes_live.md`): 아래 프론트매터 삽입 후 저장 (파일명에 `-notes` suffix)
+   - 프론트매터 형식:
+     ```yaml
+     ---
+     title: "<회의 주제>"
+     created: <YYYY-MM-DD>
+     updated: <YYYY-MM-DD>
+     type: transcript
+     tags: [transcript, meeting]
+     source: meeting
+     language: ko
+     speakers: [won]
+     audio_file:
+     canonical_path: raw/transcripts/<파일명>
+     status: raw
+     summary_page:
+     related_pages: []
+     ---
+     ```
+5. 1단계에서 Slack 채널을 받았으면, 라이브 노트 요약을 해당 채널에 공유 (slack_send_message MCP 도구 사용):
+   ```
+   *[회의 주제]* 회의록
+   • 주요 논의: (핵심 내용 2~3줄)
+   • Obsidian: raw/transcripts/<파일명>
+   ```
+6. mdgate가 실행 중이었으면 `mdgate --stop`으로 종료
 
 ## 주의사항
 
