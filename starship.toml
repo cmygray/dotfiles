@@ -1,5 +1,5 @@
 format = """
-${nodejs}${aws}${gcloud}${custom.dynein}${custom.temp_env}
+${nodejs}${aws}${gcloud}${custom.dynein}${custom.temp_env}${custom.zlqhem}
 ${all}${jobs}${character}
 """
 
@@ -36,3 +36,9 @@ command = "$env.temp"
 format = " [$output]($style)"
 when = "$env.temp? != null"
 style = "gray"
+
+[custom.zlqhem]
+command = "echo '[키]'"
+format = " [$output]($style)"
+when = "[ \"$ZLQHEM_ACTIVE\" = \"1\" ]"
+style = "bold green"

@@ -95,6 +95,10 @@ remindctl list "Today-Personal" --json
 
 섹션 구분 후 번호 부여. **번호는 미완료 항목에만** 부여 (업무 → 개인 순, 전체 통합). 완료 항목은 섹션 하단에 구분선 후 나열.
 
+필터링 규칙:
+- **미완료** (`isCompleted: false`): 전부 표시
+- **완료** (`isCompleted: true`): `completionDate`가 오늘인 것만 표시 (이전 날 완료 항목 제외)
+
 ```
 오늘의 할 일 (완료 N / 전체 M)
 
