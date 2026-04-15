@@ -14,6 +14,8 @@ prSections:
     layout:
       author:
         hidden: true
+  - title: Review Requested
+    filters: is:open review-requested:@me
   - title: Merged
     filters: is:merged author:@me sort:updated
     limit: 10
