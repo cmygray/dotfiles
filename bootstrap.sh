@@ -35,6 +35,7 @@ link claude/CLAUDE.md      "$HOME/.claude/CLAUDE.md"
 link claude/agents         "$HOME/.claude/agents"
 link claude/commands       "$HOME/.claude/commands"
 link claude/skills         "$HOME/.claude/skills"
+link claude/rules          "$HOME/.claude/rules"
 
 # Git filters (dotfiles repo)
 echo "Configuring git filters..."
