@@ -114,6 +114,7 @@
   "language": "Korean",
   "alwaysThinkingEnabled": true,
   "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "autoCompact": false,
   "feedbackSurveyState": {
