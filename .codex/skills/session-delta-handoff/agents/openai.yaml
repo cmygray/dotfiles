@@ -1,0 +1,4 @@
+interface:
+  display_name: "Session Delta Handoff"
+  short_description: "Export post-eject delta context with clipboard fallback"
+  default_prompt: "Use $session-delta-handoff to collect only new context since the last eject and prepare a paste-ready handoff message."
