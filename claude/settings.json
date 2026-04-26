@@ -120,5 +120,7 @@
   "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
-  }
+  },
+  "editorMode": "vim",
+  "autoCompactEnabled": false
 }
