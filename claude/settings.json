@@ -114,8 +114,9 @@
   "language": "Korean",
   "alwaysThinkingEnabled": true,
   "autoUpdatesChannel": "latest",
-  "tui": "fullscreen",
+  "tui": "default",
   "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
   "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
