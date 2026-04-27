@@ -1,0 +1,29 @@
+font-family = JetBrainsMono NF
+font-family = JetBrains Mono
+font-size = 12
+macos-option-as-alt = true
+
+keybind = alt+enter=ignore
+keybind = super+n=new_window
+keybind = super+shift+t=new_tab
+keybind = super+alt+h=previous_tab
+keybind = super+alt+l=next_tab
+
+# Leader: ctrl+'
+keybind = ctrl+apostrophe>r=new_split:right
+keybind = ctrl+apostrophe>d=new_split:down
+keybind = ctrl+apostrophe>shift+t=previous_tab
+keybind = ctrl+apostrophe>t=next_tab
+keybind = ctrl+apostrophe>shift+comma=move_tab:-1
+keybind = ctrl+apostrophe>shift+period=move_tab:1
+keybind = ctrl+apostrophe>x=close_surface
+
+keybind = ctrl+apostrophe>1=move_tab:0
+keybind = ctrl+apostrophe>2=move_tab:1
+keybind = ctrl+apostrophe>3=move_tab:2
+keybind = ctrl+apostrophe>4=move_tab:3
+keybind = ctrl+apostrophe>5=move_tab:4
+keybind = ctrl+apostrophe>6=move_tab:5
+keybind = ctrl+apostrophe>7=move_tab:6
+keybind = ctrl+apostrophe>8=move_tab:7
+keybind = ctrl+apostrophe>9=move_tab:8

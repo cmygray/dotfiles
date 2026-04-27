@@ -26,6 +26,7 @@ link zed/keymap.json    "$HOME/.config/zed/keymap.json"
 link zed/settings.json  "$HOME/.config/zed/settings.json"
 link karabiner/karabiner.json "$HOME/.config/karabiner/karabiner.json"
 link zellij/config.kdl       "$HOME/.config/zellij/config.kdl"
+link ghostty/config          "$HOME/.config/ghostty/config"
 link scripts/pbcopy          "$HOME/.local/bin/pbcopy"
 
 echo "Linking Claude Code settings..."
