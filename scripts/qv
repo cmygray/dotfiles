@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: qv [--cwd DIR] [--] [NVIM_ARGS...]
+
+Open Neovim in a temporary Ghostty window, blocking until Neovim exits.
+Intended for Claude Code / Codex shell escapes:
+
+  !qv
+  !qv path/to/file
+
+Environment:
+  QV_EDITOR=command                 Editor command. Default: nvim.
+EOF
+}
+
+if [[ "${QV_GHOSTTY_CHILD:-}" == "1" ]]; then
+  : "${QV_DONE_FILE:?}"
+  : "${QV_RC_FILE:?}"
+  : "${QV_PID_FILE:?}"
+  : "${QV_ROOT:?}"
+  : "${QV_CHILD_EDITOR:?}"
+  : "${QV_ARGS_FILE:?}"
+
+  printf "%s\n" "$$" > "$QV_PID_FILE"
+
+  child_args=()
+  while IFS= read -r -d '' arg; do
+    child_args+=("$arg")
+  done < "$QV_ARGS_FILE"
+
+  cd "$QV_ROOT" || exit 1
+  set +e
+  "$QV_CHILD_EDITOR" "${child_args[@]}"
+  rc=$?
+  set -e
+  printf "%s\n" "$rc" > "$QV_RC_FILE"
+  printf done > "$QV_DONE_FILE"
+  exit "$rc"
+fi
+
+root="${QV_CWD:-${VVIM_CWD:-$PWD}}"
+editor="${QV_EDITOR:-${VVIM_EDITOR:-nvim}}"
+editor_args=()
+
+while (($#)); do
+  case "$1" in
+    --ghostty)
+      shift
+      ;;
+    --cwd)
+      [[ $# -ge 2 ]] || {
+        echo "qv: --cwd requires a directory" >&2
+        exit 2
+      }
+      root="$2"
+      shift 2
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      editor_args+=("$@")
+      break
+      ;;
+    *)
+      editor_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+[[ ${#editor_args[@]} -gt 0 ]] || editor_args=(".")
+
+if [[ ! -d "$root" ]]; then
+  echo "qv: cwd does not exist: $root" >&2
+  exit 2
+fi
+
+if [[ "$editor" != */* ]]; then
+  resolved_editor="$(command -v "$editor" || true)"
+  if [[ -n "$resolved_editor" ]]; then
+    editor="$resolved_editor"
+  fi
+fi
+
+run_ghostty() {
+  command -v osascript >/dev/null 2>&1 || return 127
+  [[ -d /Applications/Ghostty.app ]] || return 127
+
+  local tmpdir runner done_file rc_file pid_file args_file window_id self
+  tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/qv.XXXXXX")"
+  done_file="$tmpdir/done"
+  rc_file="$tmpdir/rc"
+  pid_file="$tmpdir/pid"
+  args_file="$tmpdir/args"
+  window_id="$tmpdir/window_id"
+  self="${BASH_SOURCE[0]}"
+  if [[ "$self" != /* ]]; then
+    self="$(cd "$(dirname "$self")" && pwd)/$(basename "$self")"
+  fi
+  runner="$pid_file"
+
+  printf '%s\0' "${editor_args[@]}" > "$args_file"
+
+  cleanup_ghostty_runner() {
+    local pid
+    if [[ -s "$pid_file" ]]; then
+      pid="$(<"$pid_file")"
+      [[ -n "$pid" && "$pid" != "$$" ]] && kill "$pid" 2>/dev/null || true
+      return
+    fi
+    while IFS= read -r pid; do
+      [[ -n "$pid" ]] || continue
+      [[ "$pid" == "$$" ]] && continue
+      kill "$pid" 2>/dev/null || true
+    done < <(pgrep -f "$runner" 2>/dev/null || true)
+  }
+
+  close_ghostty_window() {
+    [[ -s "$window_id" ]] || return 0
+    osascript - "$(<"$window_id")" >/dev/null 2>&1 <<'APPLESCRIPT' || true
+on run argv
+  set targetId to item 1 of argv
+  tell application "Ghostty"
+    repeat with w in windows
+      if (id of w as text) is targetId then
+        close window w
+        return
+      end if
+    end repeat
+  end tell
+end run
+APPLESCRIPT
+  }
+
+  if ! osascript - "$root" "$self" "$done_file" "$rc_file" "$pid_file" "$editor" "$args_file" > "$window_id" <<'APPLESCRIPT'
+on run argv
+  set projectDir to item 1 of argv
+  set scriptPath to item 2 of argv
+  set doneFile to item 3 of argv
+  set rcFile to item 4 of argv
+  set pidFile to item 5 of argv
+  set editorCommand to item 6 of argv
+  set argsFile to item 7 of argv
+  tell application "Ghostty"
+    activate
+    set cfg to new surface configuration
+    set initial working directory of cfg to projectDir
+    set command of cfg to scriptPath
+    set environment variables of cfg to {"QV_GHOSTTY_CHILD=1", "QV_DONE_FILE=" & doneFile, "QV_RC_FILE=" & rcFile, "QV_PID_FILE=" & pidFile, "QV_ROOT=" & projectDir, "QV_CHILD_EDITOR=" & editorCommand, "QV_ARGS_FILE=" & argsFile}
+    set wait after command of cfg to false
+    set win to new window with configuration cfg
+    return id of win
+  end tell
+end run
+APPLESCRIPT
+  then
+    rm -rf "$tmpdir"
+    return 125
+  fi
+
+  local launched=false
+  for _ in {1..50}; do
+    [[ -f "$done_file" ]] && break
+    if [[ -s "$pid_file" ]]; then
+      launched=true
+      break
+    fi
+    sleep 0.1
+  done
+
+  if [[ "$launched" != true && ! -f "$done_file" ]]; then
+    cleanup_ghostty_runner
+    rm -rf "$tmpdir"
+    return 125
+  fi
+
+  local missing_checks=0
+  while [[ ! -f "$done_file" ]]; do
+    if [[ -s "$pid_file" ]] && kill -0 "$(<"$pid_file")" 2>/dev/null; then
+      missing_checks=0
+    else
+      ((missing_checks += 1))
+      if ((missing_checks >= 10)); then
+        cleanup_ghostty_runner
+        rm -rf "$tmpdir"
+        return 130
+      fi
+    fi
+    sleep 0.2
+  done
+
+  local rc=0
+  [[ -f "$rc_file" ]] && rc="$(<"$rc_file")"
+  close_ghostty_window
+  cleanup_ghostty_runner
+  rm -rf "$tmpdir"
+  return "$rc"
+}
+
+run_ghostty
