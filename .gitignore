@@ -20,3 +20,4 @@ scripts/**/secrets/*
 !scripts/**/secrets/*.example
 .dmux/
 .claude/worktrees
+zellij/plugins/*/target/

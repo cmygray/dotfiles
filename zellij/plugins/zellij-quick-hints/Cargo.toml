@@ -1,0 +1,14 @@
+[package]
+name = "zellij-quick-hints"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+regex = "1.12.2"
+zellij-tile = "0.44.1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"

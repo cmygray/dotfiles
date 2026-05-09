@@ -36,6 +36,13 @@ cd ~/dotfiles
 | `claude/commands/` | `~/.claude/commands/` |
 | `claude/skills/` | `~/.claude/skills/` |
 
+### 🤖 Agent helpers
+
+- `!qv`: Claude Code / Codex CLI shell escape에서 `scripts/qv`를 실행해 현재 세션 디렉터리를 Neovim으로 엽니다.
+  - 기본: AppleScript로 Ghostty에 임시 modal-like 창을 띄우고 Neovim 종료까지 대기
+  - Neovim 인자는 temp file로 전달하고, Ghostty에는 고정된 `scripts/qv`만 실행시킵니다.
+  - 설정: `QV_EDITOR=command`
+
 ### 📦 자동 설치
 
 - **Homebrew 패키지**: `Brewfile` 기반 일괄 설치
