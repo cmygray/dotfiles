@@ -27,6 +27,7 @@ link zed/settings.json  "$HOME/.config/zed/settings.json"
 link karabiner/karabiner.json "$HOME/.config/karabiner/karabiner.json"
 link zellij/config.kdl       "$HOME/.config/zellij/config.kdl"
 link ghostty/config          "$HOME/.config/ghostty/config"
+link codex/config.toml       "$HOME/.codex/config.toml"
 link scripts/pbcopy          "$HOME/.local/bin/pbcopy"
 
 echo "Linking Claude Code settings..."
