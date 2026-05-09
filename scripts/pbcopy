@@ -2,16 +2,18 @@
 # pbcopy wrapper - OSC 52 clipboard sync for remote sessions (SSH + Zellij)
 #
 # Sends clipboard content via OSC 52 escape sequence so the client terminal
-# (e.g. WezTerm) can capture it, even over SSH through Zellij.
+# (e.g. Ghostty) can capture it, even over SSH through Zellij.
 # Also forwards to the real pbcopy when available (local clipboard).
 
-input=$(cat)
+tmp=$(mktemp "${TMPDIR:-/tmp}/pbcopy.XXXXXX") || exit 1
+trap 'rm -f "$tmp"' EXIT HUP INT TERM
+cat > "$tmp" || exit 1
 
 # Local system clipboard (macOS)
 if [ -x /usr/bin/pbcopy ]; then
-    printf '%s' "$input" | /usr/bin/pbcopy
+    /usr/bin/pbcopy < "$tmp"
 fi
 
 # OSC 52: sync to client terminal clipboard
-encoded=$(printf '%s' "$input" | base64 | tr -d '\n')
+encoded=$(base64 < "$tmp" | tr -d '\n')
 { printf '\033]52;c;%s\a' "$encoded" > /dev/tty; } 2>/dev/null || true
