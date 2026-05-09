@@ -116,11 +116,14 @@
   "autoUpdatesChannel": "latest",
   "tui": "default",
   "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true,
+  "editorMode": "vim",
+  "autoCompactEnabled": false,
   "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
   },
-  "editorMode": "vim",
-  "autoCompactEnabled": false
+  "skipAutoPermissionPrompt": true,
+  "permissions": {
+    "defaultMode": "auto"
+  }
 }

@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: qf
+
+Open a temporary Neovim buffer in a separate Ghostty window for drafting
+a prompt. On :wq, the buffer contents are written to stdout so that
+Claude Code's `!qf` shell escape feeds them into the conversation context.
+
+  !qf
+
+Exit behavior:
+  :wq with content     -> stdout = buffer contents, exit 0
+  :wq with empty buf   -> no output, exit 0 (no-op)
+  :q! / :q             -> no output, exit 0 (discard)
+  :cq                  -> no output, exit non-zero (cancel)
+
+Environment:
+  QF_EDITOR=command    Editor command. Default: nvim.
+EOF
+}
+
+if [[ "${QF_GHOSTTY_CHILD:-}" == "1" ]]; then
+  : "${QF_DONE_FILE:?}"
+  : "${QF_RC_FILE:?}"
+  : "${QF_PID_FILE:?}"
+  : "${QF_ROOT:?}"
+  : "${QF_CHILD_EDITOR:?}"
+  : "${QF_BUFFER_FILE:?}"
+
+  printf "%s\n" "$$" > "$QF_PID_FILE"
+
+  cd "$QF_ROOT" || exit 1
+  set +e
+  "$QF_CHILD_EDITOR" "$QF_BUFFER_FILE"
+  rc=$?
+  set -e
+  printf "%s\n" "$rc" > "$QF_RC_FILE"
+  printf done > "$QF_DONE_FILE"
+  exit "$rc"
+fi
+
+case "${1:-}" in
+  --help|-h)
+    usage
+    exit 0
+    ;;
+esac
+
+editor="${QF_EDITOR:-nvim}"
+root="$PWD"
+
+if [[ "$editor" != */* ]]; then
+  resolved_editor="$(command -v "$editor" || true)"
+  if [[ -n "$resolved_editor" ]]; then
+    editor="$resolved_editor"
+  fi
+fi
+
+run_ghostty() {
+  command -v osascript >/dev/null 2>&1 || return 127
+  [[ -d /Applications/Ghostty.app ]] || return 127
+
+  local tmpdir buffer_file done_file rc_file pid_file window_id self
+  tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/qf.XXXXXX")"
+  buffer_file="$tmpdir/prompt.md"
+  done_file="$tmpdir/done"
+  rc_file="$tmpdir/rc"
+  pid_file="$tmpdir/pid"
+  window_id="$tmpdir/window_id"
+  self="${BASH_SOURCE[0]}"
+  if [[ "$self" != /* ]]; then
+    self="$(cd "$(dirname "$self")" && pwd)/$(basename "$self")"
+  fi
+
+  : > "$buffer_file"
+
+  cleanup_ghostty_runner() {
+    local pid
+    if [[ -s "$pid_file" ]]; then
+      pid="$(<"$pid_file")"
+      [[ -n "$pid" && "$pid" != "$$" ]] && kill "$pid" 2>/dev/null || true
+    fi
+  }
+
+  close_ghostty_window() {
+    [[ -s "$window_id" ]] || return 0
+    osascript - "$(<"$window_id")" >/dev/null 2>&1 <<'APPLESCRIPT' || true
+on run argv
+  set targetId to item 1 of argv
+  tell application "Ghostty"
+    repeat with w in windows
+      if (id of w as text) is targetId then
+        close window w
+        return
+      end if
+    end repeat
+  end tell
+end run
+APPLESCRIPT
+  }
+
+  if ! osascript - "$root" "$self" "$done_file" "$rc_file" "$pid_file" "$editor" "$buffer_file" > "$window_id" <<'APPLESCRIPT'
+on run argv
+  set projectDir to item 1 of argv
+  set scriptPath to item 2 of argv
+  set doneFile to item 3 of argv
+  set rcFile to item 4 of argv
+  set pidFile to item 5 of argv
+  set editorCommand to item 6 of argv
+  set bufferFile to item 7 of argv
+  tell application "Ghostty"
+    activate
+    set cfg to new surface configuration
+    set initial working directory of cfg to projectDir
+    set command of cfg to scriptPath
+    set environment variables of cfg to {"QF_GHOSTTY_CHILD=1", "QF_DONE_FILE=" & doneFile, "QF_RC_FILE=" & rcFile, "QF_PID_FILE=" & pidFile, "QF_ROOT=" & projectDir, "QF_CHILD_EDITOR=" & editorCommand, "QF_BUFFER_FILE=" & bufferFile}
+    set wait after command of cfg to false
+    set win to new window with configuration cfg
+    return id of win
+  end tell
+end run
+APPLESCRIPT
+  then
+    rm -rf "$tmpdir"
+    return 125
+  fi
+
+  local launched=false
+  for _ in {1..50}; do
+    [[ -f "$done_file" ]] && break
+    if [[ -s "$pid_file" ]]; then
+      launched=true
+      break
+    fi
+    sleep 0.1
+  done
+
+  if [[ "$launched" != true && ! -f "$done_file" ]]; then
+    cleanup_ghostty_runner
+    rm -rf "$tmpdir"
+    return 125
+  fi
+
+  local missing_checks=0
+  while [[ ! -f "$done_file" ]]; do
+    if [[ -s "$pid_file" ]] && kill -0 "$(<"$pid_file")" 2>/dev/null; then
+      missing_checks=0
+    else
+      ((missing_checks += 1))
+      if ((missing_checks >= 10)); then
+        cleanup_ghostty_runner
+        rm -rf "$tmpdir"
+        return 130
+      fi
+    fi
+    sleep 0.2
+  done
+
+  local rc=0
+  [[ -f "$rc_file" ]] && rc="$(<"$rc_file")"
+  close_ghostty_window
+  cleanup_ghostty_runner
+
+  if [[ "$rc" == "0" ]] && [[ -s "$buffer_file" ]] && grep -q '[^[:space:]]' "$buffer_file"; then
+    cat "$buffer_file"
+  fi
+
+  rm -rf "$tmpdir"
+  return "$rc"
+}
+
+run_ghostty
