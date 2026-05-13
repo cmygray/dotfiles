@@ -4,6 +4,9 @@
     "FIGMA_TOKEN": "__REDACTED__",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
+  "permissions": {
+    "defaultMode": "auto"
+  },
   "hooks": {
     "Notification": [
       {
@@ -118,12 +121,11 @@
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
   "autoCompactEnabled": false,
+  "teammateMode": "tmux",
+  "agentPushNotifEnabled": false,
+  "skipAutoPermissionPrompt": true,
   "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
-  },
-  "skipAutoPermissionPrompt": true,
-  "permissions": {
-    "defaultMode": "auto"
   }
 }

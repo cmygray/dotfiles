@@ -158,6 +158,20 @@ keybinds clear-defaults=true {
         bind "Alt o" { MoveTab "right"; }
         bind "Alt p" { TogglePaneInGroup; }
         bind "Alt Shift p" { ToggleGroupMarking; }
+        bind "Ctrl Shift Space" {
+            MessagePlugin "file:/Users/classting-won/dotfiles/zellij/plugins/zellij-quick-hints/target/wasm32-wasip1/release/zellij-quick-hints.wasm" {
+                name "activate"
+                skip_cache true
+            }
+            SwitchToMode "normal"
+        }
+        bind "Ctrl Space" {
+            MessagePlugin "file:/Users/classting-won/dotfiles/zellij/plugins/zellij-quick-hints/target/wasm32-wasip1/release/zellij-quick-hints.wasm" {
+                name "activate"
+                skip_cache true
+            }
+            SwitchToMode "normal"
+        }
         bind "Ctrl q" { Quit; }
     }
     shared_except "locked" "move" {
@@ -271,6 +285,7 @@ plugins {
 // eg. "file:/path/to/my-plugin.wasm"
 // eg. "https://example.com/my-plugin.wasm"
 load_plugins {
+    "file:/Users/classting-won/dotfiles/zellij/plugins/zellij-quick-hints/target/wasm32-wasip1/release/zellij-quick-hints.wasm"
 }
 web_client {
     font "monospace"

@@ -211,21 +211,29 @@ notes에서 GitHub 이슈 URL 확인:
 - URL 있음: `https://github.com/classtinginc/{repo}/issues/{id}` 형식 추출 → `{issue-url}` 사용
 - URL 없음: 없음 처리 (다음 단계에서 제외)
 
-### 5. 커맨드 생성 후 클립보드 복사
+### 5. 에이전트 뷰 프롬프트 생성 후 클립보드 복사
+
+에이전트 뷰 입력창에 붙여넣는 용도. `@{repo}` 노테이션으로 레포 타겟팅.
 
 **이슈 URL 있는 경우 (권장):**
 ```bash
-echo -n 'cd ~/Workspace/{repo} && cc "{task-content} | {issue-url}" --model sonnet --worktree "{worktree-name}"' | pbcopy
+echo -n '@{repo} {task-content} {issue-url}' | pbcopy
 ```
 
 **이슈 URL 없는 경우 (레포 있음):**
 ```bash
-echo -n 'cd ~/Workspace/{repo} && cc "{task-content}" --model sonnet --worktree "{worktree-name}"' | pbcopy
+echo -n '@{repo} {task-content}' | pbcopy
 ```
 
 **레포 없는 경우:**
 ```bash
-echo -n 'cc "{task-content}" --model sonnet --worktree "{worktree-name}"' | pbcopy
+echo -n '{task-content}' | pbcopy
 ```
 
-커맨드를 출력하고 "클립보드에 복사했습니다" 확인.
+레포 이름 규칙 (`~/Workspace/{repo}` → `@{repo-basename}`):
+- `~/Workspace/ai-web` → `@ai-web`
+- `~/Workspace/account-service` → `@account-service`
+- `~/Workspace/organization` → `@organization`
+- `~/Workspace/enterprise` → `@enterprise`
+
+프롬프트를 출력하고 "에이전트 뷰 입력창에 붙여넣으세요 (클립보드에 복사됨)" 확인.
