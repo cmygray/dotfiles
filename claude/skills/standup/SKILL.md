@@ -35,16 +35,47 @@ Python으로 계산 권장.
 
 ## 데이터 수집 (병렬)
 
-### 1. 어제 세션 활동
+### 1. 어제 백그라운드 에이전트 이름 (최우선)
+
+`~/.claude/projects/**/*.jsonl`에서 `type: agent-name` entry로 에이전트 이름 추출.
+**에이전트 이름이 가장 정확한 작업 테마** (사용자가 의도적으로 부여한 라벨).
+
+```python
+import json, glob, os
+projects_dir = os.path.expanduser("~/.claude/projects")
+agents_on_target = []
+for jsonl in glob.glob(f"{projects_dir}/**/*.jsonl", recursive=True):
+    if 'subagents' in jsonl:
+        continue
+    has_target_activity = False
+    agent_name = None
+    with open(jsonl) as f:
+        for line in f:
+            try:
+                d = json.loads(line)
+                if d.get('type') == 'agent-name':
+                    agent_name = d.get('agentName')
+                if d.get('timestamp', '').startswith(YESTERDAY):
+                    has_target_activity = True
+            except: pass
+    if has_target_activity and agent_name:
+        cwd_encoded = jsonl.replace(projects_dir + '/', '').split('/')[0]
+        agents_on_target.append((agent_name, cwd_encoded))
+```
+
+cwd_encoded → 실제 repo 파악 (예: `-Users-classting-won-Workspace-generative-ai-service` → `generative-ai-service`)
+
+### 2. 어제 세션 첫 user 메시지 (보조)
+
+`agent-name`이 없는 세션(인터랙티브 세션 등)은 첫 user msg로 보강.
+
 ```bash
-# YESTERDAY 변수는 위 로직으로 계산
 find ~/.claude/projects/ -name "*.jsonl" | xargs ls -lt 2>/dev/null | grep "$(date -j -v-1d +'%b %d')" | grep -v subagent
 ```
 
-각 세션 파일에서 첫 user 메시지 추출 → 작업 주제 파악.
-**주의:** `jq`로 전체 JSON 파싱 시 control character 에러 가능. 단일 jq pipe 사용 (`jq -r '.[]'` 한번에).
+**주의:** `jq`로 전체 JSON 파싱 시 control character 에러 가능. 단일 jq pipe 사용.
 
-### 2. GitHub 활동
+### 3. GitHub 활동
 ```bash
 # 머지된 PR
 gh search prs --author=@me --merged-at="${YESTERDAY}..*" --json title,repository,number,mergedAt --limit 20
@@ -53,7 +84,7 @@ gh search prs --author=@me --merged-at="${YESTERDAY}..*" --json title,repository
 gh search issues --author=@me --updated="${YESTERDAY}..*" --json title,repository --limit 10
 ```
 
-### 3. Today-Work Reminders
+### 4. Today-Work Reminders
 ```bash
 # 미완료 항목 → 오늘 계획
 remindctl list "Today-Work" --json | jq -r '.[] | select(.isCompleted == false) | .title'
@@ -63,7 +94,7 @@ TODAY=$(date +%Y-%m-%d)
 remindctl list "Today-Work" --json | jq -r --arg t "$TODAY" '.[] | select(.isCompleted == true and (.completionDate // "" | startswith($t))) | .title'
 ```
 
-### 4. 어제 Slack 활동 (옵션, 컨텍스트 강화)
+### 5. 어제 Slack 활동 (옵션, 컨텍스트 강화)
 ```
 slack_search_public: from:<@UNVC0AHQE> in:#group-product after:어제 before:오늘
 ```
@@ -73,10 +104,16 @@ slack_search_public: from:<@UNVC0AHQE> in:#group-product after:어제 before:오
 
 ## 작업 흐름 단위 그룹핑
 
-각 작업을 다음 기준으로 묶기:
-1. **동일 PR/이슈 그룹** → 하나의 테마
-2. **동일 도메인** (예: scoring-criteria, cdk migration, lambda runtime) → 하나의 테마
-3. 도메인이 같으면 한 bullet + sub-bullet으로 디테일 추가
+**1순위:** 에이전트 이름을 그대로 테마로 사용 (사용자가 의도한 라벨이므로 정확). 비슷한 이름 묶기:
+- `cdk migration task` + `cdk migration blocker(PC)` + `drift-ci-missing-validation` → `aws cdk 마이그레이션`
+- `qa-e2e test failure investigation` + `test flakiness investigation` → `e2e 테스트 안정화`
+
+**2순위 (에이전트 없는 인터랙티브 세션):** 첫 user 메시지에서 키워드 추출.
+
+기타 묶기 기준:
+- **동일 PR/이슈 그룹** → 하나의 테마
+- **동일 도메인** (예: scoring-criteria, cdk migration, lambda runtime) → 하나의 테마
+- 도메인이 같으면 한 bullet + sub-bullet으로 디테일 추가
 
 **예시:**
 - PR #643 (LLM judge 4축) + PR #644 (CI workflow 통합) → `글쓰기 평가 게이트 개선` + sub: `llm judge 통합`, `ci workflow 통합`
