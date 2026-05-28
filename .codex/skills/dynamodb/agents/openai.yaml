@@ -1,0 +1,4 @@
+interface:
+  display_name: "DynamoDB"
+  short_description: "Query Classting DynamoDB tables safely with dy."
+  default_prompt: "Use the DynamoDB skill to answer a read-only DynamoDB question."

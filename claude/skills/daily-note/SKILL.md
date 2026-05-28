@@ -6,6 +6,20 @@ allowed-tools: Bash(remindctl *), Bash(gws *), Bash(date *), Bash(echo *), Bash(
 
 # daily-note — 오늘의 할 일
 
+## ⚠️ STEP 0 (필수): 현재 날짜 확인
+
+**모든 모드 진입 전에 무조건 `date` 실행해서 오늘 날짜·요일을 확정.**
+대화 컨텍스트의 날짜 추론에 의존 금지 (세션이 며칠 이어진 경우 stale).
+
+```bash
+date '+%Y-%m-%d %A'
+# 예: 2026-05-26 Tuesday
+```
+
+이후 모든 `TODAY=$(date +%Y-%m-%d)` 사용은 이 결과 기준.
+
+---
+
 ## 데이터 소스
 
 - 업무: Reminders `Today-Work` 리스트

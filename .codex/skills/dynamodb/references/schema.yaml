@@ -1,0 +1,554 @@
+# DynamoDB 스키마 컨텍스트
+# LLM 에이전트용 - 자연어 질문에서 dy 명령어를 만들기 위한 참조 문서
+#
+# 테이블명 규칙: {service}-{env}  (env: dev | stag | prod)
+# 키 속성: pk, sk, gsi1pk, gsi1sk, gsi2pk, gsi2sk, gsi3pk, gsi3sk, gsi4pk, gsi4sk
+# 타임스탬프: 밀리초 단위 Number (expireAt, scheduledAt 등 TTL 필드는 초 단위)
+
+# ──────────────────────────────────────────
+# classroom-service
+# 테이블명: classroom-service-{env}
+# GSI: gsi-1, gsi-2, gsi-3, gsi-4
+# 교실(반), 채널, 게시물, 댓글, 과제, 멤버 관리
+# ──────────────────────────────────────────
+classroom-service:
+  table: "classroom-service-{env}"
+  gsi: [gsi-1, gsi-2, gsi-3, gsi-4]
+  entities:
+
+    classroom:
+      description: "교실(반) 엔티티"
+      pk: "Classroom#{classroomId}"
+      sk: "Classroom#{classroomId}"
+      gsi:
+        gsi-1:
+          pk: "School#{schoolId}"
+          sk: "Classroom#{classroomId}"
+          usage: "학교별 교실 목록"
+        gsi-2:
+          pk: "Enterprise#{enterpriseId}"
+          sk: "Classroom#{classroomId}"
+          usage: "엔터프라이즈별 교실 목록"
+      fields: [id, schoolId, enterpriseId, name, grade, schoolYear, archived, type, version]
+
+    channel:
+      description: "교실 내 채널"
+      pk: "Classroom#{classroomId}"
+      sk: "Channel#{channelId}"
+      gsi:
+        gsi-1:
+          pk: "ChannelGroup#{channelGroupId}"
+          sk: "Channel#{channelId}"
+          usage: "채널그룹별 채널 목록"
+      fields: [id, classroomId, channelGroupId, name, type, autoJoin, archived, isPrivate, position]
+
+    channel_member:
+      description: "채널-멤버 관계"
+      pk: "Channel#{channelId}"
+      sk: "Member#{memberId}"
+      gsi:
+        gsi-1:
+          pk: "Classroom#{classroomId}"
+          sk: "Member#{memberId}#Channel#{channelId}"
+          usage: "교실 내 멤버별 채널 관계 조회"
+
+    member:
+      description: "교실 멤버 (학생/교사)"
+      pk: "Classroom#{classroomId}"
+      sk: "Member#{memberId}"
+      gsi:
+        gsi-1:
+          pk: "Member#{memberId}"
+          sk: "Classroom#{classroomId}"
+          usage: "멤버가 속한 모든 교실 조회"
+      fields: [id, classroomId, roleId, role, group, name, active, blocked]
+
+    post:
+      description: "채널 게시물"
+      pk: "Classroom#{classroomId}"
+      sk: "Post#{postId}"
+      gsi:
+        gsi-1:
+          pk: "Channel#{channelId}"
+          sk: "Post#{postId}"
+          usage: "채널별 게시물 목록"
+        gsi-2:
+          pk: "Classroom#{classroomId}#Author#{authorId}"
+          sk: "Post#{status}#{updatedAt}"
+          usage: "교실 내 특정 작성자의 게시물 (status + 수정시간 정렬)"
+        gsi-3:
+          pk: "Classroom#{classroomId}"
+          sk: "Post#{status}#{publishedAt}"
+          usage: "교실 전체 게시물 (status + 발행시간 정렬)"
+        gsi-4:
+          pk: "Channel#{channelId}"
+          sk: "Post#{status}#{publishedAt}"
+          usage: "채널별 게시물 (status + 발행시간 정렬)"
+      fields: [id, classroomId, channelId, authorId, title, content, status, type, commentsCount, readsCount, isPinned, publishedAt]
+      notes: "status 값: PUBLISHED, DRAFT, SCHEDULED 등. expiresAt은 초 단위 저장"
+
+    post_read:
+      description: "게시물 읽음 표시"
+      pk: "Post#{postId}"
+      sk: "Read#Member#{memberId}"
+
+    comment:
+      description: "게시물 댓글"
+      pk: "Post#{postId}"
+      sk: "Comment#{commentId}"
+      gsi:
+        gsi-1:
+          pk: "Member#{authorId}"
+          sk: "Comment#{commentId}"
+          usage: "멤버별 댓글 목록"
+        gsi-2:
+          pk: "Classroom#{classroomId}"
+          sk: "Comment#{commentId}"
+          usage: "교실별 댓글 목록"
+      fields: [id, postId, classroomId, authorId, content, repliesCount, version]
+
+    tag:
+      description: "교실 태그"
+      pk: "Classroom#{classroomId}"
+      sk: "Tag#{tagName}"
+
+    assignment:
+      description: "과제"
+      pk: "Classroom#{classroomId}"
+      sk: "Assignment#{assignmentId}"
+      gsi:
+        gsi-1:
+          pk: "Classroom#{classroomId}"
+          sk: "Post#{postId}"
+          usage: "게시물과 연결된 과제 조회"
+        gsi-2:
+          pk: "Classroom#{classroomId}"
+          sk: "Assignment#updatedAt#{updatedAt}"
+          usage: "교실별 과제 (수정시간 정렬)"
+      fields: [id, classroomId, channelId, postId, title, authorId, dueDateTime, type, membersSubmittedCount]
+
+    assignment_submission:
+      description: "과제 제출"
+      pk: "Assignment#{assignmentId}"
+      sk: "AssigneeId#{assigneeId}"
+      fields: [classroomId, assigneeId, assignmentId, status, points, submissions]
+
+
+# ──────────────────────────────────────────
+# organization-service
+# 테이블명: organization-service-{env}
+# GSI: gsi-1, gsi-2, gsi-3, gsi-4
+# 조직, 멤버, 조직단위, 계약, 구독, 메시지 관리
+# ──────────────────────────────────────────
+organization-service:
+  table: "organization-service-{env}"
+  gsi: [gsi-1, gsi-2, gsi-3, gsi-4]
+  entities:
+
+    organization:
+      description: "조직"
+      pk: "Organization#{organizationId}"
+      sk: "Organization#{organizationId}"
+      gsi:
+        gsi-1:
+          pk: "Enterprise#{enterpriseId}"
+          sk: "Organization#{organizationId}"
+          usage: "엔터프라이즈별 조직 목록"
+      fields: [id, enterpriseId, name, tags, orgCodeId, subscriptionId, version]
+
+    member:
+      description: "조직 멤버"
+      pk: "Organization#{organizationId}"
+      sk: "Member#{memberId}"
+      gsi:
+        gsi-1:
+          pk: "Organization#{organizationId}"
+          sk: "Account#{accountId}"
+          usage: "조직 내 계정 ID로 멤버 조회"
+        gsi-2:
+          pk: "OrgUnit#{orgUnitId}"
+          sk: "Member#{memberId}"
+          usage: "조직 단위(부서)별 멤버 목록"
+        gsi-3:
+          pk: "Account#{accountId}"
+          sk: "Member#{memberId}"
+          usage: "계정이 속한 모든 조직의 멤버 조회"
+        gsi-4:
+          pk: "Organization#{organizationId}"
+          sk: "Member#{role}#{memberId}"
+          usage: "조직 내 역할별 멤버 목록"
+      fields: [id, accountId, organizationId, orgUnitId, email, username, name, organizationRole, accountRole]
+
+    org_unit:
+      description: "조직 단위(부서)"
+      pk: "Organization#{organizationId}"
+      sk: "OrgUnit#{orgUnitId}"
+      gsi:
+        gsi-1:
+          pk: "OrgUnit#{orgUnitId}"
+          sk: "OrgUnit#{orgUnitId}"
+          usage: "OrgUnit ID로 직접 조회"
+        gsi-2:
+          pk: "Organization#{organizationId}"
+          sk: "OrgUnitPath#{encodedPath}"
+          usage: "경로로 조직 단위 조회"
+      fields: [id, organizationId, name, path]
+      notes: "OrgUnitPath는 URI 인코딩 후 저장"
+
+    org_code:
+      description: "조직 초대 코드"
+      pk: "OrgCode#Code#{code}"
+      sk: "OrgCode#Code#{code}"
+      gsi:
+        gsi-1:
+          pk: "OrgCode#{orgCodeId}"
+          sk: "OrgCode#{orgCodeId}"
+          usage: "OrgCode ID로 조회"
+
+    member_license:
+      description: "멤버별 라이센스 할당 (이용권)"
+      pk: "License#{licenseId}"
+      sk: "Member#{memberId}"
+      gsi:
+        gsi-1:
+          pk: "Member#{memberId}"
+          sk: "Contract#{contractId}#License#{licenseId}"
+          usage: "멤버별 라이센스 조회 (계정→gsi-3로 멤버 조회 후 사용)"
+        gsi-2:
+          pk: "Member#{memberId}"
+          sk: "License#EndsAt#{timestamp}"
+          usage: "멤버별 라이센스 만료순 조회"
+      fields: [id, orgId, contractId, licenseId, accountId, memberId, learningLicenseId, code, startsAt, endsAt, pricingPlanVersion]
+      notes: |
+        code 값: teacher, student.
+        계정 단위 라이센스 조회 흐름:
+        1. gsi-3에서 Account#{accountId}로 멤버 목록 조회
+        2. 각 멤버의 gsi-1에서 Member#{memberId} + begins_with Contract# 으로 라이센스 조회
+        3. 라이센스의 contractId로 contract 엔티티에서 상품명/variants 확인
+
+    contract:
+      description: "조직 계약 (라이센스, 과목/옵션 정보 포함)"
+      pk: "Organization#{organizationId}"
+      sk: "Contract#{contractId}"
+      gsi:
+        gsi-1:
+          pk: "Contract#{contractId}"
+          sk: "Contract#{contractId}"
+          usage: "계약 ID로 직접 조회"
+      fields: [id, orgId, quantity, isTrial, startsAt, endsAt, contractVersion, licenses, variants]
+      notes: |
+        licenses: 배열. 각 항목에 id, name, code(teacher/student), totalCount, grantedCount, startsAt, endsAt 포함.
+        variants: 배열. 각 항목에 variantCode(unlimited, subject 등), serviceType, variantOption(korean 등) 포함.
+        라이센스 name 예: "School Pro", "AI Writing"
+
+    subscription:
+      description: "구독"
+      pk: "Organization#{organizationId}"
+      sk: "Subscription#{subscriptionId}"
+      gsi:
+        gsi-1:
+          pk: "Subscription#{subscriptionId}"
+          sk: "Subscription#{subscriptionId}"
+          usage: "구독 ID로 직접 조회"
+
+    order:
+      description: "주문"
+      pk: "Organization#{organizationId}"
+      sk: "Order#{orderId}"
+      gsi:
+        gsi-1:
+          pk: "Order#{orderId}"
+          sk: "Order#{orderId}"
+          usage: "주문 ID로 직접 조회"
+
+    message:
+      description: "조직 메시지 (별도 테이블: organization-service-message-{env})"
+      table_override: "organization-service-message-{env}"
+      pk: "Organization#{organizationId}"
+      sk: "Message#{messageId}"
+      gsi:
+        gsi-1:
+          pk: "Message#{messageId}"
+          sk: "Message#{messageId}"
+          usage: "메시지 ID로 직접 조회"
+        gsi-2:
+          pk: "MessageRequestId#{requestId}"
+          sk: "Message#{messageId}"
+          usage: "요청 ID별 메시지 조회"
+      fields: [id, orgId, senderId, type, title, content, totalCount, successCount, failCount]
+
+    member_bulk_update_job:
+      description: "멤버 일괄 업데이트 작업"
+      pk: "Organization#{organizationId}"
+      sk: "MemberBulkUpdateJob#{jobId}"
+
+    member_update_job:
+      description: "개별 멤버 업데이트 작업"
+      pk: "MemberBulkUpdateJob#{bulkJobId}"
+      sk: "MemberUpdateJob#{jobId}"
+      gsi:
+        gsi-1:
+          pk: "MemberBulkUpdateJob#{bulkJobId}"
+          sk: "MemberUpdateJob-{status}#{jobId}"
+          usage: "상태별 작업 조회"
+
+
+# ──────────────────────────────────────────
+# account-service
+# 테이블명: account-service-{env}
+# GSI: gsi-1, gsi-2, gsi-3, gsi-4
+# 계정, 소셜 인증, 보호자-자녀 관계, 조직 소속 관리
+# ──────────────────────────────────────────
+account-service:
+  table: "account-service-{env}"
+  gsi: [gsi-1, gsi-2, gsi-3, gsi-4]
+  entities:
+
+    account:
+      description: "사용자 계정"
+      pk: "Account#{accountId}"
+      sk: "Account#{accountId}"
+      gsi:
+        gsi-1:
+          pk: "AccountEmail#{email}"
+          sk: "Account#{accountId}"
+          usage: "이메일로 계정 조회"
+        gsi-2:
+          pk: "AccountMobile#{internationalNumber}"
+          sk: "Account#{accountId}"
+          usage: "국제 전화번호(공백 포함)로 계정 조회"
+        gsi-3:
+          pk: "Account#DeactivationProgress#{progress}"
+          sk: "Account#LastAccessAt#{timestamp}"
+          usage: "비활성화 진행 상태별 조회"
+        gsi-4:
+          pk: "Account#Status#{status}"
+          sk: "Account#LastAgreedAt#{timestamp}"
+          usage: "상태 + 마케팅 동의일 기준 조회"
+      fields: [id, email, username, status, deactivationProgress, createdAt, updatedAt]
+      notes: "status 값: ACTIVE, INACTIVE, DORMANT 등"
+
+    account_username:
+      description: "계정 사용자명 (유니크 조회용 lookup 레코드)"
+      pk: "AccountUsername#{username}"
+      sk: "AccountUsername#{username}"
+      fields: [accountId]
+
+    account_social_identity:
+      description: "소셜 로그인 연동 (유니크 조회용 lookup 레코드)"
+      pk: "AccountSocialIdentity#{provider}:{uid}"
+      sk: "AccountSocialIdentity#{provider}:{uid}"
+      fields: [accountId]
+      notes: "provider 예: google, apple, kakao"
+
+    account_student_registration_code:
+      description: "학생 등록 코드 lookup 레코드"
+      pk: "AccountStudentRegistrationCode#{code}"
+      sk: "AccountStudentRegistrationCode#{code}"
+      fields: [accountId]
+
+    personal_certificate:
+      description: "개인 인증서"
+      pk: "PersonalCertificate#{certificateId}"
+      sk: "PersonalCertificate#{certificateId}"
+      fields: [accountId, certificate]
+
+    organization:
+      description: "계정의 조직 소속 (account-service 내)"
+      pk: "Organization#{organizationId}"
+      sk: "Organization/AccountId#{accountId}"
+      gsi:
+        gsi-1:
+          pk: "Organization/AccountId#{accountId}"
+          sk: "Organization#{organizationId}"
+          usage: "계정이 속한 모든 조직 조회"
+      fields: [id, accountId, plan]
+
+    guardian_relationship:
+      description: "보호자-자녀 관계"
+      pk: "GuardianRelationship/GuardianId#{guardianId}"
+      sk: "GuardianRelationship/ChildId#{childId}"
+      gsi:
+        gsi-1:
+          pk: "GuardianRelationship/ChildId#{childId}"
+          sk: "GuardianRelationship/GuardianId#{guardianId}"
+          usage: "자녀의 보호자 조회 (역방향)"
+      fields: [guardianId, childId, relationshipType]
+
+    child_code:
+      description: "자녀 연결 코드"
+      pk: "ChildCode#{code}"
+      sk: "ChildCode#{code}"
+      gsi:
+        gsi-1:
+          pk: "ChildCode/ChildId#{childId}"
+          sk: "ChildCode/GuardianId#{verifiedGuardianId}#ExpireAt#{timestamp}"
+          usage: "자녀별 코드 및 보호자 확인 조회"
+      fields: [id, childId, childName, createdAt, expireAt]
+
+    student_registration_code:
+      description: "학생 등록 코드"
+      pk: "StudentRegistrationCode#{id}"
+      sk: "StudentRegistrationCode#{id}"
+      gsi:
+        gsi-1:
+          pk: "Account#{teacherAccountId}"
+          sk: "StudentRegistrationCodeCreatedAt#{timestamp}"
+          usage: "교사별 학생 등록 코드 조회 (생성시간 정렬)"
+      fields: [id, code, teacherAccountId, studentAccountId, expiredAt]
+
+    enterprise:
+      description: "엔터프라이즈"
+      pk: "Enterprise#{enterpriseId}"
+      sk: "Enterprise#{enterpriseId}"
+
+
+# ──────────────────────────────────────────
+# generative-ai-service / summary-service
+# 테이블명: summary-service-{env}
+# GSI: 없음
+# AI 요약 결과 저장
+# ──────────────────────────────────────────
+summary-service:
+  table: "summary-service-{env}"
+  gsi: []
+  entities:
+
+    summary:
+      description: "AI 생성 요약 (교실/학생별)"
+      pk: "Type#{type}#Grade#{grade}#Subject#{subjectId}#Classroom#{classroomId}#Student#{studentId}"
+      sk: "Type#{type}#Grade#{grade}#Subject#{subjectId}#Classroom#{classroomId}#Student#{studentId}"
+      fields: [id, type, grade, subjectId, classroomId, studentId, message, expiredAt]
+      notes: |
+        PK와 SK가 동일한 복합 구성키.
+        type 예: CLASSROOM_SUMMARY, STUDENT_SUMMARY.
+        studentId는 선택적 (교실 요약은 생략).
+        TTL: expiredAt (초 단위)
+
+
+# ──────────────────────────────────────────
+# generative-ai-service / english-writing-service
+# 테이블명: english-writing-service-{env}
+# GSI: GSI1, GSI2
+# 영어 글쓰기 과제, 토픽, 첨삭 보고서, 템플릿 관리
+# ──────────────────────────────────────────
+english-writing-service:
+  table: "english-writing-service-{env}"
+  gsi: [GSI1, GSI2]
+  entities:
+
+    topic:
+      description: "영어 글쓰기 토픽"
+      pk: "Topic#{topicId}"
+      sk: "Topic#{topicId}"
+      gsi:
+        GSI1:
+          pk: "Grade#{grade}#TopicType#{topicType}"
+          sk: "Topic#{topicId}"
+          usage: "학년 + 토픽 유형별 목록"
+      fields: [id, type, grade, title, description, imageUrl, videoUrl, requiredWords, standardAssessments, classroomId, createdAt, updatedAt]
+
+    writing:
+      description: "학생 글쓰기 제출물"
+      pk: "Writing#{writingId}"
+      sk: "Writing#{writingId}"
+      gsi:
+        GSI1:
+          pk: "Account#{accountId}#Grade#{grade}#TopicType#{topicType}"
+          sk: "Topic#{topicId}#Writing#{previousWritingId}"
+          usage: "계정/학년/토픽유형별 글쓰기 목록"
+        GSI2:
+          pk: "Topic#{topicId}"
+          sk: "Writing#{writingId}"
+          usage: "토픽에 속한 모든 글쓰기 조회"
+      fields: [id, classroomId, assignedId, grade, topic, status, title, paragraphs, report, submittedAt, version]
+      notes: "assignedId는 계정(account) ID"
+
+    report:
+      description: "글쓰기 첨삭 보고서"
+      pk: "Report#{reportId}"
+      sk: "Report#{reportId}"
+      gsi:
+        GSI1:
+          pk: "Topic#{topicId}"
+          sk: "Report#{reportId}"
+          usage: "토픽에 속한 보고서 목록"
+      fields: [id, grade, status, assignedId, writing, topic, grammarCheck, assessments, conclusion, isRead, createdAt, updatedAt]
+
+    template:
+      description: "글쓰기 템플릿"
+      pk: "Template#{templateId}"
+      sk: "Template#{templateId}"
+      gsi:
+        GSI1:
+          pk: "Grade#{grade}#Semester#{semester}"
+          sk: "Template#{templateId}"
+          usage: "학년 + 학기별 템플릿 목록"
+
+    today_word:
+      description: "오늘의 단어"
+      pk: "TodayWord#{id}"
+      sk: "TodayWord#{id}"
+      gsi:
+        GSI1:
+          pk: "Grade#{grade}"
+          sk: "TodayWord#{id}"
+          usage: "학년별 오늘의 단어 목록"
+
+
+# ──────────────────────────────────────────
+# generative-ai-service / writing-service
+# 테이블명: writing-service-{env}
+# GSI: GSI1, GSI2
+# 국어 글쓰기 (english-writing-service와 동일 구조 + OCR 기능)
+# ──────────────────────────────────────────
+writing-service:
+  table: "writing-service-{env}"
+  gsi: [GSI1, GSI2]
+  entities:
+
+    topic:
+      description: "국어 글쓰기 토픽"
+      pk: "Topic#{topicId}"
+      sk: "Topic#{topicId}"
+      gsi:
+        GSI1:
+          pk: "Grade#{grade}#TopicType#{topicType}"
+          sk: "Topic#{topicId}"
+          usage: "학년 + 토픽 유형별 목록"
+
+    writing:
+      description: "학생 글쓰기 제출물 (OCR 지원)"
+      pk: "Writing#{writingId}"
+      sk: "Writing#{writingId}"
+      gsi:
+        GSI1:
+          pk: "Account#{accountId}#Grade#{grade}#TopicType#{topicType}"
+          sk: "Topic#{topicId}#Writing#{previousWritingId}"
+          usage: "계정/학년/토픽유형별 글쓰기 목록"
+        GSI2:
+          pk: "Topic#{topicId}"
+          sk: "Writing#{writingId}"
+          usage: "토픽에 속한 모든 글쓰기 조회"
+      fields: [id, classroomId, assignedId, grade, topic, status, title, paragraphs, ocrFile, ocrText, ocrStatus, analysisStatus, version]
+      notes: "english-writing-service writing과 동일 구조. OCR 추가 필드: ocrFile, ocrText, ocrStatus, gradingRequested, aiAnalyzedAt, analysisStatus"
+
+    report:
+      description: "글쓰기 첨삭 보고서"
+      pk: "Report#{reportId}"
+      sk: "Report#{reportId}"
+      gsi:
+        GSI1:
+          pk: "Topic#{topicId}"
+          sk: "Report#{reportId}"
+          usage: "토픽에 속한 보고서 목록"
+
+    template:
+      description: "글쓰기 템플릿"
+      pk: "Template#{templateId}"
+      sk: "Template#{templateId}"
+      gsi:
+        GSI1:
+          pk: "Grade#{grade}#Semester#{semester}"
+          sk: "Template#{templateId}"
+          usage: "학년 + 학기별 템플릿 목록"
