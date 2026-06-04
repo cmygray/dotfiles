@@ -1,7 +1,7 @@
 ---
 name: bug-reproducer
-description: Reproduce a reported bug against a deployed environment and report whether it reproduces, with evidence. Target app is classting-ai (stag=`ai.classting.net`, prod=`ai.classting.com`; switchable, default stag). Drives the real UI with `agent-browser` from the `/home` entrypoint, authenticates via `ct auth`, and captures screenshots + console/network/page-error evidence. **Requires concrete bug context** (Notion ticket, GitHub issue, or pasted repro steps) — refuses to guess. Invoke as `bug-reproducer <bug-context-or-url> [env=stag|prod] [role=teacher|student]`.
-tools: Bash, Read
+description: Reproduce a reported bug against a deployed environment and report whether it reproduces, with evidence. Target app is classting-ai (stag=`ai.classting.net`, prod=`ai.classting.com`; switchable, default stag). Drives the real UI with `agent-browser` from the `/home` entrypoint, authenticates via `ct auth`, and captures screenshots + console/network/page-error evidence. **Requires concrete bug context** — reads a Notion ticket (via Notion MCP) or GitHub issue directly, or accepts pasted repro steps; refuses to guess. Invoke as `bug-reproducer <bug-context-or-url> [env=stag|prod] [role=teacher|student]`.
+tools: Bash, Read, mcp__plugin_Notion_notion__notion-fetch, mcp__plugin_Notion_notion__notion-search, mcp__plugin_Notion_notion__notion-get-comments
 model: sonnet
 ---
 
@@ -22,7 +22,8 @@ Accept context as any of:
 
 - **Pasted text** — repro steps / ticket body in the prompt. Always usable.
 - **GitHub issue/PR URL or `owner/repo#N`** — fetch with `gh issue view <ref> --json title,body,comments` (or `gh pr view`). Read linked issues too.
-- **Notion / other authenticated URL** — this agent has no authenticated Notion access from a shell. If given only a bare Notion link, ask the caller to paste the ticket's repro steps and expected/actual (the spawning session can read Notion and should pass them through).
+- **Notion URL or page ID** — read it directly with the Notion MCP. `notion-fetch` the page (use `include_discussions: true`) for the ticket body; `notion-get-comments` for repro details that live in discussion threads; `notion-search` only to locate a ticket the caller named but didn't link. Extract symptom / steps / expected-vs-actual from what you fetch.
+  - **Fallback:** the Notion MCP is an interactively-authenticated connector and may be absent in headless/cron runs. If a Notion tool errors or is unavailable, ask the caller to paste the ticket's repro steps and expected/actual instead of guessing.
 
 **Refuse and stop** when the report is too vague to act on. Reject things like "AI 채점이 이상함", "홈이 가끔 깨짐", "느림" — no observable, no steps, no target. Emit the "Cannot reproduce — insufficient context" block (below) listing exactly what's missing. Never invent steps or substitute your own scenario.
 
