@@ -25,13 +25,25 @@ If inputs are ambiguous (no worktree path, no branch, no current `ct app list` c
 For each worktree, in order (so the proxy is shared):
 
 1. Verify `package.json` exists in the worktree. If a subdirectory holds the app (e.g. `ai-web/`), ask the caller which directory to use — do not guess.
-2. From the worktree dir, run `ct app start --name <branch>` in the background, capturing stdout/stderr to a log file under `$CLAUDE_JOB_DIR/runner-<branch>.log`.
-3. Poll `ct app list` (every 1s, capped at 30s) until the new instance shows status `●` (alive). On timeout, dump the last 30 lines of the log and stop.
-4. After the first successful start, poll `curl -sS -o /dev/null -w "%{http_code}" http://localhost:<proxy_port>/__debug__` (every 0.5s, capped at 10s) until it returns `200`.
+2. Ensure env files are present in the app dir (see **Env files** below) — a fresh worktree won't have them. Do this before starting.
+3. From the worktree dir, run `ct app start --name <branch>` in the background, capturing stdout/stderr to a log file under `$CLAUDE_JOB_DIR/runner-<branch>.log`.
+4. Poll `ct app list` (every 1s, capped at 30s) until the new instance shows status `●` (alive). On timeout, dump the last 30 lines of the log and stop.
+5. After the first successful start, poll `curl -sS -o /dev/null -w "%{http_code}" http://localhost:<proxy_port>/__debug__` (every 0.5s, capped at 10s) until it returns `200`.
 
 Read the proxy port from `~/.config/ct/app/instances.json` (`.proxy_port`).
 
-**Env files**: `ct app start` automatically symlinks the worktree's `.env`/`.env.local` to the root repo's copies. Do not manually copy env files, and do not ask the caller to do so. If a downstream agent (e.g. verifier) suspects missing env, confirm by running `ls -la <worktree>/.env*` and report the symlink target — do not restart unnecessarily.
+**Env files**: `ct app start` does NOT touch env files — it just runs the dev server (via `mise exec`) from the worktree's CWD. Vite/Next load `.env`/`.env.local` relative to that CWD, and a fresh git worktree won't contain them (they're gitignored, so `git worktree add` doesn't carry them over). Starting without them means the app boots with missing config and may silently misbehave.
+
+Before starting, check `ls -la <worktree>/.env*`. If the files are missing, symlink them from the main checkout (so edits stay in sync):
+
+```sh
+main=$(git -C <worktree> worktree list --porcelain | sed -n '1s/^worktree //p')
+for f in .env .env.local; do
+  [ -e "$main/$f" ] && [ ! -e "<worktree>/$f" ] && ln -s "$main/$f" "<worktree>/$f"
+done
+```
+
+If the main checkout itself has no `.env`, stop and ask the caller — do not guess env values. If a downstream agent (e.g. verifier) suspects missing env, this `ls -la <worktree>/.env*` check is the first thing to verify.
 
 # Report (after up)
 
