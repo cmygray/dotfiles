@@ -11,9 +11,9 @@ macos-option-as-alt = true
 copy-on-select = clipboard
 unfocused-split-opacity = 0.5
 
-# Keep Ghostty usable on SSH hosts that do not have xterm-ghostty terminfo yet.
-# Ghostty will try to install terminfo remotely and fall back to xterm-256color.
-shell-integration-features = ssh-env,ssh-terminfo
+# Keep SSH sessions usable on hosts that do not have xterm-ghostty terminfo.
+# Avoid automatic remote terminfo installation; use env compatibility only.
+shell-integration-features = ssh-env
 
 keybind = alt+enter=ignore
 keybind = super+n=new_window
