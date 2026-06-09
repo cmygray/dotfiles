@@ -5,10 +5,8 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "permissions": {
-    "defaultMode": "auto",
-    "allow": [
-      "Bash(git *)"
-    ]
+    "allow": [],
+    "defaultMode": "auto"
   },
   "hooks": {
     "Notification": [
