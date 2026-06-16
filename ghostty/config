@@ -5,8 +5,13 @@ font-size = 12
 # JetBrains Mono에 없는 전각 원문자/괄호숫자 글리프를 D2Coding으로 매핑.
 # U+2460-24FF: Enclosed Alphanumerics (①②③ 등)
 # U+3200-32FF: Enclosed CJK Letters and Months (㈀ ㉠ ㊀ 등)
+# U+2776-277F: Dingbat negative circled (❶~❿), U+278A-2793: negative sans-serif (➊~➓)
+#   — 폴백 폰트가 작게 그려 식별이 어려워 D2Coding으로 강제. 둘 다 D2Coding이 글리프 보유.
+#   주의: U+2780-2789(➀~➉ 열린 산세리프)는 D2Coding에 글리프가 없어 매핑 제외.
 font-codepoint-map = U+2460-U+24FF=D2Coding
 font-codepoint-map = U+3200-U+32FF=D2Coding
+font-codepoint-map = U+2776-U+277F=D2Coding
+font-codepoint-map = U+278A-U+2793=D2Coding
 macos-option-as-alt = true
 copy-on-select = clipboard
 unfocused-split-opacity = 0.5
