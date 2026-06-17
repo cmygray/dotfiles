@@ -2,16 +2,18 @@ font-family = JetBrainsMono NF
 font-family = JetBrains Mono
 font-size = 12
 
-# JetBrains Mono에 없는 전각 원문자/괄호숫자 글리프를 D2Coding으로 매핑.
-# U+2460-24FF: Enclosed Alphanumerics (①②③ 등)
-# U+3200-32FF: Enclosed CJK Letters and Months (㈀ ㉠ ㊀ 등)
-# U+2776-277F: Dingbat negative circled (❶~❿), U+278A-2793: negative sans-serif (➊~➓)
-#   — 폴백 폰트가 작게 그려 식별이 어려워 D2Coding으로 강제. 둘 다 D2Coding이 글리프 보유.
-#   주의: U+2780-2789(➀~➉ 열린 산세리프)는 D2Coding에 글리프가 없어 매핑 제외.
-font-codepoint-map = U+2460-U+24FF=D2Coding
+# JetBrains Mono에 없는 원문자/괄호숫자 글리프를 보조 폰트로 매핑.
+#
+# 원문자(①~⑳ ⓐ~ⓩ Ⓐ~Ⓩ ❶~❿ ➀~➉ ➊~➓)는 EAW=Ambiguous/Neutral이라 ghostty가
+# 셀 1칸만 줌. D2Coding의 원문자는 전각(2칸) 글리프라 1칸에 욱여넣으면 ghostty가
+# 축소 렌더 → 너무 작아 식별 불가 (ghostty 일반 동작, issue #1903 / discussion #5588).
+# 해결: 모든 글리프를 narrow(0.5em)로 그리는 IosevkaTerm Nerd Font Mono로 매핑 →
+#       1칸에 딱 맞아 축소 없이 또렷. U+2460-24FF, U+2776-2793 전 범위 커버.
+# U+2460-24FF: Enclosed Alphanumerics, U+2776-2793: Dingbat circled (검은/산세리프)
+font-codepoint-map = U+2460-U+24FF=IosevkaTerm Nerd Font Mono
+font-codepoint-map = U+2776-U+2793=IosevkaTerm Nerd Font Mono
+# U+3200-32FF: Enclosed CJK Letters and Months (㈀ ㉠ ㊀) — EAW=Wide(2칸)라 전각 D2Coding이 맞음
 font-codepoint-map = U+3200-U+32FF=D2Coding
-font-codepoint-map = U+2776-U+277F=D2Coding
-font-codepoint-map = U+278A-U+2793=D2Coding
 macos-option-as-alt = true
 copy-on-select = clipboard
 unfocused-split-opacity = 0.5
