@@ -39,6 +39,8 @@ keybind = ctrl+shift+z=toggle_split_zoom
 
 # Copy URL under cursor (partial stand-in for wezterm ctrl+shift+space quick-select; URL-only)
 keybind = ctrl+shift+space=copy_url_to_clipboard
+# DIAG: alternate binding to test whether ctrl+shift+space is being swallowed by macOS
+keybind = super+shift+u=copy_url_to_clipboard
 
 # Leader: ctrl+'
 keybind = ctrl+apostrophe>r=new_split:right
