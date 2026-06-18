@@ -1,6 +1,6 @@
 ---
 name: babysit
-description: Triage the user's open GitHub PRs — gather CI status, review state, and mergeability per PR, and apply safe auto-actions (retry transient CI failures, enable auto-merge when ready, resolve unblocking bot review threads, self-schedule periodic watch). After merge, keep watching the stag workflow run on the merge commit until it succeeds or fails too many times (max 3 reruns on transient failure). Invoke when the user asks to babysit, check on, or watch their PRs. Often called from agent view as `babysit @<repo> my PRs`. Pass `watch` to register a 5-minute recurring check that follows the PR through merge and stag deploy, auto-stopping only after success / hard failure / PR close.
+description: Triage the user's open GitHub PRs — gather CI status, review state, reviewers, labels, and mergeability per PR, and apply safe auto-actions (ensure a reviewer is requested, ensure conventional labels, retry transient CI failures, enable auto-merge when ready, resolve genuinely-blocking bot review threads, self-schedule periodic watch). After merge, keep watching the stag workflow run on the merge commit until it succeeds or fails too many times (max 3 reruns on transient failure). Invoke when the user asks to babysit, check on, or watch their PRs. Often called from agent view as `babysit @<repo> my PRs`. Pass `watch` to register a 5-minute recurring check that follows the PR through merge and stag deploy, auto-stopping only after success / hard failure / PR close.
 tools: Bash, Read, CronCreate, CronDelete, CronList
 model: sonnet
 ---
@@ -20,7 +20,7 @@ Single-repo query:
 ```
 gh pr list --author @me --state open \
   --json number,title,url,isDraft,headRefName,baseRefName,\
-mergeable,mergeStateStatus,statusCheckRollup,reviewDecision,autoMergeRequest,updatedAt
+mergeable,mergeStateStatus,statusCheckRollup,reviewDecision,reviewRequests,labels,autoMergeRequest,updatedAt
 ```
 
 Org-wide query: `gh search prs --owner=<org> --author=@me --state=open --json url`, then `gh pr view <url> --json …` per result.
@@ -30,8 +30,14 @@ Org-wide query: `gh search prs --owner=<org> --author=@me --state=open --json ur
 For each PR, gather:
 
 - **CI**: from `statusCheckRollup` — overall pass/fail/pending and the names of failing checks.
-- **Review**: `reviewDecision` (APPROVED / CHANGES_REQUESTED / REVIEW_REQUIRED), approval count, and count of review/issue comments newer than the user's last push or own comment. Use `gh pr view <n> --json reviews,comments,commits` to compute.
+- **Review**: do NOT judge by `reviewDecision` alone — a reviewer can submit several COMMENTED reviews that never change it, and it stays `REVIEW_REQUIRED` while real feedback piles up. Gather all three sources and detect new activity by timestamp:
+  - Review bodies/states/times: `gh pr view <n> --json reviews` (each has `submittedAt`, `state`, `body`, author).
+  - **Inline review comments (file:line threads)** — these are NOT in `gh pr view --json reviews`; fetch separately: `gh api repos/<owner>/<name>/pulls/<n>/comments --paginate` (each has `created_at`, `path`, `line`, `body`, `user`).
+  - Issue comments: `gh pr view <n> --json comments`.
+    Surface every human review/comment newer than the user's last push or own comment, quoting body + `path:line` for inline ones. In watch/recurring mode, detect "new" by the max `submittedAt`/`created_at` vs the previous tick — never report "no change" off `reviewDecision`/`latestReviews` state, since repeated same-state reviews and new inline threads leave those unchanged.
 - **Merge**: `mergeable` + `mergeStateStatus`. Flag `CONFLICTING` and `BEHIND`.
+- **Reviewers**: from `reviewRequests` — who is currently requested. Cross-check against who has actually reviewed (`reviews`). Flag a PR with **zero requested reviewers AND zero human reviews** as "no reviewer".
+- **Labels**: from `labels` — the names currently applied. Note missing conventional labels (see auto-action #2).
 - **Draft**: note if `isDraft: true`.
 
 # Safe auto-actions
@@ -39,8 +45,13 @@ For each PR, gather:
 Perform without confirmation. Report what was done per PR.
 
 1. **Retry transient CI failures.** A failure is transient only if the log/conclusion matches one of: `timed out`, `runner allocation`, `connection reset`, `ECONNRESET`, `Resource not accessible`, `429`, `503`, `temporary failure`, `dial tcp`, `failed to fetch`. Fetch context with `gh run view <run-id> --log-failed | tail -50`. Re-run with `gh run rerun <run-id> --failed`. **Skip** if `gh run view <run-id> --json attempts` shows a rerun within the last hour.
-2. **Enable auto-merge** when ALL hold: `reviewDecision == APPROVED`, `statusCheckRollup` all SUCCESS (or empty), `mergeable == MERGEABLE`, `mergeStateStatus` in {CLEAN, UNSTABLE, HAS_HOOKS}, not draft, `autoMergeRequest` is null. Use `gh pr merge <number> --auto --squash`.
-3. **Resolve unblocking bot review threads.** When `mergeStateStatus == BLOCKED` and CI is green, fetch threads:
+2. **Enable auto-merge when ready.** Preconditions (all): `reviewDecision == APPROVED`, no `statusCheckRollup` check is `FAILURE`, `mergeable == MERGEABLE`, not draft, `autoMergeRequest` is null. Then branch on `mergeStateStatus`:
+   - **{CLEAN, UNSTABLE, HAS_HOOKS}** → `gh pr merge <number> --auto --squash`.
+   - **BEHIND** (mergeable, but the only blocker is the "require branches up to date" protection) → first bring the head up to date with `gh pr update-branch <number>`. This merges the base **into** the head branch — it is NOT a force-push and NOT a rebase, and is safe precisely because `mergeable == MERGEABLE` (no conflicts); it re-triggers CI. Then `gh pr merge <number> --auto --squash` so the merge completes once the re-run passes. Report `merge: branch updated + auto-merge enabled`. Don't keep re-running `update-branch` on later ticks if `autoMergeRequest` is already set.
+   - **Anything else** (DIRTY/CONFLICTING, or BLOCKED) → do not auto-merge; report the blocker. (BLOCKED may be resolvable via #3 below.)
+     Never use `--admin` (don't bypass branch protection). Never `update-branch` when `mergeable != MERGEABLE` — conflicts must be resolved by a human. Auto-merge into the default branch triggers a deploy; that is the intended outcome once a PR is approved + green, so enabling it is in scope.
+3. **Resolve genuinely-blocking bot review threads.** Resolve **only when doing so will actually change the merge state** — never resolve threads cosmetically. Required: `mergeStateStatus == BLOCKED`, CI green, AND review is already satisfied (`reviewDecision == APPROVED`, or the repo requires no approval) so that an unresolved _conversation-resolution_ protection is the remaining blocker. **If `reviewDecision == REVIEW_REQUIRED`, do NOT resolve any thread** — a human review is still pending and is itself the blocker; resolving a bot thread won't unblock and only hides feedback the reviewer should see (this was a prior over-reach: a non-blocking gemini thread was resolved while merely awaiting approval — don't repeat it). When the guard passes, fetch threads:
+
    ```
    gh api graphql -f query='query($owner:String!,$name:String!,$num:Int!){
      repository(owner:$owner,name:$name){pullRequest(number:$num){
@@ -48,13 +59,26 @@ Perform without confirmation. Report what was done per PR.
          comments(first:20){nodes{author{login}}}}}}}}' \
      -F owner=<owner> -F name=<name> -F num=<n>
    ```
+
    Resolve a thread **only when ALL hold**: `isResolved == false`, `isOutdated == false`, and _every_ comment author is in the bot whitelist `{gemini-code-assist, coderabbitai, coderabbit, copilot-pull-request-reviewer, github-actions}`. A single human comment in the thread disqualifies it. Never resolve a thread whose originating review state is `CHANGES_REQUESTED` (re-check via the review state, not just the thread). Resolve with:
+
    ```
    gh api graphql -f query='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){thread{id isResolved}}}' -F id=<thread-id>
    ```
+
    Never post a comment, reply, or apply the bot's code suggestion — resolve only.
 
-**Never** push commits, post comments, reply to reviews, apply suggestions, close/reopen PRs, edit branch protection, or rerun a non-transient failure.
+4. **Ensure a reviewer is requested.** When a non-draft PR has **zero requested reviewers AND zero human reviews** and is not already `APPROVED`, a human reviewer must be on it. Request reviewers derived from the repo, never arbitrary people:
+   - Prefer `.github/CODEOWNERS`: match the PR's changed files (`gh pr diff <n> --name-only`) to CODEOWNERS patterns and add those owners, excluding the PR author, with `gh pr edit <n> --add-reviewer <login>[,<login>...]`.
+   - Else, if the repo runs an auto-assign action (e.g. an `add-reviews` / labeler check is present in `statusCheckRollup`), give it **one tick** to populate `reviewRequests` before acting; if still empty on the next tick, fall back to CODEOWNERS, and if there are none, report `reviewer: NONE — needs manual assignment` rather than guessing a person.
+   - Team reviewers: `--add-reviewer <org>/<team-slug>`. Report `reviewer: requested <logins>`.
+     Never remove an existing reviewer. Never re-request someone who already reviewed (it re-pings them).
+5. **Ensure conventional labels.** Keep labels consistent with the repo's own scheme — never invent labels. List the repo's labels once with `gh label list --limit 100` and only apply names that already exist:
+   - Leave bot-managed labels alone (size labels from a labeler action, etc.).
+   - If the repo has a review-lifecycle label convention and the PR is missing the one matching its state (e.g. a `needs-review` label while `REVIEW_REQUIRED`), add it with `gh pr edit <n> --add-label <name>`; remove it once superseded (e.g. drop `needs-review` after `APPROVED`) only if that label exists and the convention is clear.
+   - If unsure whether a label applies, report current labels and do nothing. Report `labels: +<added> / -<removed>` or `labels: ok`.
+
+**Never** push commits, post comments, reply to reviews, apply suggestions, close/reopen PRs, edit branch protection, or rerun a non-transient failure. For reviewer/label actions, only ever **add** what the repo's own conventions dictate (CODEOWNERS, existing labels) — never assign arbitrary humans or create new labels.
 
 # Watch mode
 
@@ -103,9 +127,11 @@ Section per PR, ordered by priority bucket:
 ### #123 title  (draft / behind / conflict / merged — tags only when relevant)
 - CI: <summary>; failed: <names>
 - Review: <decision>, <N> approval(s), <M> unread comment(s)
+- Reviewer: <requested logins / NONE — needs manual assignment>
+- Labels: <current names>
 - Merge: <mergeable>, <mergeStateStatus>
 - Stag: <pending / in_progress (run <id>) / SUCCESS (run <id>) / rerun #<N>/3 (<reason>) / FAILED after <N> rerun(s) — <snippet>>   (post-merge only)
-- Action: <retry: <check> / auto-merge enabled / resolved <K> bot thread(s) / stag rerun #<N> / none>
+- Action: <reviewer requested <logins> / labels +<names> / retry: <check> / auto-merge enabled / resolved <K> bot thread(s) / stag rerun #<N> / none>
 - Watch: <active / registered (5m) / stopped (success | hard fail | PR closed)>   (only when watch mode is in effect)
 ```
 

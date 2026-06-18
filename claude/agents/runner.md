@@ -26,9 +26,31 @@ For each worktree, in order (so the proxy is shared):
 
 1. Verify `package.json` exists in the worktree. If a subdirectory holds the app (e.g. `ai-web/`), ask the caller which directory to use — do not guess.
 2. Ensure env files are present in the app dir (see **Env files** below) — a fresh worktree won't have them. Do this before starting.
-3. From the worktree dir, run `ct app start --name <branch>` in the background, capturing stdout/stderr to a log file under `$CLAUDE_JOB_DIR/runner-<branch>.log`.
-4. Poll `ct app list` (every 1s, capped at 30s) until the new instance shows status `●` (alive). On timeout, dump the last 30 lines of the log and stop.
-5. After the first successful start, poll `curl -sS -o /dev/null -w "%{http_code}" http://localhost:<proxy_port>/__debug__` (every 0.5s, capped at 10s) until it returns `200`.
+3. Ensure dependencies are installed and in sync with the lockfile (see **Dependency sync** below) — a worktree whose base changed (reset/rebase) has a stale `node_modules`. Do this before starting.
+4. From the worktree dir, run `ct app start --name <branch>` in the background, capturing stdout/stderr to a log file under `$CLAUDE_JOB_DIR/runner-<branch>.log`.
+5. Poll `ct app list` (every 1s, capped at 30s) until the new instance shows status `●` (alive). On timeout, dump the last 30 lines of the log and stop.
+6. After the first successful start, poll `curl -sS -o /dev/null -w "%{http_code}" http://localhost:<proxy_port>/__debug__` (every 0.5s, capped at 10s) until it returns `200`.
+
+**Dependency sync**: `ct app start` does NOT install deps — it just runs the dev server. If `node_modules` is stale relative to `yarn.lock` (common after a base change), Vite pre-bundles the old deps and the app throws `Uncaught TypeError: undefined is not a function` from inside `node_modules/.vite/deps/chunk-*.js` (e.g. `@mui/material/Box`) — a confusing, non-obvious failure.
+
+**Auth precheck:** the `@classtinginc` scope resolves from GitHub Packages via `${GITHUB_TOKEN}` in `.npmrc`/`.yarnrc.yml`. `GITHUB_TOKEN` is exported from `~/.zshrc` (`export GITHUB_TOKEN="$(gh auth token)"`), which the shell loads on every Bash call, so a plain `yarn install` works. If you ever see `Failed to replace env in config: ${GITHUB_TOKEN}`, the profile didn't load — re-export inline as a fallback (`GITHUB_TOKEN="$(gh auth token)" yarn install`).
+
+The token must carry the `read:packages` scope, or a private package (e.g. `@classtinginc/ai-learning-ui`) 403s mid-install. Check it; if missing, STOP and ask the caller to run `gh auth refresh -s read:packages -h github.com` (interactive — you cannot do it for them).
+
+```sh
+gh auth status 2>&1 | grep -q 'read:packages' || echo "MISSING read:packages — caller must: gh auth refresh -s read:packages -h github.com"
+```
+
+Before starting, decide whether install is needed. Reinstall if `node_modules` is missing, EMPTY, a SYMLINK, or older than the lockfile:
+
+```sh
+nm=<worktree>/node_modules
+{ [ -L "$nm" ] || [ ! -d "$nm" ] || [ -z "$(ls -A "$nm" 2>/dev/null)" ] || [ <worktree>/yarn.lock -nt "$nm" ]; } && echo "install needed"
+```
+
+**NEVER symlink `node_modules`** (to the main checkout or anywhere) as an install shortcut. Even when versions match, it makes the worktree share `node_modules/.vite` optimizeDeps cache with the main checkout and other worktree instances; running more than one `ct app` instance then corrupts that shared cache → the same `Box.js: undefined is not a function` break. Each worktree must own a real `node_modules`. If you find `node_modules` is already a symlink, remove just the link (`rm node_modules` — never `rm -rf` the target it points at) and do a real install. (Symlinking `.env` is fine and intended; `node_modules` is not.)
+
+If needed, run `yarn install` from the worktree dir, then start with the optimizeDeps cache rebuilt: `ct app start --name <branch> --cmd "vite --force"`. If install errors, report stderr verbatim and stop.
 
 Read the proxy port from `~/.config/ct/app/instances.json` (`.proxy_port`).
 
@@ -73,7 +95,8 @@ Run `ct app list` and emit verbatim. No interpretation.
 # Safety
 
 - Never modify code or commit anything.
-- Never run dev commands the caller didn't request. Use `ct app start` only (it auto-detects the dev script).
+- Never run dev commands the caller didn't request: `ct app start` for the dev server (it auto-detects the dev script), plus the `yarn install` dependency-sync step above when `node_modules` is stale. Nothing else.
+- Never symlink `node_modules` to dodge an install (shared `.vite` cache → cross-instance corruption). If `read:packages` is missing, stop and hand the `gh auth refresh` command back to the caller rather than working around the 403.
 - If `ct app start` errors (missing dev script, port collision, npm install failure), report stderr verbatim and stop. Do not retry with different flags.
 - Do not kill the proxy unless the caller said `down` with no args, or the last instance was just stopped.
 - Never run against any remote environment. `ct app` is local-only by design; if the caller hints at dev/stag, refuse.
