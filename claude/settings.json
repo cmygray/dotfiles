@@ -50,6 +50,10 @@
           {
             "type": "command",
             "command": "sh -c '$HOME/dotfiles/claude/hooks/ddb-readonly-gate.sh'"
+          },
+          {
+            "type": "command",
+            "command": "sh -c '$HOME/dotfiles/claude/hooks/block-node-modules-symlink.sh'"
           }
         ]
       },

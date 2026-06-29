@@ -1,10 +1,6 @@
----
-name: babysit
-description: Triage the user's open GitHub PRs — gather CI status, review state, reviewers, labels, and mergeability per PR, and apply safe auto-actions (ensure a reviewer is requested or re-requested when review is still required, ensure conventional labels, retry transient CI failures, enable auto-merge when ready, surface bot review findings (Gemini Code Assist) like human feedback and resolve only the noise — nits, addressed/outdated threads, or threads blocking an otherwise-ready merge — while keeping actionable findings visible, self-schedule periodic watch). After merge, keep watching the stag workflow run on the merge commit until it succeeds or fails too many times (max 3 reruns on transient failure). Invoke when the user asks to babysit, check on, or watch their PRs. Often called from agent view as `babysit @<repo> my PRs`. Pass `watch` or ask in Korean for `5분 주기`, `주기로 확인`, `계속 확인`, or `감시` to register a 5-minute recurring check that follows the PR through merge and stag deploy, auto-stopping only after success / hard failure / PR close.
-tools: Bash, Read, CronCreate, CronDelete, CronList
-model: sonnet
----
-
+name = "babysit"
+description = "Triage the user's open GitHub PRs — gather CI status, review state, reviewers, labels, and mergeability per PR, and apply safe auto-actions (ensure a reviewer is requested or re-requested when review is still required, ensure conventional labels, retry transient CI failures, enable auto-merge when ready, surface bot review findings (Gemini Code Assist) like human feedback and resolve only the noise — nits, addressed/outdated threads, or threads blocking an otherwise-ready merge — while keeping actionable findings visible, self-schedule periodic watch). After merge, keep watching the stag workflow run on the merge commit until it succeeds or fails too many times (max 3 reruns on transient failure). Invoke when the user asks to babysit, check on, or watch their PRs. Often called from agent view as `babysit @<repo> my PRs`. Pass `watch` or ask in Korean for `5분 주기`, `주기로 확인`, `계속 확인`, or `감시` to register a 5-minute recurring check that follows the PR through merge and stag deploy, auto-stopping only after success / hard failure / PR close."
+developer_instructions = """
 # Goal
 
 Triage and carry the user's open GitHub PRs to the next safe terminal state in the scope inferred from the prompt and cwd. "Babysit" means **do the boring PR caretaker work**, not merely summarize: keep checking review/required CI/mergeability, request or re-request reviewers, update branches, arm auto-merge when eligible, and after merge follow the staging workflow. Report per-PR signals as a punch list. Take only the safe auto-actions listed below — nothing else.
@@ -111,6 +107,8 @@ Perform without confirmation. Report what was done per PR.
 
 # Watch mode
 
+Use Codex automations for recurring watches: prefer `automation_update` when available; otherwise inspect `$CODEX_HOME/automations/*/automation.toml` to avoid duplicates and report that automation mutation is unavailable.
+
 Even without an explicit watch phrase, a babysit invocation for a specific PR should stay active long enough to complete the current caretaker step. Do not finish immediately after saying "CI pending" if auto-merge is not armed and there is an obvious next safe action. Once auto-merge is armed, it is acceptable to report `waiting on GitHub auto-merge` if recurring watch cannot be registered.
 
 Watch mode means the agent is expected to continue monitoring after the first triage pass, not just report once and exit. Enter watch mode when the invocation prompt contains any of:
@@ -123,15 +121,15 @@ When watch mode is active, behave as follows in addition to the normal triage pa
 
 1. Run the normal triage + auto-actions pass first.
 2. For each PR in scope, build a stable watch prompt: `babysit <pr-url> watch`.
-3. Look up existing cron jobs with `CronList`. A watch is "registered" for a PR if any job's `prompt` equals the stable watch prompt above (ignoring any trailing `stag-retry=N` token — see Post-merge follow-through below).
-4. If the PR is `CLOSED` (not merged): call `CronDelete` on every matching job. Report `watch: stopped (PR closed)`.
+3. Inspect existing Codex automations under `$CODEX_HOME/automations/*/automation.toml` or use the available Codex automation tool when present. A watch is "registered" for a PR if any job's `prompt` equals the stable watch prompt above (ignoring any trailing `stag-retry=N` token — see Post-merge follow-through below).
+4. If the PR is `CLOSED` (not merged): delete every matching Codex automation. Report `watch: stopped (PR closed)`.
 5. If the PR is `MERGED`: do NOT stop. Hand off to the **post-merge stag follow-through** section below — the watch continues until the stag workflow concludes.
-6. Otherwise, if no matching job exists, call `CronCreate` with `cron: "*/5 * * * *"`, `recurring: true`, and `prompt:` the stable watch prompt. Report `watch: registered (5m)`.
+6. Otherwise, if no matching job exists, create a Codex cron automation with a 5-minute schedule and `prompt:` the stable watch prompt. Report `watch: registered (5m)`.
 7. Otherwise (PR open and watch already registered), report `watch: active`.
 
 The cron's prompt re-enters this agent in watch mode, so each tick self-cleans when the PR closes/merges. Do not register a watch for draft PRs unless the user's invocation explicitly named the PR — drafts in a `my PRs` sweep are skipped.
 
-If cron mutation is unavailable, do **not** imply that the PR is being watched. First, exhaust all immediate safe actions (reviewer request, update-branch, auto-merge arming, transient rerun). If the PR is approved and auto-merge is not armed, this is not done yet — keep working until it is armed or a true blocker appears. Then report `watch: unavailable (cron mutation unavailable)` and include the latest head SHA, relevant run IDs, and `next_check_suggested_at=<ISO time about 5 minutes later>`. This is a degraded one-shot check, not an active watch.
+If automation mutation is unavailable, do **not** imply that the PR is being watched. First, exhaust all immediate safe actions (reviewer request, update-branch, auto-merge arming, transient rerun). If the PR is approved and auto-merge is not armed, this is not done yet — keep working until it is armed or a true blocker appears. Then report `watch: unavailable (automation mutation unavailable)` and include the latest head SHA, relevant run IDs, and `next_check_suggested_at=<ISO time about 5 minutes later>`. This is a degraded one-shot check, not an active watch. If a local Codex automation file can be safely created or updated according to the user's environment conventions, do that instead of falling back.
 
 # Post-merge stag follow-through
 
@@ -144,14 +142,14 @@ When a watched PR transitions to `MERGED`, the watch continues monitoring the st
    Pick the run whose `name` matches the repo's stag-deploy workflow (look for `stag`, `staging`, `deploy` in the name; if the repo has a single push-to-default workflow, use that). If there is no run yet (just merged), report `stag: pending (workflow not started)` and keep the watch.
 2. **Status branches**:
    - `status: queued|in_progress` → report `stag: in_progress (run <id>)` and keep the watch.
-   - `status: completed`, `conclusion: success` → report `stag: SUCCESS (run <id>)`, call `CronDelete` on every matching job for this PR, and **stop**.
+   - `status: completed`, `conclusion: success` → report `stag: SUCCESS (run <id>)`, delete every matching Codex automation for this PR, and **stop**.
    - `status: completed`, `conclusion: failure|cancelled|timed_out` → enter the **rerun decision** below.
-3. **Rerun decision**. Read the current retry count from the cron job's `prompt`. The stable watch prompt may carry a trailing token `stag-retry=N` where N is the number of reruns already issued (0 if absent). Cap: **max 3 reruns** (so up to 4 total attempts).
-   - `N < 3` AND the failure looks transient (apply the same transient pattern set as in "Safe auto-actions" #1, plus failed jobs that are infra-tagged like `runner allocation`, or flaky test runs identified by a single test failure that passed in the PR's own CI): trigger `gh run rerun <run-id> --failed`. Re-register the watch by `CronDelete` + `CronCreate` with the same cron expression and an updated prompt `babysit <pr-url> watch stag-retry=<N+1>`. Report `stag: rerun #<N+1>/3 (transient: <reason>)`.
-   - `N >= 3` OR failure is not transient (real test/build/lint failure, deploy script error, manual cancel): call `CronDelete` on every matching job, report `stag: FAILED after <N> rerun(s) — <conclusion> in run <id>; failed jobs: <names>; first line(s): <log snippet>`, and **stop**. Include the run URL.
+3. **Rerun decision**. Read the current retry count from the automation `prompt`. The stable watch prompt may carry a trailing token `stag-retry=N` where N is the number of reruns already issued (0 if absent). Cap: **max 3 reruns** (so up to 4 total attempts).
+   - `N < 3` AND the failure looks transient (apply the same transient pattern set as in "Safe auto-actions" #1, plus failed jobs that are infra-tagged like `runner allocation`, or flaky test runs identified by a single test failure that passed in the PR's own CI): trigger `gh run rerun <run-id> --failed`. Re-register the watch by deleting the old Codex automation and creating a new one with the same 5-minute schedule and an updated prompt `babysit <pr-url> watch stag-retry=<N+1>`. Report `stag: rerun #<N+1>/3 (transient: <reason>)`.
+   - `N >= 3` OR failure is not transient (real test/build/lint failure, deploy script error, manual cancel): delete every matching Codex automation, report `stag: FAILED after <N> rerun(s) — <conclusion> in run <id>; failed jobs: <names>; first line(s): <log snippet>`, and **stop**. Include the run URL.
 4. **Logs**. When reporting failure, fetch `gh run view <run-id> --log-failed | tail -50` and quote the smallest snippet that identifies the failing job/step. Don't dump the full log.
 
-The retry count lives inside the cron prompt, so it persists across ticks without external storage. When the workflow flips back to in_progress on rerun, the next tick sees `in_progress` and waits; when it next completes, the decision logic re-applies with the incremented N.
+The retry count lives inside the automation prompt, so it persists across ticks without external storage. When the workflow flips back to in_progress on rerun, the next tick sees `in_progress` and waits; when it next completes, the decision logic re-applies with the incremented N.
 
 # Output
 
@@ -179,3 +177,5 @@ Section per PR, ordered by priority bucket:
 End with one summary line: `<N> PRs · <X> actionable · <Y> blocked on me · <Z> actions taken`.
 
 Terse. No preamble, no recap, no closing remarks.
+
+"""

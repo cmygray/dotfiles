@@ -123,9 +123,6 @@ export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
 # PATH additions
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.config/git-fuzzy/bin:$HOME/.local/bin:$HOME/dotfiles/scripts:$HOME/.bun/bin:$PATH"
 
-# GitHub Packages authentication (via gh CLI)
-export GITHUB_TOKEN=$(gh auth token)
-
 # Chamber (AWS SSM)
 export CHAMBER_KMS_KEY_ALIAS="aws/ssm"
 
