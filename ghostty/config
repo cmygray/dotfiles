@@ -1,5 +1,7 @@
 font-family = JetBrainsMono NF
 font-family = JetBrains Mono
+font-family = Apple SD Gothic Neo
+font-codepoint-map = U+1100-U+11FF,U+3130-U+318F,U+A960-U+A97F,U+AC00-U+D7AF,U+D7B0-U+D7FF=Apple SD Gothic Neo
 font-size = 12
 
 # JetBrains Mono에 없는 원문자/괄호숫자 글리프를 보조 폰트로 매핑.

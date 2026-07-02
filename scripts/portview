@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+import http.server
+import subprocess
+import html
+import json
+import os
+from datetime import datetime
+from pathlib import Path
+
+PORT = 7777
+CONFIG_PATH = Path.home() / '.config' / 'portview' / 'config.json'
+EXCLUDE_CMD_PREFIXES = ('/Applications/', '/System/', '/usr/libexec/')
+
+
+def load_config():
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH) as f:
+            return json.load(f)
+    return {'host': 'localhost', 'pinned': []}
+
+
+def parse_cmd(cmd):
+    """Returns (label, url_path)."""
+    if 'http.server' in cmd:
+        parts = cmd.split()
+        try:
+            label = 'http.server · ' + parts[parts.index('--directory') + 1].rstrip('/')
+        except (ValueError, IndexError):
+            label = 'http.server'
+        return label, '/'
+    if 'live-server' in cmd:
+        parts = cmd.split()
+        label = 'live-server'
+        path = '/'
+        for i, p in enumerate(parts):
+            if 'live-server' in p and i + 1 < len(parts) and not parts[i + 1].startswith('-'):
+                label = 'live-server · ' + os.path.basename(parts[i + 1].rstrip('/'))
+            if p.startswith('--open='):
+                path = '/' + p[7:].lstrip('/')
+        return label, path
+    if '/uv/tools/' in cmd:
+        try:
+            parts = cmd.split('/')
+            return parts[parts.index('tools') + 1], '/'
+        except (ValueError, IndexError):
+            pass
+    if '.venv/bin/python' in cmd:
+        parts = cmd.split()
+        tool = None
+        target = None
+        skip_next = False
+        for a in parts[1:]:
+            if skip_next:
+                skip_next = False
+                continue
+            if a.startswith('-'):
+                skip_next = True
+                continue
+            if tool is None:
+                tool = os.path.basename(a)
+            elif not a.isdigit():
+                target = os.path.basename(a)
+                break
+        label = f'{tool} · {target}' if tool and target else (tool or '?')
+        return label, '/'
+    if cmd.startswith('node '):
+        for a in cmd.split()[1:]:
+            if not a.startswith('-') and '/' in a:
+                return os.path.basename(a), '/'
+    return cmd.split()[0].rsplit('/', 1)[-1], '/'
+
+
+def get_running_servers(config):
+    lsof = subprocess.run(
+        ['lsof', '-iTCP', '-P', '-n', '-sTCP:LISTEN'],
+        capture_output=True, text=True
+    )
+    entries, seen = [], set()
+    for line in lsof.stdout.splitlines()[1:]:
+        parts = line.split()
+        if len(parts) < 9:
+            continue
+        pid, addr = parts[1], parts[8]
+        if not addr.startswith('*:'):
+            continue
+        port = addr.rsplit(':', 1)[-1]
+        if (port, pid) not in seen:
+            seen.add((port, pid))
+            entries.append({'port': port, 'pid': pid})
+
+    if not entries:
+        return []
+
+    ps = subprocess.run(
+        ['ps', '-p', ','.join(e['pid'] for e in entries), '-o', 'pid=,args='],
+        capture_output=True, text=True
+    )
+    cmds = {}
+    for line in ps.stdout.splitlines():
+        line = line.strip()
+        if line:
+            pid, _, cmd = line.partition(' ')
+            cmds[pid.strip()] = cmd.strip()
+
+    host = config['host']
+    pinned_ports = {str(s['port']) for s in config.get('pinned', [])}
+    pinned_names = {s['name'].lower() for s in config.get('pinned', [])}
+
+    servers = []
+    for e in entries:
+        port = e['port']
+        if port == str(PORT) or port in pinned_ports:
+            continue
+        cmd = cmds.get(e['pid'], '')
+        if any(cmd.startswith(p) for p in EXCLUDE_CMD_PREFIXES):
+            continue
+        label, path = parse_cmd(cmd) if cmd else (f':{port}', '/')
+        if label.split(' · ')[0].lower() in pinned_names:
+            continue
+        servers.append({'port': port, 'label': label, 'url': f'http://{host}:{port}{path}', 'cmd': cmd})
+
+    servers.sort(key=lambda x: int(x['port']) if x['port'].isdigit() else 0)
+    return servers
+
+
+def card(name, url, subtitle='', cls=''):
+    sub = f'<div class="sub">{html.escape(subtitle)}</div>' if subtitle else ''
+    return (
+        f'<a class="card {cls}" href="{html.escape(url)}" target="_blank">'
+        f'<div class="name">{html.escape(name)}</div>'
+        f'{sub}'
+        f'<div class="url">{html.escape(url)}</div>'
+        f'</a>\n'
+    )
+
+
+def render(config, running):
+    host = config['host']
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    pinned_html = ''.join(
+        card(s['name'], s.get('url') or f'http://{host}:{s["port"]}/', s.get('desc', ''))
+        for s in config.get('pinned', [])
+    )
+    running_html = ''.join(
+        card(s['label'], s['url'], s['cmd'][:90], 'tmp')
+        for s in running
+    )
+
+    sections = ''
+    if pinned_html:
+        sections += f'<h2>pinned</h2><div class="grid">{pinned_html}</div>\n'
+    if running_html:
+        sections += f'<h2>running</h2><div class="grid">{running_html}</div>\n'
+    if not sections:
+        sections = '<p class="empty">No services running.</p>'
+
+    return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="10">
+<title>home port</title>
+<style>
+* {{ box-sizing: border-box; margin: 0; padding: 0; }}
+body {{ font-family: ui-monospace, monospace; background: #0f1117; color: #d0d0d0; padding: 2rem; font-size: 14px; }}
+h1 {{ color: #7eb8f7; font-size: 1.1rem; margin-bottom: 0.3rem; }}
+.meta {{ color: #444; font-size: 0.82rem; margin-bottom: 2rem; }}
+h2 {{ color: #555; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; margin: 1.8rem 0 0.7rem; }}
+.grid {{ display: flex; flex-wrap: wrap; gap: 0.6rem; }}
+.card {{ display: block; text-decoration: none; padding: 0.85rem 1rem; background: #181824;
+         border: 1px solid #2a2a3a; border-radius: 6px; min-width: 200px; max-width: 360px; }}
+.card:hover {{ border-color: #7eb8f7; }}
+.card.tmp {{ border-color: #252d1a; }}
+.card.tmp:hover {{ border-color: #8bc34a; }}
+.name {{ color: #f0f0f0; font-weight: bold; margin-bottom: 0.2rem; }}
+.card.tmp .name {{ color: #8bc34a; }}
+.sub {{ color: #666; font-size: 0.78rem; margin-bottom: 0.35rem;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }}
+.url {{ color: #444; font-size: 0.78rem; }}
+.empty {{ color: #444; margin-top: 1rem; }}
+</style>
+</head>
+<body>
+<h1>home port</h1>
+<p class="meta">{html.escape(host)} &middot; {now} &middot; auto-refresh 10s</p>
+{sections}
+</body>
+</html>'''
+
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        config = load_config()
+        body = render(config, get_running_servers(config)).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *_):
+        pass
+
+
+if __name__ == '__main__':
+    with http.server.HTTPServer(('', PORT), Handler) as srv:
+        print(f'home port ::{PORT}')
+        srv.serve_forever()

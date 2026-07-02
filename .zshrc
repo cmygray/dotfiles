@@ -141,8 +141,10 @@ alias zj=zellij
 # SSH Session
 # =====================================================================
 
-# Unlock macOS login keychain for CLI tools (gh, claude, etc.)
-if [[ -n "$SSH_CONNECTION" && -z "$KEYCHAIN_UNLOCKED" ]]; then
+# Unlock macOS login keychain for CLI tools (gh, claude, etc.) only when a
+# real terminal is attached. Non-interactive SSH commands, including Codex
+# app-server startup, cannot answer the password prompt.
+if [[ -n "$SSH_CONNECTION" && -z "$KEYCHAIN_UNLOCKED" && -t 0 && -t 1 ]]; then
     security unlock-keychain ~/Library/Keychains/login.keychain-db
     export KEYCHAIN_UNLOCKED=true
 fi

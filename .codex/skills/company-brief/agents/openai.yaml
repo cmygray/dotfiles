@@ -1,0 +1,4 @@
+interface:
+  display_name: "Company Brief"
+  short_description: "Build sourced Korean company analysis reports."
+  default_prompt: "Use $company-brief to create a sourced Korean company analysis HTML report for a named company."

@@ -1,0 +1,6 @@
+{
+  "host": "home.drum-massometer.ts.net",
+  "pinned": [
+    { "name": "mdgate", "port": 9483 }
+  ]
+}
