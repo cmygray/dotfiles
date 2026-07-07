@@ -14,11 +14,30 @@ Provide a running local app environment for other agents to verify against. Brin
 The caller passes one of:
 
 - `up <worktree-path>[ <worktree-path>...]` — start an instance from each worktree.
+- `up --namespace ai-learning <worktree-path>` — start the AI Learning local preview Docker Compose stack from a minerva-api worktree.
+- `up --script storybook <worktree-path>` — start a Storybook instance from a frontend worktree, e.g. ai-web.
 - `up <branch>[,<branch>...]` — resolve to `.claude/worktrees/<branch>`; if the worktree does not exist, stop and ask the caller to prepare it.
 - `down [<name>...]` — tear down. With no names, stop everything.
 - `status` — `ct app list` only, no changes.
 
 If inputs are ambiguous (no worktree path, no branch, no current `ct app list` context), stop and ask the caller for the exact set.
+
+# Discover ct app modes
+
+Before choosing a start command for a new request, inspect the local CLI surface:
+
+```sh
+ct app start --help
+ct app start modes
+```
+
+Use those outputs as the source of truth for available variations. The stable modes are currently:
+
+- default app: `ct app start --name <branch>`
+- package script: `ct app start --name <branch>-storybook --script storybook`
+- AI Learning preview: `ct app start --namespace ai-learning --name <branch>`
+
+If the installed `ct` does not expose `ct app start modes`, fall back to this instruction file and report that the local CLI should be upgraded.
 
 # Bring-up flow
 
@@ -27,9 +46,33 @@ For each worktree, in order (so the proxy is shared):
 1. Verify `package.json` exists in the worktree. If a subdirectory holds the app (e.g. `ai-web/`), ask the caller which directory to use — do not guess.
 2. Ensure env files are present in the app dir (see **Env files** below) — a fresh worktree won't have them. Do this before starting.
 3. Ensure dependencies are installed and in sync with the lockfile (see **Dependency sync** below) — a worktree whose base changed (reset/rebase) has a stale `node_modules`. Do this before starting.
-4. From the worktree dir, run `ct app start --name <branch>` in the background, capturing stdout/stderr to a log file under `$CLAUDE_JOB_DIR/runner-<branch>.log`.
+4. From the worktree dir, run `ct app start --name <branch>` in the background, capturing stdout/stderr to a log file under `$CLAUDE_JOB_DIR/runner-<branch>.log` (or `/tmp/claude-runner-<branch>.log` if `CLAUDE_JOB_DIR` is unset).
 5. Poll `ct app list` (every 1s, capped at 30s) until the new instance shows status `●` (alive). On timeout, dump the last 30 lines of the log and stop.
 6. After the first successful start, poll `curl -sS -o /dev/null -w "%{http_code}" http://localhost:<proxy_port>/__debug__` (every 0.5s, capped at 10s) until it returns `200`.
+
+## Storybook script
+
+When the caller asks for Storybook, use the existing `ct app` proxy flow from the frontend worktree:
+
+```sh
+ct app start --name <branch>-storybook --script storybook
+```
+
+`ct app` reads `package.json` scripts, strips any script-defined port flag, assigns the instance port, and registers it behind the normal proxy. Report the proxy URL and switch UI exactly like a regular frontend instance. Do not create a separate namespace for Storybook.
+
+## AI Learning namespace
+
+When the caller asks for `--namespace ai-learning`, do not run the normal `ct app` frontend flow. From the minerva-api worktree root, run:
+
+```sh
+ct app start --namespace ai-learning --name <branch>
+```
+
+The `ct app` command owns the AI Learning preview details: it locates `ai-learning/infra/local-dc.yaml`, prepares `ai-learning/infra/.env.preview.local` by copying it from the main checkout when missing, starts the Docker Compose stack with the worker profile, waits for `http://localhost:3000/health`, and records the instance for `ct app list` / `ct app stop`.
+
+AI Learning preview is currently single-instance because the compose file exposes fixed local ports (`3000`, `9000`, `4566`). If another AI Learning namespace instance is already listed, stop and ask whether to run `ct app stop <name>` first.
+
+Do not print secret values from `.env.preview.local`; only report that the namespace started and the returned API/health URLs.
 
 **Dependency sync**: `ct app start` does NOT install deps — it just runs the dev server. If `node_modules` is stale relative to `yarn.lock` (common after a base change), Vite pre-bundles the old deps and the app throws `Uncaught TypeError: undefined is not a function` from inside `node_modules/.vite/deps/chunk-*.js` (e.g. `@mui/material/Box`) — a confusing, non-obvious failure.
 
