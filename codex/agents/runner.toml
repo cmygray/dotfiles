@@ -64,9 +64,17 @@ When the caller asks for `--namespace ai-learning`, do not run the normal `ct ap
 ct app start --namespace ai-learning --name <branch>
 ```
 
-The `ct app` command owns the AI Learning preview details: it locates `ai-learning/infra/local-dc.yaml`, prepares `ai-learning/infra/.env.preview.local` by copying it from the main checkout when missing, starts the Docker Compose stack with the worker profile, waits for `http://localhost:3000/health`, and records the instance for `ct app list` / `ct app stop`.
+The `ct app` command owns the AI Learning preview details: it locates `ai-learning/infra/local-dc.yaml`, prepares `ai-learning/infra/.env.preview.local` by copying it from the main checkout when missing, starts the Docker Compose stack with the worker profile, waits for `http://localhost:5001/health`, and records the instance for `ct app list` / `ct app stop`.
 
-AI Learning preview is currently single-instance because the compose file exposes fixed local ports (`3000`, `9000`, `4566`). If another AI Learning namespace instance is already listed, stop and ask whether to run `ct app stop <name>` first.
+**Never run the API directly (`nest start`, `yarn start:dev`, node on `src/main`) for ai-learning verification** — the repo `.env` may point at the staging RDS, so a direct process either hangs on DB connection timeouts or silently runs against the wrong database. Always go through the Docker preview stack. If `ct app` is unavailable or misbehaves, the equivalent manual command is:
+
+```sh
+docker compose --env-file ai-learning/infra/.env.preview.local -f ai-learning/infra/local-dc.yaml up -d --build mysql localstack ai_learning
+```
+
+Verify on `http://localhost:5001` — the compose file maps host `${AI_LEARNING_BACKEND_PORT:-5001}` to container `5000`. Never verify on `:5000`: anything answering there on the host is a stray direct process, not the preview stack.
+
+AI Learning preview is currently single-instance because the compose file exposes fixed local ports (`5001`, `9000`, `4566`). If another AI Learning namespace instance is already listed, stop and ask whether to run `ct app stop <name>` first.
 
 Do not print secret values from `.env.preview.local`; only report that the namespace started and the returned API/health URLs.
 
@@ -90,6 +98,8 @@ nm=<worktree>/node_modules
 **NEVER symlink `node_modules`** (to the main checkout or anywhere) as an install shortcut. Even when versions match, it makes the worktree share `node_modules/.vite` optimizeDeps cache with the main checkout and other worktree instances; running more than one `ct app` instance then corrupts that shared cache → the same `Box.js: undefined is not a function` break. Each worktree must own a real `node_modules`. If you find `node_modules` is already a symlink, remove just the link (`rm node_modules` — never `rm -rf` the target it points at) and do a real install. (Symlinking `.env` is fine and intended; `node_modules` is not.)
 
 If needed, run `GITHUB_TOKEN="$(env -u GITHUB_TOKEN -u GH_TOKEN gh auth token)" yarn install` from the worktree dir, then start with the optimizeDeps cache rebuilt: `ct app start --name <branch> --cmd "vite --force"`. If install errors, report stderr verbatim and stop.
+
+The `--force` pairing applies to *any* fresh-install start, not just installs you performed: if the caller says deps were just installed, or `<worktree>/node_modules/.vite` does not exist yet, start with `--cmd "vite --force"` too. Same when a restart is requested because of a runtime break in pre-bundled deps (`Uncaught TypeError: undefined is not a function` from `node_modules/.vite/deps/chunk-*.js`, e.g. `Box.js`) — a plain restart reuses the corrupted cache and won't fix it.
 
 Read the proxy port from `~/.config/ct/app/instances.json` (`.proxy_port`).
 
