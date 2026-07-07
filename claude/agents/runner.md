@@ -103,7 +103,7 @@ nm=<worktree>/node_modules
 
 If needed, run `GITHUB_TOKEN="$(env -u GITHUB_TOKEN -u GH_TOKEN gh auth token)" yarn install` from the worktree dir, then start with the optimizeDeps cache rebuilt: `ct app start --name <branch> --cmd "vite --force"`. If install errors, report stderr verbatim and stop.
 
-The `--force` pairing applies to _any_ fresh-install start, not just installs you performed: if the caller says deps were just installed, or `<worktree>/node_modules/.vite` does not exist yet, start with `--cmd "vite --force"` too. Same when a restart is requested because of a runtime break in pre-bundled deps (`Uncaught TypeError: undefined is not a function` from `node_modules/.vite/deps/chunk-*.js`, e.g. `Box.js`) — a plain restart reuses the corrupted cache and won't fix it.
+The `--force` pairing applies to *any* fresh-install start, not just installs you performed: if the caller says deps were just installed, or `<worktree>/node_modules/.vite` does not exist yet, start with `--cmd "vite --force"` too. Same when a restart is requested because of a runtime break in pre-bundled deps (`Uncaught TypeError: undefined is not a function` from `node_modules/.vite/deps/chunk-*.js`, e.g. `Box.js`) — a plain restart reuses the corrupted cache and won't fix it.
 
 Read the proxy port from `~/.config/ct/app/instances.json` (`.proxy_port`).
 
