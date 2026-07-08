@@ -47,7 +47,6 @@ brew "openssl@1.1"
 brew "poppler"
 brew "rename"
 brew "ripgrep"
-brew "rtk"
 brew "starship"
 brew "stylua"
 brew "tailscale", restart_service: :changed

@@ -56,15 +56,6 @@
             "command": "sh -c '$HOME/dotfiles/claude/hooks/block-node-modules-symlink.sh'"
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh -c '$HOME/.claude/hooks/rtk-rewrite.sh'"
-          }
-        ]
       }
     ]
   },
@@ -84,7 +75,8 @@
     "sentry@claude-plugins-official": true,
     "notion@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "aws-core@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {

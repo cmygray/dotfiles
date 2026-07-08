@@ -4,8 +4,7 @@
 
 ## 심볼릭 링크 구조
 
-- `~/.claude/{skills, rules, agents, settings.json, RTK.md}` → `dotfiles/claude/...`
-- `~/.claude/hooks/rtk-rewrite.sh`는 글로벌 (dotfiles 외)
+- `~/.claude/{skills, rules, agents, settings.json}` → `dotfiles/claude/...`
 - 이 경로 아래 파일을 수정하면 **즉시** 글로벌에 반영됨
 
 ## 커밋/푸시 규칙
