@@ -135,6 +135,7 @@ alias awsprod="aws-vault exec classting-prod --no-session"
 alias cc="uvx zlqhem wrap -- claude --dangerously-skip-permissions"
 alias ccr="uvx zlqhem wrap -- claude --dangerously-skip-permissions --resume"
 alias ccc="uvx zlqhem wrap -- claude --dangerously-skip-permissions --continue"
+alias ca="claude agents"
 alias zj=zellij
 
 # =====================================================================
