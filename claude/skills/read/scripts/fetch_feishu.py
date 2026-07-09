@@ -5,13 +5,18 @@ Special thanks to joeseesun for the excellent qiaomu-markdown-proxy project,
 which inspired the Feishu API integration and document parsing approach here.
 https://github.com/joeseesun/qiaomu-markdown-proxy
 
-Requirements:
+Default path:
     pip install requests
 
 Setup:
     export FEISHU_APP_ID=your_app_id
     export FEISHU_APP_SECRET=your_app_secret
     App needs: docx:document:readonly, wiki:wiki:readonly
+
+Alternative user-login path:
+    npm install -g @larksuite/cli
+    lark-cli auth login
+    lark-cli docs +fetch --doc <feishu_url>
 
 Usage:
     python3 fetch_feishu.py <feishu_url>
@@ -27,10 +32,15 @@ import urllib.parse
 try:
     import requests
 except ImportError:
-    print("Error: requests not installed. Run: pip install requests", file=sys.stderr)
-    sys.exit(1)
+    requests = None
 
 API = "https://open.feishu.cn/open-apis"
+TIMEOUT = 20
+LARK_CLI_HINT = (
+    "For user-login access instead of app credentials, install/configure lark-cli "
+    "(npm install -g @larksuite/cli && lark-cli auth login), then run "
+    "lark-cli docs +fetch --doc <feishu_url>."
+)
 
 
 def yaml_string(value):
@@ -40,10 +50,16 @@ def yaml_string(value):
 def get_token():
     app_id = os.environ.get("FEISHU_APP_ID")
     app_secret = os.environ.get("FEISHU_APP_SECRET")
+    missing = []
+    if requests is None:
+        missing.append("Python package requests not installed; run: pip install requests")
     if not app_id or not app_secret:
-        return None, "FEISHU_APP_ID or FEISHU_APP_SECRET not set"
+        missing.append("FEISHU_APP_ID or FEISHU_APP_SECRET not set")
+    if missing:
+        return None, "; ".join(missing) + f". {LARK_CLI_HINT}"
     resp = requests.post(f"{API}/auth/v3/tenant_access_token/internal",
-                         json={"app_id": app_id, "app_secret": app_secret})
+                         json={"app_id": app_id, "app_secret": app_secret},
+                         timeout=TIMEOUT)
     d = resp.json()
     if d.get("code") != 0:
         return None, f"Auth failed: {d.get('msg', resp.text)}"
@@ -69,7 +85,8 @@ def parse_url(url):
 def resolve_wiki(token, wiki_token):
     resp = requests.get(f"{API}/wiki/v2/spaces/get_node",
                         headers={"Authorization": f"Bearer {token}"},
-                        params={"token": wiki_token})
+                        params={"token": wiki_token},
+                        timeout=TIMEOUT)
     d = resp.json()
     if d.get("code") == 0:
         node = d["data"]["node"]
@@ -85,7 +102,8 @@ def get_blocks(token, doc_id):
             params["page_token"] = page_token
         resp = requests.get(f"{API}/docx/v1/documents/{doc_id}/blocks",
                             headers={"Authorization": f"Bearer {token}"},
-                            params=params)
+                            params=params,
+                            timeout=TIMEOUT)
         d = resp.json()
         if d.get("code") != 0:
             return None, f"Blocks fetch failed: {d.get('msg', resp.text)}"
@@ -141,7 +159,7 @@ def blocks_to_md(blocks):
             key = f"heading{level}"
             data = block.get(key) or block.get("heading", {})
             text = extract_text(data.get("elements", []))
-            lines.append(f"{'#' * level} {text}")
+            lines.append(f"{'#' * min(level, 6)} {text}")
         elif bt == 10:
             text = extract_text(block.get("bullet", {}).get("elements", []))
             lines.append(f"- {text}")
@@ -203,8 +221,9 @@ def fetch_feishu(url):
         doc_id, doc_type = real_id, real_type or "docx"
 
     info_resp = requests.get(f"{API}/docx/v1/documents/{doc_id}",
-                             headers={"Authorization": f"Bearer {token}"})
-    doc_info = info_resp.json().get("data", {}).get("document", {})
+                             headers={"Authorization": f"Bearer {token}"},
+                             timeout=TIMEOUT)
+    doc_info = (info_resp.json().get("data") or {}).get("document") or {}
     title = doc_info.get("title", "")
 
     blocks, err = get_blocks(token, doc_id)
@@ -234,7 +253,8 @@ def to_markdown(r):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: fetch_feishu.py <feishu_url> [--json]", file=sys.stderr)
-        print("  Requires: FEISHU_APP_ID, FEISHU_APP_SECRET", file=sys.stderr)
+        print("  Default requires: pip install requests plus FEISHU_APP_ID and FEISHU_APP_SECRET", file=sys.stderr)
+        print(f"  Alternative: {LARK_CLI_HINT}", file=sys.stderr)
         sys.exit(1)
 
     result = fetch_feishu(sys.argv[1])
