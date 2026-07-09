@@ -222,3 +222,8 @@ if [ -f '/Users/classting-won/Downloads/google-cloud-sdk/completion.zsh.inc' ]; 
 eval "$(agf init zsh)"
 
 fpath+=~/.zfunc; autoload -Uz compinit; compinit
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/classting-won/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+# End of Docker CLI completions

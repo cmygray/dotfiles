@@ -2,11 +2,17 @@
 
 DOTFILES="$HOME/dotfiles"
 
-# Helper: create symlink unconditionally (force-replaces files and broken symlinks)
+# Helper: create symlink (force-replaces files and broken symlinks).
+# Guard: if dst is a real directory (not a symlink), `ln -nfs` would nest the
+# link inside it instead of replacing it — skip and warn instead.
 link() {
     src="$DOTFILES/$1"
     dst="$2"
     mkdir -p "$(dirname "$dst")"
+    if [ -d "$dst" ] && [ ! -L "$dst" ]; then
+        echo "  SKIP $dst (real dir exists — remove it first to avoid nesting)"
+        return
+    fi
     ln -nfs "$src" "$dst"
     echo "  $dst -> $src"
 }
@@ -27,7 +33,9 @@ link zed/settings.json  "$HOME/.config/zed/settings.json"
 link karabiner/karabiner.json "$HOME/.config/karabiner/karabiner.json"
 link zellij/config.kdl       "$HOME/.config/zellij/config.kdl"
 link ghostty/config          "$HOME/.config/ghostty/config"
-link codex/config.toml       "$HOME/.codex/config.toml"
+# codex/config.toml intentionally NOT linked: the Codex app rewrites it at
+# runtime (hooks.state hashes, marketplace timestamps, app version), so it's
+# left as the app-managed real file rather than a dotfiles symlink.
 link codex/agents            "$HOME/.codex/agents"
 link scripts/pbcopy          "$HOME/.local/bin/pbcopy"
 link scripts/portview        "$HOME/.local/bin/portview"
