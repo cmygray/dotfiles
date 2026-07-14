@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'python3 \"$HOME/dotfiles/codex/hooks/claude_pre_tool_use_adapter.py\" \"$HOME/dotfiles/claude/hooks/pre-push-gate.sh\"'"
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'python3 \"$HOME/dotfiles/codex/hooks/claude_pre_tool_use_adapter.py\" \"$HOME/dotfiles/claude/hooks/require-issue-link.sh\"'"
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'python3 \"$HOME/dotfiles/codex/hooks/claude_pre_tool_use_adapter.py\" \"$HOME/dotfiles/claude/hooks/ddb-readonly-gate.sh\"'"
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'python3 \"$HOME/dotfiles/codex/hooks/claude_pre_tool_use_adapter.py\" \"$HOME/dotfiles/claude/hooks/block-node-modules-symlink.sh\"'"
+          }
+        ]
+      }
+    ]
+  }
+}
