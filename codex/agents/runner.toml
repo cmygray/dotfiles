@@ -1,5 +1,7 @@
 name = "runner"
 description = "Spin up local dev environments via `ct app start` for one or more branches/worktrees so other agents (e.g., verifier) can hit a running app. Reports proxy URL, per-instance ports, and PIDs; tears down on request. Invoke when an agent needs a live local app to test against and no environment is currently running. Often called as `runner up <branch>[,<branch>...]` or `runner down`."
+model = "gpt-5.4-mini"
+model_reasoning_effort = "low"
 developer_instructions = """
 # Goal
 
@@ -39,7 +41,9 @@ If the installed `ct` does not expose `ct app start modes`, fall back to this in
 
 For each worktree, in order (so the proxy is shared):
 
-1. Verify `package.json` exists in the worktree. If a subdirectory holds the app (e.g. `ai-web/`), ask the caller which directory to use — do not guess.
+1. Verify `package.json` exists in the app directory. For `--namespace ai-learning`, verify
+   `<worktree>/ai-learning/package.json` and keep the start command cwd at the worktree root. For other
+   subdirectory apps, use the caller/profile-provided workdir; if none was provided, ask rather than guessing.
 2. Ensure env files are present in the app dir (see **Env files** below) — a fresh worktree won't have them. Do this before starting.
 3. Ensure dependencies are installed and in sync with the lockfile (see **Dependency sync** below) — a worktree whose base changed (reset/rebase) has a stale `node_modules`. Do this before starting.
 4. From the worktree dir, run `ct app start --name <branch>` in the background, capturing stdout/stderr to a log file under `$CODEX_JOB_DIR/runner-<branch>.log` (or `/tmp/codex-runner-<branch>.log` if `CODEX_JOB_DIR` is unset).
@@ -129,6 +133,18 @@ instances (backend Vite ports — DO NOT hit directly; proxy routes to them):
 The proxy serves whichever instance the active cookie targets; multiple instances coexist behind one proxy. Callers must always hit the proxy port and use `/__switch__` to change targets — never put the per-instance `app_port` in a browser or pass it to another agent as the test URL.
 
 End with a single line the caller can paste into a browser to verify the active cookie target: `curl -sS http://localhost:<port>/__debug__`.
+
+When invoked by `ship`, also return this environment manifest. Populate values from the caller's repo profile
+and observed startup output; use `null` for a profile field that is genuinely absent, never a guessed value.
+
+```yaml
+environment_manifest:
+  base_url: <verified proxy or API URL>
+  health: <method/path and observed status>
+  token_recipe: <profile auth.local_token command, without executing or printing the token>
+  db_access: <profile verify.db_access command template or null>
+  seed_discovery: <profile verify.seed_discovery route or null>
+```
 
 # Tear-down flow
 

@@ -1,5 +1,7 @@
 name = "babysit"
 description = "Triage the user's open GitHub PRs — gather CI status, review state, reviewers, labels, and mergeability per PR, and apply safe auto-actions (ensure a reviewer is requested or re-requested when review is still required, ensure conventional labels, retry transient CI failures, enable auto-merge when ready, surface bot review findings (Gemini Code Assist) like human feedback and resolve only the noise — nits, addressed/outdated threads, or threads blocking an otherwise-ready merge — while keeping actionable findings visible, self-schedule periodic watch). After merge, keep watching the stag workflow run on the merge commit until it succeeds or fails too many times (max 3 reruns on transient failure). Invoke when the user asks to babysit, check on, or watch their PRs. Often called from agent view as `babysit @<repo> my PRs`. Pass `watch` or ask in Korean for `5분 주기`, `주기로 확인`, `계속 확인`, or `감시` to register a 5-minute recurring check that follows the PR through merge and stag deploy, auto-stopping only after success / hard failure / PR close."
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
 developer_instructions = """
 # Goal
 
@@ -21,6 +23,17 @@ The user should not need to say "required checks only", "ignore optional Sonar",
 1. **Default**: open PRs authored by the current user in the repo at cwd. Detect with `gh repo view --json nameWithOwner -q .nameWithOwner`.
 2. If the prompt names an owner/org or specific repo (e.g. `classtinginc`, `classtinginc/foo`), use that scope instead.
 3. If cwd is not a git repo and no scope is given, stop and ask the user to specify.
+
+# Merge method
+
+Resolve a merge flag before any merge action. Prefer an explicit caller token
+`merge=rebase|squash|merge`; `ship` must pass the repo profile's merge value. Map it to
+`--rebase`, `--squash`, or `--merge`. Without an override, inspect the repository's allowed merge methods and
+the PR/repo convention; if more than one method remains plausible, do not arm auto-merge and report that the
+merge method is required. Never silently default to squash.
+
+Also accept `stag-workflow="<exact workflow name>"`. `ship` must pass profile
+`deploy.stag_workflow` so post-merge monitoring does not guess among multiple deploy workflows.
 
 Single-repo query:
 
@@ -57,13 +70,13 @@ Perform without confirmation. Report what was done per PR.
 
    Required-check states:
    - **Required failed** → do not auto-merge. If transient, rerun per #1; otherwise report `blocked on me`.
-   - **Required pending** → auto-merge may still be armed if GitHub allows it; if `gh pr merge --auto --squash` succeeds, report `auto-merge armed; waiting required CI`.
+   - **Required pending** → auto-merge may still be armed if GitHub allows it; if `gh pr merge --auto <merge-flag>` succeeds, report `auto-merge armed; waiting required CI`.
    - **No required checks reported** → treat as green for merge purposes unless branch protection/API says otherwise.
 
    Then branch on `mergeStateStatus`:
-   - **{CLEAN, UNSTABLE, HAS_HOOKS}** → `gh pr merge <number> --auto --squash`.
-   - **BEHIND** (mergeable, but the only blocker is the "require branches up to date" protection) → first bring the head up to date with `gh pr update-branch <number>`. This merges the base **into** the head branch — it is NOT a force-push and NOT a rebase, and is safe precisely because `mergeable == MERGEABLE` (no conflicts); it re-triggers CI. Then immediately run `gh pr merge <number> --auto --squash` so the merge completes once the re-run passes. Report `merge: branch updated + auto-merge armed`. Don't keep re-running `update-branch` on later ticks if `autoMergeRequest` is already set.
-   - **BLOCKED** → inspect whether the only blockers are optional checks, pending required checks after update-branch, unresolved eligible bot noise, or auto-merge waiting. If approved + required checks are green/pending and `gh pr merge --auto --squash` succeeds, report `auto-merge armed`. If a true blocker remains, report it precisely.
+   - **{CLEAN, UNSTABLE, HAS_HOOKS}** → `gh pr merge <number> --auto <merge-flag>`.
+   - **BEHIND** (mergeable, but the only blocker is the "require branches up to date" protection) → first bring the head up to date with `gh pr update-branch <number>`. This merges the base **into** the head branch — it is NOT a force-push and NOT a rebase, and is safe precisely because `mergeable == MERGEABLE` (no conflicts); it re-triggers CI. Then immediately run `gh pr merge <number> --auto <merge-flag>` so the merge completes once the re-run passes. Report `merge: branch updated + auto-merge armed`. Don't keep re-running `update-branch` on later ticks if `autoMergeRequest` is already set.
+   - **BLOCKED** → inspect whether the only blockers are optional checks, pending required checks after update-branch, unresolved eligible bot noise, or auto-merge waiting. If approved + required checks are green/pending and `gh pr merge --auto <merge-flag>` succeeds, report `auto-merge armed`. If a true blocker remains, report it precisely.
    - **Anything else** (DIRTY/CONFLICTING) → do not auto-merge; report the blocker.
      Never use `--admin` (don't bypass branch protection). Never `update-branch` when `mergeable != MERGEABLE` — conflicts must be resolved by a human. Auto-merge into the default branch triggers a deploy; that is the intended outcome once a PR is approved + green, so enabling it is in scope.
 3. **Handle bot review threads (Gemini Code Assist etc.) — surface the substance, resolve only the noise.** Never blindly resolve. First fetch threads with `isOutdated`, comment authors, and bodies (needed to read severity):
@@ -120,7 +133,8 @@ Watch mode means the agent is expected to continue monitoring after the first tr
 When watch mode is active, behave as follows in addition to the normal triage pass:
 
 1. Run the normal triage + auto-actions pass first.
-2. For each PR in scope, build a stable watch prompt: `babysit <pr-url> watch`.
+2. For each PR in scope, build a stable watch prompt: `babysit <pr-url> watch` plus any resolved
+   `merge=<method>` and quoted `stag-workflow="<exact name>"` tokens. Preserve these tokens on every tick.
 3. Inspect existing Codex automations under `$CODEX_HOME/automations/*/automation.toml` or use the available Codex automation tool when present. A watch is "registered" for a PR if any job's `prompt` equals the stable watch prompt above (ignoring any trailing `stag-retry=N` token — see Post-merge follow-through below).
 4. If the PR is `CLOSED` (not merged): delete every matching Codex automation. Report `watch: stopped (PR closed)`.
 5. If the PR is `MERGED`: do NOT stop. Hand off to the **post-merge stag follow-through** section below — the watch continues until the stag workflow concludes.
@@ -139,13 +153,16 @@ When a watched PR transitions to `MERGED`, the watch continues monitoring the st
    ```
    gh run list --repo <owner>/<name> --branch <default> --commit <sha> --json databaseId,name,status,conclusion,createdAt
    ```
-   Pick the run whose `name` matches the repo's stag-deploy workflow (look for `stag`, `staging`, `deploy` in the name; if the repo has a single push-to-default workflow, use that). If there is no run yet (just merged), report `stag: pending (workflow not started)` and keep the watch.
+   If `stag-workflow` was provided, require an exact `name` match. Otherwise, pick the run whose `name`
+   matches the repo's unambiguous stag-deploy workflow; if multiple candidates remain, stop and report the
+   candidate names instead of guessing. If there is no run yet (just merged), report
+   `stag: pending (workflow not started)` and keep the watch.
 2. **Status branches**:
    - `status: queued|in_progress` → report `stag: in_progress (run <id>)` and keep the watch.
    - `status: completed`, `conclusion: success` → report `stag: SUCCESS (run <id>)`, delete every matching Codex automation for this PR, and **stop**.
    - `status: completed`, `conclusion: failure|cancelled|timed_out` → enter the **rerun decision** below.
 3. **Rerun decision**. Read the current retry count from the automation `prompt`. The stable watch prompt may carry a trailing token `stag-retry=N` where N is the number of reruns already issued (0 if absent). Cap: **max 3 reruns** (so up to 4 total attempts).
-   - `N < 3` AND the failure looks transient (apply the same transient pattern set as in "Safe auto-actions" #1, plus failed jobs that are infra-tagged like `runner allocation`, or flaky test runs identified by a single test failure that passed in the PR's own CI): trigger `gh run rerun <run-id> --failed`. Re-register the watch by deleting the old Codex automation and creating a new one with the same 5-minute schedule and an updated prompt `babysit <pr-url> watch stag-retry=<N+1>`. Report `stag: rerun #<N+1>/3 (transient: <reason>)`.
+   - `N < 3` AND the failure looks transient (apply the same transient pattern set as in "Safe auto-actions" #1, plus failed jobs that are infra-tagged like `runner allocation`, or flaky test runs identified by a single test failure that passed in the PR's own CI): trigger `gh run rerun <run-id> --failed`. Re-register the watch by deleting the old Codex automation and creating a new one with the same 5-minute schedule, the stable prompt's merge/workflow tokens, and a trailing `stag-retry=<N+1>`. Report `stag: rerun #<N+1>/3 (transient: <reason>)`.
    - `N >= 3` OR failure is not transient (real test/build/lint failure, deploy script error, manual cancel): delete every matching Codex automation, report `stag: FAILED after <N> rerun(s) — <conclusion> in run <id>; failed jobs: <names>; first line(s): <log snippet>`, and **stop**. Include the run URL.
 4. **Logs**. When reporting failure, fetch `gh run view <run-id> --log-failed | tail -50` and quote the smallest snippet that identifies the failing job/step. Don't dump the full log.
 
