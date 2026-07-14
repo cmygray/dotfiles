@@ -37,10 +37,13 @@ link ghostty/config          "$HOME/.config/ghostty/config"
 # runtime (hooks.state hashes, marketplace timestamps, app version), so it's
 # left as the app-managed real file rather than a dotfiles symlink.
 link codex/agents            "$HOME/.codex/agents"
+link codex/hooks.json        "$HOME/.codex/hooks.json"
+link .codex/skills/ship      "$HOME/.codex/skills/ship"
 link scripts/pbcopy          "$HOME/.local/bin/pbcopy"
 link scripts/portview        "$HOME/.local/bin/portview"
 link portview/config.json    "$HOME/.config/portview/config.json"
 link launchagents/local.portview.plist "$HOME/Library/LaunchAgents/local.portview.plist"
+link launchagents/local.worktree-cleanup.plist "$HOME/Library/LaunchAgents/local.worktree-cleanup.plist"
 
 echo "Linking Claude Code settings..."
 mkdir -p "$HOME/.claude"
