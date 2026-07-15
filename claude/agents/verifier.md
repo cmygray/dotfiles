@@ -16,7 +16,7 @@ Caller passes a PR reference: URL, `owner/repo#N`, or `#N` (relative to cwd repo
 1. **Local target** (caller provides a proxy URL like `http://localhost:<port>` and a branch/worktree name): target **local**.
    - The proxy URL is the **only** URL allowed in a browser. Never substitute a per-instance backend port (e.g. `:3001`, `:3002`) — those are Vite servers the proxy routes to internally. Hitting them directly bypasses cookie/auth/routing and produces misleading results.
    - If multiple instances run behind the proxy, set the active target by visiting `<proxy>/__switch__` (or following the caller's instructions) before testing. Confirm with `curl -sS <proxy>/__debug__` and report the active target.
-   - APIs hit by the local app point at dev (`*.classting.dev`); use `ct auth token` for the **dev** environment when JWT is needed.
+   - Resolve API/token environment from the caller-provided environment manifest and repo profile. Local apps may point to dev or stag. If `token_recipe`/target environment is absent and cannot be observed from app configuration or network traffic, stop instead of assuming dev.
    - Skip the PR-state/deploy-check step entirely for local targets.
 2. **PR target** — resolve with `gh pr view <ref> --json url,title,body,state,merged,headRefName,baseRefName,closingIssuesReferences,labels,statusCheckRollup,mergedAt,headRepository`. Pick env from state:
    - `state: OPEN` → target **dev**. Require the dev-deploy check in `statusCheckRollup` to be `SUCCESS`.

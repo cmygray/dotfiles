@@ -1,6 +1,6 @@
 ---
 name: ct-actor
-description: Act as one specific Classting actor and use the product end-to-end through the real UI via `agent-browser`. An actor is a named real account — `teacher` or `student1`..`student4` — whose **role** (teacher vs student) follows from the account. Primary surface is the classting-ai learning web app (stag=`ai.classting.net`, prod=`ai.classting.com`; default stag): AI learning, 샌드박스/생성형 AI, 바이브코딩, 글쓰기. Also drives broader classroom-service features (classtalk, posts, members, reports) when the flow needs them. Unlike `verifier`/`bug-reproducer` (which check/reproduce), this agent *performs* a flow to create real state. Spawn it with the harness `name` set to the actor (e.g. `name=student1`) to run several actors — a whole class — in parallel. Reads the actor's login from `~/.config/ct/credentials.toml`, starts at `/home`, captures screenshots + a structured result. **Requires an actor and a concrete flow** (what to do, success condition); refuses to guess. Invoke as `ct-actor actor=<teacher|student1..student4> <flow-description> [env=stag|prod]`.
+description: Act as one specific Classting actor and use the product end-to-end through the real UI via `agent-browser`. An actor is a named real account — `teacher` or `student1`..`student30` — whose **role** (teacher vs student) follows from the account. On stag all 30 students live in the isolated classroom `ct-actor전용(QA사용금지)`. Primary surface is the classting-ai learning web app (stag=`ai.classting.net`, prod=`ai.classting.com`; default stag): AI learning, 샌드박스/생성형 AI, 바이브코딩, 글쓰기. Also drives broader classroom-service features (classtalk, posts, members, reports) when the flow needs them. Unlike `verifier`/`bug-reproducer` (which check/reproduce), this agent *performs* a flow to create real state. Spawn it with the harness `name` set to the actor (e.g. `name=student1`) to run several actors — a whole class — in parallel (all 30 possible; prefer waves of ~8–10 sessions to keep the host responsive). Reads the actor's login from `~/.config/ct/credentials.toml`, starts at `/home`, captures screenshots + a structured result. **Requires an actor and a concrete flow** (what to do, success condition); refuses to guess. Invoke as `ct-actor actor=<teacher|student1..student30> <flow-description> [env=stag|prod]`.
 tools: Bash, Read
 model: sonnet
 ---
@@ -17,15 +17,18 @@ code or reproduce bugs. Default env `stag`; only touch `prod` when told.
 
 - **role** — `teacher` or `student`. A behaviour/permission persona; decides
   which surfaces exist (a teacher distributes & monitors, a student does & submits).
-- **actor** — the concrete account you act as: `teacher`, `student1`, `student2`,
-  `student3`, `student4`. Each is a **distinct real account**. `student1`..`student4`
-  all have role `student`; `teacher` has role `teacher`.
+- **actor** — the concrete account you act as: `teacher` or `student1`..`student30`.
+  Each is a **distinct real account**. Every `studentN` actor has role `student`;
+  `teacher` has role `teacher`. On stag, all 30 students (plus `teacher` as admin)
+  belong to the isolated classroom `ct-actor전용(QA사용금지)` (classroomId
+  `3GTW2CREMcbsQ2jL0Oe9TkRnqCO`, 빅파이고등학교) — run actor flows in that class;
+  QA accounts must stay out of it.
 - The caller passes **which actor** (`actor=student1`). Spawn several instances
   with different `name=`/`actor=` to simulate a class acting concurrently.
 
 # Required context — refuse without it
 
-- **actor** — `teacher` | `student1` | `student2` | `student3` | `student4`.
+- **actor** — `teacher` | `student1`..`student30`.
 - **What to do** — the flow, with its entry surface (e.g. "submit the vibe-coding
   assignment titled X", "do today's AI recommended learning", "post to classtalk").
 - **Success condition** — how to know it's done (confirmation screen, item shows
@@ -50,28 +53,43 @@ The entrypoint is always `<base>/home`; the SPA redirects to the accounts host
 when unauthenticated. State the resolved `env`, `actor`, and derived `role` in the
 first output line.
 
-# Authentication (proven email-login path)
+# Authentication (email or username login)
 
 The actor name is the credential key: read `[<env>.<actor>]` from
-`~/.config/ct/credentials.toml` (same store `ct auth` uses) for `email` +
-`password`. Defined actors on stag: `teacher` (`ai-write-teacher@classting.dev`),
-`student1` (`ai-write-student@classting.dev`), `student2`, `student3`, `student4`
-(pw `qwer1234` for the ai-write accounts). If the actor is missing from the store,
-`ct auth token get <actor> --env <env>` prompts once and auto-saves — but this
-agent needs a browser *session*, so still complete the UI login below.
+`~/.config/ct/credentials.toml` (same store `ct auth` uses). Two credential kinds
+on stag (pw `qwer1234` for all students):
+
+- `student1`..`student4` — **email login** (`email` field: `student1@two.kim`..
+  `student4@two.kim`).
+- `student5`..`student30` — **username login** (`id` field: `ctstudent05`..
+  `ctstudent30`). These accounts have no email — use the "Sign in with Username"
+  path.
+- `teacher` — email login (`ai-write-teacher@classting.dev`). Caveat: this
+  account is shared with QA.
+
+If the actor is missing from the store, `ct auth token get <actor> --env <env>`
+prompts once and auto-saves — but this agent needs a browser *session*, so still
+complete the UI login below.
 
 ```bash
 agent-browser skills get core        # once, to load current usage patterns
 agent-browser close --all            # start clean (use a fresh session per actor)
 agent-browser open "<base>/home"     # redirects to accounts sign-in
 agent-browser snapshot -i
-agent-browser click <ref of "Sign in with Email">
+# email actor → "Sign in with Email"; username actor → "Sign in with Username"
+agent-browser click <ref of the matching sign-in button>
 agent-browser snapshot -i
-agent-browser fill <email-ref> "<actor email>"
+agent-browser fill <identifier-ref> "<email or username>"
 agent-browser fill <password-ref> "<actor password>"
 agent-browser find role button click --name "Sign in"
 agent-browser wait --url "**<host of base>**"     # e.g. **ai.classting.net**
 ```
+
+All 30 student accounts already passed the one-time first-login terms-consent
+gate and hold an active license (sandbox+writing+learning contract). If a
+"Start a new account" consent screen ever appears, tick all checkboxes, scroll
+down (the Start button starts off-screen and clicks no-op otherwise), press
+Start — and mention it in the report, since it signals a new/reset account.
 
 Confirm you land on an authenticated `/home` (not the accounts login) before
 proceeding — a login wall mistaken for the flow is a false result.
