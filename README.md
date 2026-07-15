@@ -1,6 +1,7 @@
-# Dotfiles
+# dotfiles
 
-개인 개발 환경 설정을 위한 dotfiles 저장소입니다.
+macOS 개발 환경과 AI 코딩 에이전트(Claude Code, Codex CLI) 설정의 source of truth입니다.
+여기서 파일을 수정하면 심볼릭 링크를 통해 즉시 글로벌 설정에 반영됩니다.
 
 ## 설치
 
@@ -10,72 +11,51 @@ cd ~/dotfiles
 ./bootstrap.sh
 ```
 
-> Homebrew가 먼저 설치되어 있어야 합니다.
+- 심볼릭 링크는 Homebrew보다 먼저 걸리므로, Homebrew 없는 환경(SSH 등)에서도 링크까지는 동작합니다.
+- 패키지 설치 단계부터는 Homebrew가 필요합니다.
 
-## 자동 설정되는 항목
+## bootstrap.sh가 하는 일
 
-### 🔗 심볼릭 링크 설정
+1. **심볼릭 링크** — 셸/앱/에이전트 설정을 홈 디렉터리로 연결 (전체 목록은 `bootstrap.sh` 참조)
+2. **git filter 등록** — `claude/settings.json` 커밋 시 시크릿 자동 제거 (아래 참조)
+3. **패키지 설치** — `Brewfile`(brew bundle), `requirements-pipx.txt`(pipx), `gh-extensions.txt`(gh extension)
 
-| 소스 | 대상 |
+## 레포 구조
+
+| 경로 | 내용 |
 |------|------|
-| `.zshrc` | `~/.zshrc` |
-| `.zshenv` | `~/.zshenv` |
-| `.gitconfig` | `~/.gitconfig` |
-| `.gitignore` | `~/.gitignore` |
-| `.wezterm.lua` | `~/.wezterm.lua` |
-| `.hammerspoon/` | `~/.hammerspoon/` |
-| `starship.toml` | `~/.config/starship.toml` |
-| `nvim/` | `~/.config/nvim/` |
-| `gh-dash/` | `~/.config/gh-dash/` |
-| `zed/keymap.json` | `~/.config/zed/keymap.json` |
-| `zed/settings.json` | `~/.config/zed/settings.json` |
-| `karabiner/karabiner.json` | `~/.config/karabiner/karabiner.json` |
-| `claude/settings.json` | `~/.claude/settings.json` |
-| `claude/CLAUDE.md` | `~/.claude/CLAUDE.md` |
-| `claude/agents/` | `~/.claude/agents/` |
-| `claude/commands/` | `~/.claude/commands/` |
-| `claude/skills/` | `~/.claude/skills/` |
+| `agent-common/` | Claude·Codex 공용 에이전트 지침 (`global.md`, `won-judgment.md`, `personas/`) |
+| `claude/` | Claude Code 글로벌 설정 — `settings.json`, `CLAUDE.md`, `agents/`, `skills/`, `commands/`, `rules/`, `hooks/` → `~/.claude/*` |
+| `codex/` | Codex CLI 설정 — `agents/`, `hooks.json` → `~/.codex/*`. `AGENTS.md`는 생성 파일(직접 수정 금지) |
+| `scripts/` | 유틸리티 스크립트 (`qv`, `portview`, `secret-{clean,smudge}.sh`, `sync-agent-instructions.sh` 등) |
+| `launchagents/` | macOS LaunchAgent (`portview` 서버, merged worktree 자동 정리) |
+| `portview/` | portview 설정 |
+| `nvim/`, `zed/`, `karabiner/`, `ghostty/`, `zellij/`, `gh-dash/`, `.hammerspoon/` | 앱별 설정 |
+| `Brewfile`, `requirements-pipx.txt`, `gh-extensions.txt` | 패키지 목록 |
+| `skills-lock.json` | 외부 소스에서 가져온 스킬의 버전 잠금 |
 
-### 🤖 Agent helpers
+## AI 에이전트 설정
 
-- `!qv`: Claude Code / Codex CLI shell escape에서 `scripts/qv`를 실행해 현재 세션 디렉터리를 Neovim으로 엽니다.
-  - 기본: AppleScript로 Ghostty에 임시 modal-like 창을 띄우고 Neovim 종료까지 대기
-  - Neovim 인자는 temp file로 전달하고, Ghostty에는 고정된 `scripts/qv`만 실행시킵니다.
-  - 설정: `QV_EDITOR=command`
+### Claude Code
 
-### 📦 자동 설치
+- `~/.claude/{settings.json, CLAUDE.md, agents, commands, skills, rules}` → `claude/` 하위로 링크됨
+- 이 레포에서 수정하면 즉시 반영. 단, skill/rule/agent 추가는 **새 세션**을 띄워야 인식되고, `settings.json` 수정은 `/doctor` 또는 재시작으로 확인
 
-- **Homebrew 패키지**: `Brewfile` 기반 일괄 설치
-- **pipx 패키지**: `requirements-pipx.txt` 기반 설치
-- **gh 확장**: `gh-extensions.txt` 기반 설치
+### Codex CLI
 
-### ⚙️ Git 필터
+- `~/.codex/{agents, hooks.json}` → `codex/` 하위로 링크됨
+- `codex/config.toml`은 **의도적으로 링크하지 않음** — Codex 앱이 런타임에 파일을 재작성하므로 앱 관리 파일로 둡니다
+- `codex/AGENTS.md`는 `scripts/sync-agent-instructions.sh`가 `agent-common/*.md` + `codex/codex-specific.md`를 합쳐 생성합니다. 공용 지침을 고치려면 `agent-common/`을 수정 후 스크립트를 재실행하세요
 
-Claude Code `settings.json`에서 `model` 필드를 커밋 시 자동 제거합니다.
+## 시크릿 관리
 
-```
-filter.strip-claude-local.clean = jq 'del(.model, .effortLevel)'
-```
+- `.gitattributes`에서 `claude/settings.json`에 `strip-claude-local` filter 적용
+- `scripts/secret-{clean,smudge}.sh`가 `~/.zshsecrets`의 `export KEY="VAL"` 목록을 읽어 변환
+  - commit 시: 실제값 → `__REDACTED__`
+  - checkout 시: `__REDACTED__` → 실제값
+- working copy에 평문 토큰이 보여도 정상이며, git 히스토리에는 들어가지 않습니다
+- 새 시크릿 추가: `~/.zshsecrets`에 `export KEY="VAL"` 한 줄 추가하면 자동 연동
 
-## TODO
+## 커밋 규칙
 
-- [x] sync gh extensions (`gh-extensions.txt`)
-- [x] zellij 설정 링크 추가
-
-직접 설치할 앱들:
-
-- 1password
-- authy
-- karabiner
-- appcleaner
-- brave
-- fantastical
-- hammerspoon
-- monitorcontrol (appstore)
-- pdf expert
-- homerow
-- wezterm
-
-참고:
-
-- https://blog.appkr.dev/work-n-play/dotfiles/
+- 이 레포에서 `commit push` = 브랜치/PR 없이 `main`에 직접 푸시 (단일 사용자, 설정 동기화 목적)
