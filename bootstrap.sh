@@ -48,6 +48,7 @@ link launchagents/local.worktree-cleanup.plist "$HOME/Library/LaunchAgents/local
 echo "Linking Claude Code settings..."
 mkdir -p "$HOME/.claude"
 link claude/settings.json  "$HOME/.claude/settings.json"
+link claude/statusline.sh  "$HOME/.claude/statusline.sh"
 link claude/CLAUDE.md      "$HOME/.claude/CLAUDE.md"
 link claude/agents         "$HOME/.claude/agents"
 link claude/commands       "$HOME/.claude/commands"
