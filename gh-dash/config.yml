@@ -28,6 +28,8 @@ issuesSections:
     filters: is:open assignee:@me
   - title: Authored by me
     filters: is:open author:@me
+  - title: Need Finalize
+    filters: is:open org:classtinginc label:need-finalize
   - title: Platform Core
     filters: is:open project:classtinginc/26
   - title: AI Writing
