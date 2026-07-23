@@ -1,0 +1,47 @@
+#!/bin/zsh
+# harness shim — BusyBox 패턴 (argv[0] 분기: claude | codex)
+#
+# 역할 (mangkyu.tistory.com/467 shim 아키텍처 착안):
+#   1. Codex 스킬 심링크 자가치유 — super-ct marketplace 클론을 가리키도록 (ms 단위, 포그라운드)
+#   2. 스로틀된 백그라운드 sync — marketplace 클론 + Claude 플러그인 갱신 (TTL 12h)
+#   3. PATH에서 자신을 제거하고 진짜 바이너리로 exec (투명성)
+#
+# 설치: .zshrc에서 PATH 최앞단에 dotfiles/shim/bin 추가
+#   export PATH="$HOME/dotfiles/shim/bin:$PATH"
+
+emulate -L zsh
+SHIM_DIR="${0:A:h}"
+CMD="${0:t}"
+
+# ── 재귀 방지 + 진짜 바이너리 해석 ──────────────────────────────
+path=("${(@)path:#$SHIM_DIR}")
+REAL_BIN="$(command -v "$CMD")" || { print -u2 "shim: 진짜 $CMD 를 PATH에서 못 찾음"; exit 127; }
+REAL_CLAUDE="$(command -v claude)"   # sync에 사용 (없으면 sync 생략)
+
+# ── 1. Codex 스킬 심링크 자가치유 ───────────────────────────────
+MARKET="$HOME/.claude/plugins/marketplaces/superct/claude-plugins"
+typeset -A CODEX_LINKS=(
+  ship "$MARKET/dev/codex/skills/ship"
+)
+if [[ -d "$MARKET" ]]; then
+  mkdir -p "$HOME/.codex/skills"
+  for name target in "${(@kv)CODEX_LINKS}"; do
+    link="$HOME/.codex/skills/$name"
+    [[ "$(readlink "$link" 2>/dev/null)" == "$target" ]] || ln -sfn "$target" "$link"
+  done
+fi
+
+# ── 2. 스로틀된 백그라운드 sync (TTL 12h) ───────────────────────
+CACHE="$HOME/.cache/ct-shim"; STAMP="$CACHE/last-sync"; TTL=$((12 * 3600))
+mkdir -p "$CACHE"
+now=$(date +%s); last=$(stat -f %m "$STAMP" 2>/dev/null || print 0)
+if (( now - last > TTL )) && [[ -n "$REAL_CLAUDE" ]]; then
+  touch "$STAMP"
+  {
+    "$REAL_CLAUDE" plugin marketplace update superct
+    for p in dev@superct qa@superct; do "$REAL_CLAUDE" plugin update "$p"; done
+  } &> "$CACHE/sync.log" &!
+fi
+
+# ── 3. 진짜 바이너리로 교체 ─────────────────────────────────────
+exec "$REAL_BIN" "$@"
