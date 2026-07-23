@@ -1,4 +1,0 @@
-interface:
-  display_name: "Ship"
-  short_description: "이슈를 구현부터 stag 검증과 알림까지 배송"
-  default_prompt: "Use $ship to deliver this issue through implementation, PR, merge, staging verification, and notification."
