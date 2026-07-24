@@ -18,6 +18,12 @@ path=("${(@)path:#$SHIM_DIR}")
 REAL_BIN="$(command -v "$CMD")" || { print -u2 "shim: 진짜 $CMD 를 PATH에서 못 찾음"; exit 127; }
 REAL_CLAUDE="$(command -v claude)"   # sync에 사용 (없으면 sync 생략)
 
+# ── 0. 호출 추적 (발동 여부 진단용 — tail ~/.cache/ct-shim/invocations.log) ──
+TRACE="$HOME/.cache/ct-shim/invocations.log"
+mkdir -p "${TRACE:h}"
+print -r -- "$(date '+%F %T') cmd=$CMD ppid=$PPID parent=$(ps -o comm= -p $PPID 2>/dev/null) tty=${TTY:-none}" >> "$TRACE"
+tail -n 200 "$TRACE" > "$TRACE.tmp" && mv "$TRACE.tmp" "$TRACE"   # 최근 200줄 유지
+
 # ── 1. Codex 스킬 심링크 자가치유 ───────────────────────────────
 MARKET="$HOME/.claude/plugins/marketplaces/superct/claude-plugins"
 typeset -A CODEX_LINKS=(
