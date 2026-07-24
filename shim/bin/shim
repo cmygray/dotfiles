@@ -26,16 +26,24 @@ tail -n 200 "$TRACE" > "$TRACE.tmp" && mv "$TRACE.tmp" "$TRACE"   # 최근 200�
 
 # ── 1. Codex 스킬 심링크 자가치유 ───────────────────────────────
 MARKET="$HOME/.claude/plugins/marketplaces/superct/claude-plugins"
-typeset -A CODEX_LINKS=(
+typeset -A CODEX_SKILL_LINKS=(
   ship     "$MARKET/dev/codex/skills/ship"
   dynamodb "$MARKET/common/codex/skills/dynamodb"
 )
+typeset -A CODEX_AGENT_LINKS=(
+  runner.toml   "$MARKET/dev/codex/agents/runner.toml"
+  babysit.toml  "$MARKET/dev/codex/agents/babysit.toml"
+  verifier.toml "$MARKET/qa/codex/agents/verifier.toml"
+  ct-actor.toml "$MARKET/qa/codex/agents/ct-actor.toml"
+)
+heal() {  # heal <base-dir> <name> <target>
+  local link="$1/$2" target="$3"
+  [[ "$(readlink "$link" 2>/dev/null)" == "$target" ]] || ln -sfn "$target" "$link"
+}
 if [[ -d "$MARKET" ]]; then
-  mkdir -p "$HOME/.codex/skills"
-  for name target in "${(@kv)CODEX_LINKS}"; do
-    link="$HOME/.codex/skills/$name"
-    [[ "$(readlink "$link" 2>/dev/null)" == "$target" ]] || ln -sfn "$target" "$link"
-  done
+  mkdir -p "$HOME/.codex/skills" "$HOME/.codex/agents"
+  for name target in "${(@kv)CODEX_SKILL_LINKS}"; do heal "$HOME/.codex/skills" "$name" "$target"; done
+  for name target in "${(@kv)CODEX_AGENT_LINKS}"; do heal "$HOME/.codex/agents" "$name" "$target"; done
 fi
 
 # ── 2. 스로틀된 백그라운드 sync (TTL 12h) ───────────────────────

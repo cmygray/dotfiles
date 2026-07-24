@@ -36,7 +36,8 @@ link ghostty/config          "$HOME/.config/ghostty/config"
 # codex/config.toml intentionally NOT linked: the Codex app rewrites it at
 # runtime (hooks.state hashes, marketplace timestamps, app version), so it's
 # left as the app-managed real file rather than a dotfiles symlink.
-link codex/agents            "$HOME/.codex/agents"
+# ~/.codex/agents는 실디렉토리 — super-ct 유래 agent TOML 링크는 shim이 소유
+mkdir -p "$HOME/.codex/agents"
 link codex/hooks.json        "$HOME/.codex/hooks.json"
 # super-ct 유래 codex 스킬(ship, dynamodb 등) 링크는 shim/bin/shim이 소유 — 실행 시 자가치유
 link scripts/pbcopy          "$HOME/.local/bin/pbcopy"
