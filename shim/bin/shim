@@ -21,7 +21,8 @@ REAL_CLAUDE="$(command -v claude)"   # sync에 사용 (없으면 sync 생략)
 # ── 1. Codex 스킬 심링크 자가치유 ───────────────────────────────
 MARKET="$HOME/.claude/plugins/marketplaces/superct/claude-plugins"
 typeset -A CODEX_LINKS=(
-  ship "$MARKET/dev/codex/skills/ship"
+  ship     "$MARKET/dev/codex/skills/ship"
+  dynamodb "$MARKET/common/codex/skills/dynamodb"
 )
 if [[ -d "$MARKET" ]]; then
   mkdir -p "$HOME/.codex/skills"

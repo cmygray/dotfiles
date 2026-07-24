@@ -38,7 +38,7 @@ link ghostty/config          "$HOME/.config/ghostty/config"
 # left as the app-managed real file rather than a dotfiles symlink.
 link codex/agents            "$HOME/.codex/agents"
 link codex/hooks.json        "$HOME/.codex/hooks.json"
-link .codex/skills/ship      "$HOME/.codex/skills/ship"
+# super-ct 유래 codex 스킬(ship, dynamodb 등) 링크는 shim/bin/shim이 소유 — 실행 시 자가치유
 link scripts/pbcopy          "$HOME/.local/bin/pbcopy"
 link scripts/portview        "$HOME/.local/bin/portview"
 link portview/config.json    "$HOME/.config/portview/config.json"
