@@ -54,7 +54,8 @@ if (( now - last > TTL )) && [[ -n "$REAL_CLAUDE" ]]; then
   touch "$STAMP"
   {
     "$REAL_CLAUDE" plugin marketplace update superct
-    for p in dev@superct qa@superct; do "$REAL_CLAUDE" plugin update "$p"; done
+    for pl in common@superct dev@superct qa@superct; do "$REAL_CLAUDE" plugin update "$pl"; done
+    command -v uv >/dev/null && uv tool upgrade ct-cli   # ct CLI — git main 소스 재해석
   } &> "$CACHE/sync.log" &!
 fi
 
