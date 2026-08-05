@@ -1,61 +1,93 @@
 ---
 name: design-doc
-description: Create, restructure, or review software design documents so they are useful for engineering review. Use when the user asks to write a design doc, improve a design proposal, turn notes/PRD/comments into a reviewable technical design, identify open questions and alternatives, or apply design-doc standards to an existing document.
+description: 소프트웨어 design doc을 사용자와의 인터뷰로 한 섹션씩 작성한다. "design doc 작성", "설계 문서", "설계 정리" 등의 요청에 반응. 새 문서 작성이 중심이고, 기존 문서 개선 요청에는 같은 판단 기준을 체크리스트로 적용한다.
 ---
 
 # Design Doc
 
-Use this skill to produce a design doc that helps reviewers focus on expensive-to-change decisions, not incidental implementation details.
+사용자와 함께 design doc을 작성한다. 산출물은 Notion 페이지(한국어 본문 + 영어 기술 용어)다.
 
-## Core Rule
+## 헌법 — 어길 수 없는 3원칙
 
-Include a decision when the penalty for being wrong is meaningful: data model, API contract, persistence, access control, privacy/security, cross-team dependency, rollout, or compatibility. Demote easy-to-change details to implementation notes or omit them.
+1. **문서는 사용자의 답에서만 자란다.** 사용자가 말하지 않은 내용을 쓰지 않는다. 모르는 것을 그럴듯한 문장으로 채우지 않는다. 답이 없는 질문은 Open Issues에 질문 그대로 남긴다.
+2. **한 번에 한 섹션.** 현재 섹션에 대해 질문하고 → 답을 받고 → 그 답만 반영해 작성하고 → 사용자 확인 후 다음 섹션으로 넘어간다. 뒤 섹션을 미리 작성하지 않는다. 질문은 한 턴에 1~3개로 제한한다.
+3. **필수 섹션만 기본.** 조건부 섹션은 설계 대상에 맞을 때 사용자에게 제안하고, 동의할 때만 연다.
 
-## Workflow
+## 워크플로
 
-1. Establish the objective in one sentence.
-2. Separate context from decisions:
-   - **Background**: facts, constraints, current system shape, product requirement.
-   - **Resolved issues**: decisions already made and why.
-   - **Open issues**: decisions still needing input, each with options and a next step.
-3. Put scope up front:
-   - **Goals**: user/team/system outcomes.
-   - **Non-goals**: plausible-but-excluded work.
-4. Add scenarios before low-level design when requirements are ambiguous. Use scenarios to test whether the model handles real product paths.
-5. Present the proposed design around stable interfaces:
-   - data model and ownership
-   - APIs/DTOs/events
-   - policy and permission boundaries
-   - lifecycle/state transitions
-   - indexing/query paths that matter
-6. Add alternatives only for options reviewers are likely to ask about or options already investigated.
-7. End with review status:
-   - what is decided
-   - what needs review
-   - who/what can unblock remaining issues
+### 0. 게이트 — 쓸 가치가 있는가
 
-## Editing Existing Docs
+시작할 때 간단히 판정한다: 여러 사람이 구현하나 / 수년 운영되나 / 팀 간 협업인가 / 요구사항이 모호한가 / 설계로 예방할 치명적 리스크(보안·법적)가 있나. 2개 이상 "예"면 진행, 0~1개면 문서가 과할 수 있음을 알리고 사용자 판단에 맡긴다. 적절한 투자량이 0일 수도 있다.
 
-When improving an existing document, avoid a full rewrite unless requested. Prefer:
+### 1. 설계 대상 파악
 
-- Move the objective, goals, non-goals, and key decisions toward the top.
-- Convert chronological notes into **Resolved issues** and **Open issues**.
-- Remove contradictions between old text and review updates.
-- Keep investigation details only when they justify a costly decision.
-- Preserve useful inline comments or reply to them with the paired decision.
+무엇을 설계하는지 묻는다(API / 데이터 모델 / 서비스 간 연동 / UI / 인프라 등). 대상에 따라 열 조건부 섹션을 제안한다.
 
-## Review Checklist
+### 2. 섹션 순서대로 인터뷰 → 작성
 
-Before finalizing, check:
+필수 섹션을 아래 순서대로 진행한다. 섹션별 질문 가이드는 `references/template.md` 참조.
 
-- The first page makes sense without verbal context.
-- Goals are outcomes, not implementation tasks.
-- Non-goals block likely scope misunderstandings.
-- Open issues state the problem, options, proposed solution if any, and next step.
-- Alternatives explain why rejected options were not chosen.
-- Security, privacy, logging, and monitoring are included when the feature touches user data, public access, moderation, or production operation.
-- Easy-to-change details are not stealing review attention.
+| # | 섹션 | 요지 |
+|---|------|------|
+| 1 | Metadata | 작성자, 상태(Draft/In review/Accepted), 최종 갱신일 |
+| 2 | Objective | 한 문장. 어떤 이해관계자든 이해하는 평이한 언어 |
+| 3 | Related documents | **에이전트가 탐색 지원** — 아래 참조 |
+| 4 | Background | 구두 설명 없이 문서가 자립하는 데 필요한 최소한. 왜 지금 하는가 |
+| 5 | Goals / Non-goals | Goals는 구현이 아니라 임팩트 관점. Non-goals는 독자가 범위 안이라 오해할 것들 |
+| 6 | Scenarios | 완성된 시스템의 실제 동작을 번호 매긴 단계로 |
+| 7 | Constraints | 예산·인프라·의존성·정책이 설계에 부과하는 제약 |
+| 8 | Timeline | 마일스톤 단위. 각 마일스톤은 이해관계자에게 유용한 산출물. 날짜는 사용자가 제시한 것만 적는다 |
+| 9 | Proposed Design | 틀렸을 때 대가가 큰 결정만 (아래 대가 필터) |
+| 10 | Alternatives Considered | 독자가 "왜 X 안 했나" 물을 것들. 항목당 몇 줄이면 충분 |
+| 11 | Open Issues | 문제 / 선택지 / 제안(있으면) / 다음 단계 |
 
-## References
+**Proposed Design 하위 섹션** (설계 대상에 따라 선택): Data Model, Interfaces, Diagrams(Mermaid 등 편집 가능한 소스로), Lifecycle.
 
-Read `references/template.md` when the user asks for a template, asks to create a full design doc, or the document needs more than a small edit.
+**조건부 독립 섹션** (대상에 맞으면 제안): Glossary, SLO, Security, Privacy, Monitoring / Logging, Rollout / Migration, Resolved Issues(원장 — `references/template.md`의 원장 규칙 참조).
+
+### 3. Related documents 탐색
+
+이 섹션 차례가 되면 Notion(PRD, 인접 설계 문서, 에픽/태스크), Slack 논의, GitHub PR/이슈, 코드베이스를 검색해 **후보 목록만 제시**한다. 사용자가 고른 것만 문서에 넣는다. 찾은 문서는 이후 섹션(Background, Constraints) 질문의 재료로 쓴다.
+
+## 대가 필터 — Proposed Design에 무엇을 넣나
+
+틀렸을 때 되돌리는 비용이 큰 결정만 넣는다. 판정 리트머스 — 이 결정을 되돌릴 때:
+
+1. **데이터에 새겨졌나?** 마이그레이션·backfill·null 재해석이 필요한가
+2. **경계를 넘었나?** 나 혼자 고치면 끝인가, 다른 서비스·팀·배포된 클라이언트가 같이 움직여야 하나
+3. **권한·보안 의미가 있나?** 틀리면 버그가 아니라 노출 사고인가
+
+전부 "아니오"인 결정(네이밍, UI 디테일, 쉽게 교체되는 라이브러리)은 문서에 넣지 않는다. 비용은 시점에 따라 변한다 — 같은 API 경로도 클라이언트 배포 전엔 싸고 배포 후엔 비싸다.
+
+## 문체 규칙 — 문서 본문의 AI slop 금지
+
+산출물 문서의 본문에 적용한다 (다이어그램, 코드블록, 데이터 명칭은 예외).
+
+1. **대시("—") 부연 금지.** "X — Y" 꼴로 설명을 덧붙이지 않는다. 완결된 문장으로 푼다. 이유는 "~하기 때문이다", 목적은 "~하기 위해"로 서술한다.
+   - ❌ `발행된 문집의 삭제 — 의도적 제외.`
+   - ⭕ `발행된 문집의 삭제는 의도적으로 제외한다.`
+2. **Go-To 어노테이션 금지.** "(X 절 참조)", "(상세는 Y)", "위와 동일한 이유" 같은 문서 내 점프 지시를 쓰지 않는다. 그 자리에서 읽히도록 풀어 쓰거나, 정말 필요하면 실제 하이퍼링크를 만든다.
+   - ❌ `산출물 30일 삭제 집행은 크리티컬 패스에 두지 않는다 (Proposed Design의 보존 절).`
+   - ⭕ `media에는 만료 정책 기능이 아직 없다. 이 때문에 산출물 30일 삭제의 실제 집행을 릴리즈 크리티컬 패스에 두지 않는다.`
+
+### 발행 전 자체 검사 (결정적)
+
+Notion 발행 직전, 초안 파일에 grep을 돌려 잔존 패턴을 검사한다:
+
+```bash
+grep -n "—" <초안.md>
+grep -nE "참조\)|절\)|위와 동일|상세는 |아래서 다룬다|앞서 (언급|말한)" <초안.md>
+```
+
+히트 각 건을 판정한다: 본문이면 고치고, 다이어그램·코드블록·데이터 명칭이면 통과시킨다. 검사를 통과해야 발행한다.
+
+## 기존 문서 개선 요청 시
+
+전면 재작성하지 않는다. 헌법과 같은 기준으로 점검한다:
+
+- 첫 페이지가 구두 설명 없이 이해되는가
+- Goals가 구현 태스크가 아니라 임팩트인가
+- 사용자가 확인해주지 않은 추측성 서술이 없는가 — 있으면 Open Issue로 강등
+- 쉬운 결정이 리뷰 주의를 훔치고 있지 않은가 — 있으면 제거 제안
+- 본문에 대시 부연·Go-To 어노테이션이 남아 있는가 — 문체 규칙의 grep 검사 적용
+- Resolved 원장이 비대하면 `references/template.md`의 원장 압축 규칙 적용을 제안

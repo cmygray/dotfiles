@@ -1,160 +1,130 @@
-# Design Doc Template
+# Design Doc 골격 + 섹션별 인터뷰 가이드
 
-Use only the sections that fit the project. Keep the first page understandable to a reader without prior discussion.
+각 섹션의 골격과, 그 섹션을 채우기 위해 사용자에게 물을 질문이다. 질문은 한 턴에 1~3개만. 답이 없으면 해당 내용은 쓰지 않고 Open Issues로 보낸다.
 
-## Metadata
+## 1. Metadata
 
-- **Author**:
-- **Status**: Draft | Ready for review | Approved
-- **Created**:
-- **Last updated**:
-- **Authoritative URL**:
-- **Related documents**:
-
-## Objective
-
-One sentence in plain language. State the user/team/system outcome, not the implementation.
-
-## Background
-
-Explain:
-
-- Why this project exists.
-- What problem it solves.
-- Current system behavior and constraints.
-- Previous attempts or related designs, if any.
-
-## Goals
-
-Outcome-oriented bullets. Avoid implementation details.
-
-Example:
-
-- Allow students and teachers to comment on visible writing results.
-- Keep public-link viewers read-only.
-
-## Non-goals
-
-Explicitly exclude plausible scope:
-
-- Notifications.
-- General-purpose comment platform.
-- Migration of unrelated existing features.
-
-## Scenarios
-
-Use concrete flows to validate requirements.
-
-```text
-Scenario: <name>
-1. Actor does ...
-2. System responds ...
-3. Expected result ...
+```
+- **Author**: <이름>
+- **Status**: Draft | In review | Accepted
+- **Last updated**: <YYYY-MM-DD>
 ```
 
-## Proposed Design
+질문 불필요. 상태는 Draft로 시작한다.
 
-Summarize the design in a few paragraphs. Then split details by concern.
+## 2. Objective
 
-### Data Model
+한 문장. 기술 용어 최소화.
 
-Cover:
+- 질문: "이 프로젝트가 끝나면 무엇이 달라지나요? 한 문장으로요."
 
-- entities and ownership
-- important fields
-- lifecycle/state representation
-- indexes and uniqueness constraints
-- compatibility/migration considerations
+## 3. Related documents
 
-### Interfaces
+에이전트가 Notion·Slack·GitHub·코드베이스에서 후보를 찾아 제시하고, 사용자가 고른 것만 넣는다.
 
-Cover APIs, DTOs, events, jobs, or file formats. Include only stable contracts and behavior that clients depend on.
+- 탐색 대상: PRD, 인접 시스템의 설계 문서, 이전 반복의 설계 문서, 관련 Slack 스레드, 관련 PR/이슈
+- 질문: "이 후보들 중 문서에 링크할 것을 골라주세요. 빠진 문서가 있나요?"
 
-### Access And Visibility
+## 4. Background
 
-Cover:
+독자가 구두 설명 없이 이해하는 데 필요한 최소한.
 
-- viewer relationships
-- permission checks
-- public/private boundaries
-- resource-specific visibility
-- moderation or policy calculators
+- 질문: "왜 지금 이걸 하나요? 어떤 문제가 있었나요?" / "이전에 시도된 적 있나요?" / "현재 시스템은 어떤 모습인가요?"
+- 점검: 처음 보는 팀 밖 독자가 이 섹션만 읽고 프로젝트 동기를 이해할 수 있는가.
 
-### Lifecycle
+## 5. Goals / Non-goals
 
-Cover state transitions and who can trigger them.
+- Goals는 임팩트 관점으로 쓴다. "Kubernetes 도입"(구현) ❌ → "배포 관련 장애 최소화"(임팩트) ⭕
+- Non-goals는 독자가 범위 안이라 오해할 법한 것만. 각 항목에 왜 제외인지 한 줄.
+- 질문: "구현이 끝나면 사용자/팀에 뭐가 좋아지나요?" / "독자가 '이것도 하겠지'라고 착각할 만한 건 뭔가요?"
 
-## Dependencies And Constraints
+## 6. Scenarios
 
-List dependencies that are expensive to change:
+완성된 시스템의 실제 동작. 등장인물 + 번호 매긴 단계.
 
-- storage
-- cross-service calls
-- external systems
-- runtime/infrastructure
-- product or legal constraints
-
-## Security And Privacy
-
-Use when the feature touches user data, public access, moderation, authentication, authorization, or logs.
-
-Answer:
-
-- What sensitive data is handled?
-- Who can read/write it?
-- What untrusted input is accepted?
-- What must not be logged?
-
-## Monitoring And Logging
-
-Cover critical events, operational signals, and sensitive-data limits.
-
-## Rollout And Migration
-
-Cover:
-
-- feature flags or staged rollout
-- backfill/migration
-- compatibility with existing clients
-- rollback path
-
-## Alternatives Considered
-
-Keep brief. Include only strong alternatives or ones reviewers will ask about.
-
-```text
-- Alternative:
-  Why it seemed plausible:
-  Why rejected:
+```
+### Scenario: <제목>
+1. <행위자>가 <행동>한다.
+2. 시스템은 <검증/처리>한다.
+...
 ```
 
-## Resolved Issues
+- 질문: "대표적인 사용 흐름을 처음부터 끝까지 말해주세요." / "실패하거나 거부되는 흐름도 있나요?"
+- 요구사항이 모호할수록 시나리오를 늘린다. 시나리오는 설계 검증 도구다("이 모델로 시나리오 3이 되는가").
 
-Move settled review questions here.
+## 7. Constraints
 
-```text
-Resolved Issue: <title>
-Decision:
-Rationale:
+설계에 부과되는 외부 제약: 예산, 인프라, 의존 시스템, 정책, 계약.
+
+- 질문: "설계 선택지를 좁히는 제약이 있나요? (인프라, 기존 시스템, 정책, 마감)"
+
+## 8. Timeline
+
+이해관계자에게 유용한 산출물 단위의 마일스톤. **날짜·기간은 사용자가 말한 것만 적는다 — 에이전트가 추정하지 않는다.**
+
+```
+- **마일스톤 1 (<날짜>)**: <확인 가능한 산출물>
 ```
 
-## Open Issues
+- 질문: "중간에 이해관계자에게 보여줄 수 있는 산출물 단위가 있나요?" / "확정된 날짜가 있나요?"
 
-Every open issue should have a next step.
+## 9. Proposed Design
 
-```text
-Open Issue: <title>
-Problem:
-Options:
-Proposed solution:
-Next step:
-Owner:
+대가 필터를 통과한 결정만 (SKILL.md의 리트머스 3문항). 하위 섹션은 설계 대상에 따라 선택:
+
+- **Data Model** — 테이블/엔티티, 키·인덱스·unique 제약, null의 의미
+- **Interfaces** — API/이벤트/DTO 계약. 코드블록으로
+- **Diagrams** — 데이터 흐름, 컴포넌트 관계. Mermaid 등 편집 가능한 소스로, 원본 코드를 문서에 남긴다
+- **Lifecycle** — 상태 전이, 생성→변경→삭제 흐름
+
+- 질문 예: "이 결정이 틀렸다고 6개월 뒤 판명되면 뭘 고쳐야 하나요?" — 답이 "마이그레이션/타 팀 협의"면 문서에, "rename 한 번"이면 문서 밖으로.
+
+## 10. Alternatives Considered
+
+독자가 "왜 X 안 했나요?"라고 물을 것들에 선제 답변. 항목당 몇 줄.
+
+```
+- **<대안>**
+  - <왜 기각했는지 1~2문장>
 ```
 
-## Review Notes
+- 질문: "검토했다가 접은 방안이 있나요? 왜 접었나요?" / "리뷰어가 '왜 이렇게 안 했냐'고 물을 만한 게 뭘까요?"
 
-State:
+## 11. Open Issues
 
-- what needs review now
-- what is intentionally deferred
-- whose approval or input is needed
+인터뷰 중 사용자가 답하지 못한 질문이 모두 여기로 온다.
+
+```
+### Open Issue: <제목>
+**Problem**: <추가 작업이 필요한 문제>
+**Options**: <보이는 선택지들>
+**Proposed**: <제안하는 해법, 있으면>
+**Next step**: <당장의 다음 단계, 담당자>
+```
+
+---
+
+## 조건부 독립 섹션
+
+설계 대상에 맞을 때 사용자에게 제안하고 동의하면 연다.
+
+- **Glossary** — 팀 밖 독자가 모를 내부 용어. 가능하면 용어집 대신 본문 인라인 정의를 우선
+- **SLO** — 측정 가능한 목표 (가용성, 지연 시간, 규모)
+- **Security** — 위협, 공격 표면, 신뢰 경계. 위협이 없다고 판단해도 그 근거를 적는다
+- **Privacy** — 민감 데이터, 보관 기간, 접근 권한, 암호화
+- **Monitoring / Logging** — 무엇이 알림을 울리나, 무엇을 로깅하나, 로그에 넣지 말 것
+- **Rollout / Migration** — 배포 순서, backfill, 기존 데이터 호환, 롤백 경로
+- **Resolved Issues** — 결정 원장. 아래 원장 규칙 참조
+
+## 원장 규칙 (Resolved Issues 운영 시)
+
+Open Issue가 해결되어 Resolved로 옮길 때 원장이 비대해지지 않도록:
+
+1. **입장**: 해결이 본문 명세(1~10 섹션)를 바꾸는 이슈만 원장에 남긴다. 구현 디테일·태스크 범위 조정은 태스크/PR에 기록한다.
+2. **깊이**: 대가 필터 리트머스로 판정 — 비싼 결정은 풀 구조(Context / Options / Decision / Rationale / Next step), 싼 결정은 한 줄(Decision + 이유 반 문장 + 날짜).
+3. **압축**: Resolved 처리는 3단계 원자 작업 — ① 본문 명세에 반영 → ② 원장 항목을 다이제스트로 압축 → ③ 전문은 하위 페이지 "결정 원장 아카이브"로 이동.
+
+```
+### ✅ <제목> (<날짜>, <확정자>)
+<결정 한 줄> → [전문](아카이브 링크) · [관련 PR/스레드](링크)
+```
