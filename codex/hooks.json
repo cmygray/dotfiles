@@ -21,6 +21,15 @@
             "command": "sh -c 'python3 \"$HOME/dotfiles/codex/hooks/claude_pre_tool_use_adapter.py\" \"$HOME/dotfiles/claude/hooks/block-node-modules-symlink.sh\"'"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/codex-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -28,7 +37,78 @@
         "hooks": [
           {
             "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/codex-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "bash \"$HOME/dotfiles/codex/hooks/codex-harness-sync.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/codex-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/codex-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/codex-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/codex-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/codex-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/codex-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/codex-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
             "timeout": 10
           }
         ]

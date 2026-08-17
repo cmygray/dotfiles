@@ -33,6 +33,15 @@
             "command": "sh -c '$HOME/dotfiles/claude/hooks/log-english-prompt.sh'"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -54,6 +63,107 @@
           {
             "type": "command",
             "command": "sh -c '$HOME/dotfiles/claude/hooks/block-node-modules-symlink.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "timeout": 10
           }
         ]
       }
