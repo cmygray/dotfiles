@@ -227,3 +227,8 @@ fpath=(/Users/classting-won/.docker/completions $fpath)
 autoload -Uz compinit
 compinit
 # End of Docker CLI completions
+
+if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
+
+# harness shim — claude/codex 하네스 동기화 (dotfiles/shim/bin/shim). PATH 최앞단 유지
+export PATH="$HOME/dotfiles/shim/bin:$PATH"
