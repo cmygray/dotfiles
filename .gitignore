@@ -23,3 +23,11 @@ scripts/**/secrets/*
 zellij/plugins/*/target/
 
 **/.claude/settings.local.json
+
+# 로컬 백업 파일
+*.bak
+
+# Orca 앱이 관리하는 머신 로컬 스킬 심링크 (절대경로 → 타 머신에서 깨짐)
+claude/skills/computer-use
+claude/skills/orca-cli
+claude/skills/orchestration
