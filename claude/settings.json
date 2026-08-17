@@ -12,6 +12,14 @@
     ],
     "defaultMode": "auto"
   },
+  "skillOverrides": {
+    "check": "off",
+    "write": "off",
+    "ui": "off",
+    "change-profile-image": "off",
+    "company-brief": "off",
+    "ktx-analytics": "off"
+  },
   "hooks": {
     "Notification": [
       {
@@ -176,17 +184,20 @@
   "enabledPlugins": {
     "commit-commands@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "claude-hud@claude-hud": true,
+    "typescript-lsp@claude-plugins-official": false,
+    "claude-hud@claude-hud": false,
     "codex@openai-codex": true,
-    "plannotator@plannotator": true,
     "dev@superct": true,
     "ralph-loop@claude-plugins-official": true,
     "sentry@claude-plugins-official": true,
     "notion@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "aws-core@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": false,
+    "aws-core@claude-plugins-official": true,
+    "qa@superct": true,
+    "common@superct": true,
+    "context7@claude-plugins-official": false,
+    "serena@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -207,22 +218,10 @@
         "repo": "openai/codex-plugin-cc"
       }
     },
-    "plannotator": {
-      "source": {
-        "source": "github",
-        "repo": "backnotprop/plannotator"
-      }
-    },
     "superct": {
       "source": {
         "source": "github",
         "repo": "classtinginc/super-ct"
-      }
-    },
-    "harness-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "revfactory/harness"
       }
     }
   },
