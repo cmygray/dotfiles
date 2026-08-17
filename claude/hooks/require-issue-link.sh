@@ -1,5 +1,5 @@
 #!/bin/sh
-# PreToolUse hook: gh pr create 시 이슈 링크 필수
+# PreToolUse hook: gh pr create 시 GitHub 이슈 또는 Notion 태스크 링크 필수
 #
 # stdin: JSON { "tool_name": "Bash", "tool_input": { "command": "..." } }
 # stdout: JSON { "decision": "approve"|"deny", "reason": "..." }
@@ -29,4 +29,10 @@ if echo "$COMMAND" | grep -qiE '(closes|fixes|resolves)\s+https://github\.com/';
   exit 0
 fi
 
-echo '{"decision":"deny","reason":"gh pr create에 이슈 링크가 없습니다. PR body에 closes #<number>, fixes #<number>, 또는 resolves #<number>를 포함하세요."}'
+# PR body에 Notion 태스크 URL 패턴 확인
+if echo "$COMMAND" | grep -qiE 'https://(app\.)?notion\.com/|https://(www\.)?notion\.so/'; then
+  echo '{"decision":"approve"}'
+  exit 0
+fi
+
+echo '{"decision":"deny","reason":"PR body에 GitHub 이슈 링크 또는 Notion 태스크 링크가 없습니다. closes/fixes/resolves #<number>나 Notion URL을 포함하세요."}'
