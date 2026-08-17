@@ -8,6 +8,23 @@
 // command palette
 {
   // editor
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "agent_servers": {
+    "codex-acp": {
+      "type": "registry"
+    },
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
+  "icon_theme": {
+    "mode": "system",
+    "light": "Zed (Default)",
+    "dark": "Zed (Default)"
+  },
+  "base_keymap": "JetBrains",
   "ssh_connections": [],
   "edit_predictions": {
     "disabled_globs": ["*.rs"],
@@ -32,8 +49,8 @@
   "buffer_font_family": "JetBrains Mono",
   "theme": {
     "mode": "system",
-    "light": "Nord",
-    "dark": "Nord"
+    "light": "One Light",
+    "dark": "One Dark"
   },
 
   // vim specific settings
