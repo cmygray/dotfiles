@@ -1,0 +1,2 @@
+# Claude Code user-level subagents (.md). 비어 있어도 bootstrap.sh의
+# ~/.claude/agents 심링크가 dangling 되지 않도록 유지한다.

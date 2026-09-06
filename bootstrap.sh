@@ -39,6 +39,8 @@ link ghostty/config          "$HOME/.config/ghostty/config"
 # ~/.codex/agents는 실디렉토리 — super-ct 유래 agent TOML 링크는 shim이 소유
 mkdir -p "$HOME/.codex/agents"
 link codex/hooks.json        "$HOME/.codex/hooks.json"
+# codex/AGENTS.md는 scripts/sync-agent-instructions.sh 생성물 — Codex 전역 지침
+link codex/AGENTS.md         "$HOME/.codex/AGENTS.md"
 # super-ct 유래 codex 스킬(ship, dynamodb 등) 링크는 shim/bin/shim이 소유 — 실행 시 자가치유
 link scripts/pbcopy          "$HOME/.local/bin/pbcopy"
 link scripts/portview        "$HOME/.local/bin/portview"
