@@ -249,6 +249,41 @@ return {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSUpdate",
     config = function()
+      -- nvim 0.12부터 query match[id]가 TSNode[]로 바뀌었으나 nvim-treesitter master(동결)는
+      -- 단일 노드로 가정해 "attempt to call method 'range'" 에러가 난다. directive를 호환되게 재등록.
+      local function first_node(match, id)
+        local n = match[id]
+        if type(n) == 'table' then n = n[#n] end
+        return n
+      end
+      local ts_opts = { force = true, all = false }
+      local aliases = { ex = 'elixir', pl = 'perl', sh = 'bash', uxn = 'uxntal', ts = 'typescript' }
+      local script_types = {
+        importmap = 'json', module = 'javascript',
+        ['application/ecmascript'] = 'javascript', ['text/ecmascript'] = 'javascript',
+      }
+      vim.treesitter.query.add_directive('set-lang-from-mimetype!', function(match, _, bufnr, pred, metadata)
+        local node = first_node(match, pred[2])
+        if not node then return end
+        local text = vim.treesitter.get_node_text(node, bufnr)
+        local parts = vim.split(text, '/', {})
+        metadata['injection.language'] = script_types[text] or parts[#parts]
+      end, ts_opts)
+      vim.treesitter.query.add_directive('set-lang-from-info-string!', function(match, _, bufnr, pred, metadata)
+        local node = first_node(match, pred[2])
+        if not node then return end
+        local alias = vim.treesitter.get_node_text(node, bufnr):lower()
+        metadata['injection.language'] = vim.filetype.match({ filename = 'a.' .. alias }) or aliases[alias] or alias
+      end, ts_opts)
+      vim.treesitter.query.add_directive('downcase!', function(match, _, bufnr, pred, metadata)
+        local id = pred[2]
+        local node = first_node(match, id)
+        if not node then return end
+        local text = vim.treesitter.get_node_text(node, bufnr, { metadata = metadata[id] }) or ''
+        metadata[id] = metadata[id] or {}
+        metadata[id].text = text:lower()
+      end, ts_opts)
+
       require('nvim-treesitter.configs').setup {
         ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline" },
         sync_install = false,
