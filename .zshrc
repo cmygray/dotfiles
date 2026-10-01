@@ -132,9 +132,9 @@ alias ll="ls -l"
 alias awsdev="aws-vault exec classting-dev --no-session"
 alias awsstag="aws-vault exec classting-stag --no-session"
 alias awsprod="aws-vault exec classting-prod --no-session"
-alias cc="uvx zlqhem wrap -- claude --dangerously-skip-permissions"
-alias ccr="uvx zlqhem wrap -- claude --dangerously-skip-permissions --resume"
-alias ccc="uvx zlqhem wrap -- claude --dangerously-skip-permissions --continue"
+alias cc="claude --dangerously-skip-permissions"
+alias ccr="claude --dangerously-skip-permissions --resume"
+alias ccc="claude --dangerously-skip-permissions --continue"
 alias ca="claude agents"
 alias zj=zellij
 
