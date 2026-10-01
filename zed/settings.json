@@ -8,6 +8,40 @@
 // command palette
 {
   // editor
+  "agent": {
+    "tool_permissions": {
+      "tools": {
+        "skill": {
+          "default": "allow"
+        },
+        "terminal": {
+          "default": "allow"
+        },
+        "fetch": {
+          "default": "allow"
+        }
+      }
+    },
+    "sandbox_permissions": {
+      "write_paths": [
+        {
+          "requested": "/Users/classting-won/.config/zed",
+          "resolved": "/Users/classting-won/.config/zed"
+        }
+      ],
+      "network_hosts": [
+        "zed.dev"
+      ]
+    },
+    "default_model": {
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "enable_thinking": true,
+      "effort": "medium"
+    },
+    "favorite_models": [],
+    "model_parameters": []
+  },
   "session": {
     "trust_all_worktrees": true
   },
@@ -62,7 +96,7 @@
     "quick_actions": false
   },
   "cursor_blink": false,
-  "relative_line_numbers": true,
+  "relative_line_numbers": "enabled",
   "scrollbar": { "show": "never" },
   "vertical_scroll_margin": 0,
   "scroll_beyond_last_line": "off",
