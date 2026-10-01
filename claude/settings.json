@@ -18,7 +18,15 @@
     "ui": "off",
     "change-profile-image": "off",
     "company-brief": "off",
-    "ktx-analytics": "off"
+    "ktx-analytics": "off",
+    "orchestration": "off",
+    "orca-cli": "off",
+    "computer-use": "off",
+    "plannotator-compound": "off",
+    "hunt": "off",
+    "health": "off",
+    "think": "off",
+    "design-doc": "off"
   },
   "hooks": {
     "Notification": [
@@ -198,7 +206,11 @@
     "common@superct": true,
     "context7@claude-plugins-official": false,
     "serena@claude-plugins-official": false,
-    "data@superct": true
+    "data@superct": true,
+    "cs@synced": false,
+    "pm@synced": false,
+    "cowork-plugin-management@synced": false,
+    "design@synced": false
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
