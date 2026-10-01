@@ -197,7 +197,8 @@
     "qa@superct": true,
     "common@superct": true,
     "context7@claude-plugins-official": false,
-    "serena@claude-plugins-official": false
+    "serena@claude-plugins-official": false,
+    "data@superct": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
