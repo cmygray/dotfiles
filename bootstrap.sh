@@ -48,6 +48,8 @@ link scripts/portview        "$HOME/.local/bin/portview"
 link portview/config.json    "$HOME/.config/portview/config.json"
 link launchagents/local.portview.plist "$HOME/Library/LaunchAgents/local.portview.plist"
 link launchagents/local.worktree-cleanup.plist "$HOME/Library/LaunchAgents/local.worktree-cleanup.plist"
+# Remote Control 데몬 — 머신별 이름은 ~/.config/claude-rc/name (없으면 no-op)
+link launchagents/local.claude-remote-control.plist "$HOME/Library/LaunchAgents/local.claude-remote-control.plist"
 
 echo "Linking Claude Code settings..."
 mkdir -p "$HOME/.claude"
