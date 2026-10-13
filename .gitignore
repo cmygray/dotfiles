@@ -31,3 +31,16 @@ zellij/plugins/*/target/
 claude/skills/computer-use
 claude/skills/orca-cli
 claude/skills/orchestration
+
+# 머신별 산출물·외부 설치 skill (Claude 앱 동기화, 로컬 설치 symlink 등)
+claude/skills/.trash/
+claude/skills/synced/
+claude/skills/agent-browser
+claude/skills/aside-browser/
+claude/skills/ego-browser
+claude/skills/sonamu-*/
+
+# dotfiles repo 전용 로컬 Claude 설정
+.claude/settings.local.json
+
+.DS_Store

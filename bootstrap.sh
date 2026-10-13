@@ -61,8 +61,8 @@ link claude/rules          "$HOME/.claude/rules"
 
 # Git filters (dotfiles repo)
 echo "Configuring git filters..."
-git -C "$DOTFILES" config filter.strip-claude-local.clean "jq 'del(.model, .effortLevel)'"
-git -C "$DOTFILES" config filter.strip-claude-local.smudge "cat"
+git -C "$DOTFILES" config filter.strip-claude-local.clean '$HOME/dotfiles/scripts/secret-clean.sh'
+git -C "$DOTFILES" config filter.strip-claude-local.smudge '$HOME/dotfiles/scripts/secret-smudge.sh'
 
 # Install packages
 if ! command -v brew >/dev/null 2>&1; then

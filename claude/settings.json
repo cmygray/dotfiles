@@ -49,15 +49,6 @@
             "command": "sh -c '$HOME/dotfiles/claude/hooks/log-english-prompt.sh'"
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
       }
     ],
     "PreToolUse": [
@@ -81,104 +72,15 @@
             "command": "sh -c '$HOME/dotfiles/claude/hooks/block-node-modules-symlink.sh'"
           }
         ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
       }
     ],
-    "Stop": [
+    "SessionStart": [
       {
+        "matcher": "^(startup|resume|clear|compact|fork)$",
         "hooks": [
           {
             "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "StopFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "TeammateIdle": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [ -f '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -r '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ] && [ -x '/Users/classting-won/.orca/agent-hooks/claude-hook.sh' ]; then /bin/sh '/Users/classting-won/.orca/agent-hooks/claude-hook.sh'; else cat >/dev/null 2>&1 || :; fi",
+            "command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
             "timeout": 10
           }
         ]
@@ -246,7 +148,7 @@
   "editorMode": "vim",
   "autoCompactEnabled": false,
   "teammateMode": "tmux",
-  "agentPushNotifEnabled": false,
+  "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "autoMode": {
     "environment": [
@@ -272,7 +174,7 @@
       "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
       "### User-specific",
       "**Primary use of Claude Code**: software development",
-      "**Trusted repo**: /Users/classting-won/Workspace/super-ct (github.com:classtinginc/super-ct.git), private — confidential material is fine here, but content ported from outside this repo/session is not this repo's own work",
+      "**Trusted repo**: ~/Workspace/super-ct (github.com:classtinginc/super-ct.git), private — confidential material is fine here, but content ported from outside this repo/session is not this repo's own work",
       "**Org-specific CLIs**: None configured",
       "routine under classting-won/ prefix: none identified beyond the trusted repo above"
     ]
@@ -280,5 +182,7 @@
   "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
-  }
+  },
+  "inputNeededNotifEnabled": true,
+  "remoteControlAtStartup": true
 }
