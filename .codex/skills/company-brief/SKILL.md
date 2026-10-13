@@ -18,19 +18,19 @@ Do not use this skill for quick facts such as "CEO가 누구야?", person tracki
 
 ## Output
 
-- `${REPORTS_DIR:-/Users/won/Workspace/research/reports}/<slug>.html`: standalone HTML report.
+- `${REPORTS_DIR:-$HOME/Workspace/research/reports}/<slug>.html`: standalone HTML report.
 - `${REPORTS_DIR}/index.html`: add one report card when the report is published.
 - Public URL in Won's environment: `https://home.two.kim/<slug>.html`.
 
-If `REPORTS_DIR` is set, use it. Otherwise use `/Users/won/Workspace/research/reports`.
+If `REPORTS_DIR` is set, use it. Otherwise use `~/Workspace/research/reports`.
 
 ## Local Assumptions
 
-- Reports directory: `/Users/won/Workspace/research/reports/`.
+- Reports directory: `~/Workspace/research/reports/`.
 - Shared CSS: `reports/assets/report.css`; link it instead of writing one-off inline styles.
 - HTML skeleton: `reports/_template/skeleton.html`.
 - Data scripts: `reports/_scripts/restore-cookies.sh`, `reports/_scripts/fetch-company.sh`.
-- DART API key: `/Users/won/Workspace/research/.env` as `DART_API_KEY`.
+- DART API key: `~/Workspace/research/.env` as `DART_API_KEY`.
 - Innoforest cookies: `~/.innoforest_cookies.txt` with mode `600`.
 
 Mark uncertain facts with `TODO: verify` until sourced.
@@ -42,7 +42,7 @@ Mark uncertain facts with `TODO: verify` until sourced.
 Run cookie restoration once per session when Innoforest access is needed:
 
 ```bash
-bash "${REPORTS_DIR:-/Users/won/Workspace/research/reports}/_scripts/restore-cookies.sh"
+bash "${REPORTS_DIR:-$HOME/Workspace/research/reports}/_scripts/restore-cookies.sh"
 ```
 
 For the named company, gather in parallel when practical:
@@ -54,7 +54,7 @@ For the named company, gather in parallel when practical:
 Use the existing fetch script when an Innoforest URL is available:
 
 ```bash
-bash "${REPORTS_DIR:-/Users/won/Workspace/research/reports}/_scripts/fetch-company.sh" "<company>" "<innoforest_url>"
+bash "${REPORTS_DIR:-$HOME/Workspace/research/reports}/_scripts/fetch-company.sh" "<company>" "<innoforest_url>"
 ```
 
 If DART has the company, also inspect:
@@ -85,8 +85,8 @@ Emphasis by pattern:
 
 ```bash
 SLUG=<english_lowercase_slug>
-cp "${REPORTS_DIR:-/Users/won/Workspace/research/reports}/_template/skeleton.html" \
-  "${REPORTS_DIR:-/Users/won/Workspace/research/reports}/${SLUG}.html"
+cp "${REPORTS_DIR:-$HOME/Workspace/research/reports}/_template/skeleton.html" \
+  "${REPORTS_DIR:-$HOME/Workspace/research/reports}/${SLUG}.html"
 ```
 
 Replace skeleton placeholders with sourced data. Delete irrelevant sections completely. Reuse existing components from sister reports instead of inventing new CSS.

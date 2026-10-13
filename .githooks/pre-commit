@@ -1,0 +1,15 @@
+#!/bin/sh
+# 머신마다 사용자명이 달라(won, classting-won) 홈 절대경로가 커밋되면 다른 머신에서 깨진다.
+# 새로 추가되는 줄에 /Users/<name>/ 이 있으면 커밋을 막는다. $HOME 또는 ~ 를 쓸 것.
+# 앱이 절대경로로 자동 생성·재작성하는 파일은 예외. 불가피하면 git commit --no-verify.
+EXEMPT='^(codex/config\.toml|zed/settings\.json|zellij/)'
+
+hits=$(git diff --cached --name-only --diff-filter=ACMR | grep -vE "$EXEMPT" | while read -r f; do
+  git diff --cached -U0 -- "$f" | grep -E '^\+[^+]' | grep -E '/Users/[A-Za-z0-9._-]+/' | sed "s|^|$f: |"
+done)
+
+if [ -n "$hits" ]; then
+  echo "pre-commit: 홈 절대경로가 포함되어 있습니다. \$HOME 또는 ~ 로 바꿔주세요." >&2
+  echo "$hits" | cut -c1-200 >&2
+  exit 1
+fi

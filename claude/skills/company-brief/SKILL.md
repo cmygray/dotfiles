@@ -28,11 +28,11 @@ metadata:
 
 ## 인프라 가정 (사용자 `won`의 환경 기준)
 
-- **reports 디렉토리**: `/Users/won/Workspace/research/reports/` — 정적 파일을 두면 즉시 `https://home.two.kim/`에서 서빙됨 (Cloudflare Named Tunnel + Tailscale)
+- **reports 디렉토리**: `~/Workspace/research/reports/` — 정적 파일을 두면 즉시 `https://home.two.kim/`에서 서빙됨 (Cloudflare Named Tunnel + Tailscale)
 - **공통 CSS**: `reports/assets/report.css` — 변경 없이 link 참조만
 - **HTML skeleton**: `reports/_template/skeleton.html`
 - **데이터 수집 스크립트**: `reports/_scripts/restore-cookies.sh`, `fetch-company.sh`
-- **DART API key**: `/Users/won/Workspace/research/.env`의 `DART_API_KEY`
+- **DART API key**: `~/Workspace/research/.env`의 `DART_API_KEY`
 - **혁신의숲 쿠키**: `~/.innoforest_cookies.txt` (chmod 600)
 
 `REPORTS_DIR` 환경변수가 있으면 그쪽 사용. 없으면 위 절대 경로 폴백.
@@ -43,7 +43,7 @@ metadata:
 
 ```bash
 # 세션마다 한 번 (이미 인증된 상태면 스킵)
-bash "${REPORTS_DIR:-/Users/won/Workspace/research/reports}/_scripts/restore-cookies.sh"
+bash "${REPORTS_DIR:-$HOME/Workspace/research/reports}/_scripts/restore-cookies.sh"
 ```
 
 회사명 받았으면 다음을 병렬로:

@@ -6,8 +6,9 @@
     <string>local.portview</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
-        <string>/Users/won/dotfiles/scripts/portview</string>
+        <string>/bin/zsh</string>
+        <string>-c</string>
+        <string>exec /usr/bin/python3 "$HOME/dotfiles/scripts/portview"</string>
     </array>
     <key>RunAtLoad</key>
     <true/>

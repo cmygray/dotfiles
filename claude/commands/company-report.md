@@ -41,7 +41,7 @@ description: '한국 기업 분석 리포트 1건 생성 + home.two.kim 배포 (
 ### 2단계 — 인증 + 데이터 수집
 
 ```bash
-REPORTS_DIR="${REPORTS_DIR:-/Users/won/Workspace/research/reports}"
+REPORTS_DIR="${REPORTS_DIR:-$HOME/Workspace/research/reports}"
 
 # 세션마다 한 번 (이미 인증된 상태면 빠르게 통과)
 bash "${REPORTS_DIR}/_scripts/restore-cookies.sh"

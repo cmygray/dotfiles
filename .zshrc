@@ -210,10 +210,10 @@ bindkey '^G' edit-command-line
 
 
 # The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/classting-won/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/classting-won/Downloads/google-cloud-sdk/path.zsh.inc'; fi
+if [ -f "$HOME/Downloads/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/path.zsh.inc"; fi
 
 # The next line enables shell command completion for gcloud.
-if [ -f '/Users/classting-won/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/classting-won/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
+if [ -f "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc"; fi
 
 [[ ":$PATH:" != *":$HOME/.config/kaku/zsh/bin:"* ]] && export PATH="$HOME/.config/kaku/zsh/bin:$PATH" # Kaku PATH Integration
 [[ "${TERM_PROGRAM:-}" == "Kaku" && -f "$HOME/.config/kaku/zsh/kaku.zsh" ]] && source "$HOME/.config/kaku/zsh/kaku.zsh" # Kaku Shell Integration
@@ -223,7 +223,7 @@ eval "$(agf init zsh)"
 
 fpath+=~/.zfunc; autoload -Uz compinit; compinit
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/classting-won/.docker/completions $fpath)
+fpath=("$HOME/.docker/completions" $fpath)
 autoload -Uz compinit
 compinit
 # End of Docker CLI completions

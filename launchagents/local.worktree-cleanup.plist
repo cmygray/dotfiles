@@ -7,7 +7,8 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/zsh</string>
-        <string>/Users/classting-won/dotfiles/scripts/cleanup-merged-worktrees.sh</string>
+        <string>-c</string>
+        <string>exec /bin/zsh "$HOME/dotfiles/scripts/cleanup-merged-worktrees.sh"</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>

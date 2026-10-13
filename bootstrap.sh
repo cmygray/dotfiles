@@ -61,6 +61,9 @@ link claude/commands       "$HOME/.claude/commands"
 link claude/skills         "$HOME/.claude/skills"
 link claude/rules          "$HOME/.claude/rules"
 
+# Git hooks (dotfiles repo) — 홈 절대경로 커밋 방지
+git -C "$DOTFILES" config core.hooksPath .githooks
+
 # Git filters (dotfiles repo)
 echo "Configuring git filters..."
 git -C "$DOTFILES" config filter.strip-claude-local.clean '$HOME/dotfiles/scripts/secret-clean.sh'
