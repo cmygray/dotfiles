@@ -44,3 +44,4 @@ claude/skills/sonamu-*/
 .claude/settings.local.json
 
 .DS_Store
+claude/mods/*/.claude-plugin/types/

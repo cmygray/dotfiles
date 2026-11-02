@@ -1,0 +1,11 @@
+{
+  "name": "won-mods",
+  "owner": { "name": "Won" },
+  "plugins": [
+    {
+      "name": "eval-glossary",
+      "source": "./eval-glossary",
+      "description": "Eval 용어(L0–L4, nMAE, C-D, flip률 등)를 응답 아래 칩으로 보여 주고, CLAUDE.md가 import할 GLOSSARY.md를 원본에서 생성합니다."
+    }
+  ]
+}

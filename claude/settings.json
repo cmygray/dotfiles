@@ -112,7 +112,8 @@
     "cs@synced": false,
     "pm@synced": false,
     "cowork-plugin-management@synced": false,
-    "design@synced": false
+    "design@synced": false,
+    "eval-glossary@won-mods": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -137,6 +138,12 @@
       "source": {
         "source": "github",
         "repo": "classtinginc/super-ct"
+      }
+    },
+    "won-mods": {
+      "source": {
+        "source": "directory",
+        "path": "~/dotfiles/claude/mods"
       }
     }
   },

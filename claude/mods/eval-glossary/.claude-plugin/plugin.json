@@ -1,0 +1,6 @@
+{
+  "name": "eval-glossary",
+  "version": "0.1.0",
+  "description": "Explains eval terms (L0–L4, nMAE, C-D, flip rate) on first use in Claude's writing and as hover chips under replies.",
+  "types": "./types/index.d.ts"
+}
