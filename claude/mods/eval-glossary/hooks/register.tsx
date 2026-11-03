@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
 import type { Mode } from '../types'
-import { TERMS } from './glossary'
+import { ANCHORS, TERMS } from './glossary'
 import type { Term } from './glossary'
 import { glossaryMarkdown } from './rule'
 
@@ -13,15 +13,21 @@ const mode = atom({ plugin: 'eval-glossary', key: 'mode' } as const, 'band')
 const recent = atom({ plugin: 'eval-glossary', key: 'recent' } as const, [] as readonly string[])
 
 const ENTRIES: readonly Entry[] = TERMS.map(t => ({ ...t, patterns: t.match.map(p => new RegExp(p)) }))
+const ANCHOR_PATTERNS: readonly RegExp[] = ANCHORS.map(p => new RegExp(p))
+const BAND_LIMIT = 6
 
 // Code spans and fences name identifiers, not the terms: `L1` in a path is not L1.
 function prose(text: string): string {
   return text.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`\n]*`/g, ' ')
 }
 
+// A term whose notation is common elsewhere (`context`) counts only beside
+// evidence of the eval context: an unambiguous term or an anchor word.
 function termsIn(text: string): Entry[] {
   const body = prose(text)
-  return ENTRIES.filter(t => t.patterns.some(p => p.test(body)))
+  const hits = ENTRIES.filter(t => t.patterns.some(p => p.test(body)))
+  const isEval = hits.some(t => !t.context) || ANCHOR_PATTERNS.some(p => p.test(body))
+  return isEval ? hits : []
 }
 
 export const register: Register = on => {
@@ -77,10 +83,14 @@ export const register: Register = on => {
       return next(e)
     }
     const ids = await read($, recent)
-    const found = ENTRIES.filter(t => ids.includes(t.id))
-    if (found.length === 0) {
+    const all = ENTRIES.filter(t => ids.includes(t.id))
+    if (all.length === 0) {
       return next(e)
     }
+    // A reply about the glossary itself names most terms; past BAND_LIMIT the
+    // band says how many it left out (`/glossary` lists them all).
+    const found = all.slice(0, BAND_LIMIT)
+    const rest = all.length - found.length
 
     const { Box, Text } = $.ui.resolve(e)
     const width = e.props.bodyColumns
@@ -97,6 +107,7 @@ export const register: Register = on => {
               </Text>
             </Box>
           ))}
+          {rest > 0 && <Text dimColor>+{rest}</Text>}
         </Box>
         <Box height={1} overflow="hidden">
           <Text dimColor wrap="truncate-end">

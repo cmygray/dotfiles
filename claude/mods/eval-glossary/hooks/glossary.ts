@@ -8,12 +8,25 @@
 //
 // match: regular expressions tried on the prose of a reply (code spans and
 // fences removed); keep single letters (A, B, C, S) tied to their context.
+// context: the notation is common elsewhere (L1 of a curriculum, a cache, a
+// norm; 급락 and drift as plain words), so the term counts only where the same
+// text also shows the eval context: a term without `context`, or an ANCHOR.
 
-export type Term = { id: string; term: string; short: string; long: string; match: readonly string[] }
+export type Term = {
+  id: string
+  term: string
+  short: string
+  long: string
+  match: readonly string[]
+  context?: true
+}
+
+export const ANCHORS: readonly string[] = ['하네스', '(?<![A-Za-z])eval(?![A-Za-z])', '베이스라인', 'baseline', '골드셋', '교사 점수', '채점 프롬프트']
 
 export const TERMS: readonly Term[] = [
   {
     "id": "flows",
+    "context": true,
     "term": "A·B·C",
     "short": "채점 흐름 3종: A 국어 글쓰기 초3~중3, B 국어 글쓰기 고1~3, C 서논술형",
     "long": "운영 중인 채점 프롬프트 ID. A는 ko-default 번들, B는 ko-high 번들(둘 다 gpt-4.1), C는 ko-essay 프롬프트(ESSAY_GPT_MODEL·ESSAY_REASONING_EFFORT, prod는 gpt-5 / low).",
@@ -54,6 +67,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "a0-a1",
+    "context": true,
     "term": "A0 / A1",
     "short": "A0 = 운영에 저장된 당시 AI 점수, A1 = eval에서 다시 채점한 점수",
     "long": "같은 글에 대해 운영 기록(A0)과 현재 프롬프트로 재채점한 결과(A1)를 나란히 놓고, 어느 쪽이 교사에 더 가까운지 비교한다.",
@@ -63,6 +77,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "l0",
+    "context": true,
     "term": "L0 계약",
     "short": "출력 계약 위반: Zod 통과, 항목 수·이름, 점수 범위, 루브릭 허용 집합, band 사이값, 총점 재계산 일치",
     "long": "회귀 판정에서 L0 위반은 1건이라도 회귀 후보다.",
@@ -72,6 +87,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "l1",
+    "context": true,
     "term": "L1 노이즈 플로어",
     "short": "같은 입력을 N회(기본 3) 반복 채점했을 때의 흔들림: 총점 SD·최대 편차, flip률",
     "long": "반복을 가로지르는 지표라 단일 실행 화면(예: Datadog 실험)에서는 계산할 수 없다. 회귀 판정은 베이스라인 클래스 bootstrap 95% CI 상한 초과 여부로 한다.",
@@ -81,6 +97,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "l2",
+    "context": true,
     "term": "L2 변별력",
     "short": "원본 vs 규칙 기반 변형(truncate·repeat·noun_stuff·off_topic). 기대: 원본 점수 ≥ 변형 점수",
     "long": "위반률과 하락 폭을 본다. 베이스라인에서 repeat·noun_stuff 변형은 점수가 거의 떨어지지 않았다.",
@@ -90,6 +107,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "l3",
+    "context": true,
     "term": "L3 교사 (불)일치",
     "short": "AI 점수와 교사 점수의 차이: nMAE, 방향 편향, 항목 정확·인접 일치, A0 vs A1",
     "long": "C-D 집합에서 잰다. A·B는 교사 수정 기록이 없어 운영 데이터로는 측정할 수 없다(HIL 라벨 필요).",
@@ -99,6 +117,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "l4",
+    "context": true,
     "term": "L4 judge",
     "short": "LLM judge(gpt-4o-mini)로 점수·피드백 정합과 학년 수준 어휘를 판정",
     "long": "judge 자체의 보정은 아직 하지 않았다.",
@@ -117,6 +136,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "bias",
+    "context": true,
     "term": "편향",
     "short": "(AI 총점 − 교사 총점) ÷ 만점의 평균. 음수면 AI가 교사보다 낮게 줌",
     "long": "채점 정책이 정해지지 않아 회귀 판정에서는 CI 밖이면 '변화'로만 표시한다. 베이스라인 C-D는 −0.129.",
@@ -137,6 +157,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "collapse",
+    "context": true,
     "term": "급락",
     "short": "같은 글의 최고 반복보다 30pt(만점 대비) 이상 낮게 나온 반복",
     "long": "반복 채점 중 한 회차만 크게 무너지는 현상. 베이스라인 C에서 9.1%.",
@@ -186,6 +207,7 @@ export const TERMS: readonly Term[] = [
   },
   {
     "id": "drift",
+    "context": true,
     "term": "drift",
     "short": "C-U에서 운영 저장 점수(A0)와 재채점 점수(A1)의 차이 ÷ 만점",
     "long": "",

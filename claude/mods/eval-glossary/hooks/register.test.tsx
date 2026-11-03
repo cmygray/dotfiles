@@ -95,6 +95,15 @@ test('the band shows the latest answer\'s terms, a definition row under them, on
   expect((await cleared.find({ type: 'Text', text: /^engine$/ }))?.text).toBe('engine')
   await cleared.unmount()
 
+  // past six terms the band shows the first six and how many it left out
+  await $.turn.complete(turn('하네스의 L0, L1, L2, L3, L4와 nMAE, flip률, QWK를 봅니다.'))
+  const capped = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect(await capped.find({ type: 'Text', text: /^L4 judge$/ })).toBeDefined()
+  expect(await capped.find({ type: 'Text', text: /^nMAE$/ })).toBeDefined()
+  expect(await capped.find({ type: 'Text', text: /^flip률$/ })).toBeUndefined()
+  expect(await capped.find({ type: 'Text', text: /^\+2$/ })).toBeDefined()
+  await capped.unmount()
+
   // in band mode the replies themselves carry no chips
   const reply = await $.ui.mount({ ...message(REPLY), surface: 'desktop' })
   expect(await reply.find({ type: 'Text', text: /^nMAE$/ })).toBeUndefined()
@@ -119,12 +128,41 @@ test('/glossary hover puts one chip per term under a reply, on every surface', a
   }
 })
 
+test('a common notation counts beside the eval context: an unambiguous term or an anchor', async ($, on) => {
+  stubSession(on, new Map())
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.command.run({ ...RUN, command: 'glossary', args: 'hover' })
+
+  for (const text of ['L1 SD가 nMAE보다 크게 흔들립니다.', '베이스라인의 L1 노이즈가 큽니다.']) {
+    const ui = await $.ui.mount({ ...message(text), surface: 'desktop' })
+    expect(await ui.find({ type: 'Text', text: /^L1 노이즈 플로어$/ })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('the writing rule is scoped to eval writing and marks the common notations', async ($, on) => {
+  const files = new Map<string, string>()
+  stubSession(on, files)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const text = [...files.values()][0] ?? ''
+  expect(text).toContain('교육과정 층위의 L1')
+  expect(text).toContain('- **L1 노이즈 플로어** (맥락 한정):')
+  expect(text).toContain('- **nMAE**: ')
+})
+
 test('a term inside code, or no term at all, leaves the engine its drawing', async ($, on) => {
   stubSession(on, new Map())
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
   await $.command.run({ ...RUN, command: 'glossary', args: 'hover' })
 
-  for (const text of ['경로는 `eval/L1/metrics.json`입니다.', 'Plan B와 A안을 비교합니다.']) {
+  for (const text of [
+    '경로는 `eval/L1/metrics.json`입니다.',
+    'Plan B와 A안을 비교합니다.',
+    // a curriculum's levels, a cache, a plain word: same notation, another context
+    '층을 L1, L2, L3로 부릅니다. L1은 교육과정의 글의 유형입니다.',
+    'L1 캐시 적중률이 급락했고 drift가 있습니다.',
+  ]) {
     const ui = await $.ui.mount({ ...message(text), surface: 'desktop' })
 
     expect(await ui.find({ type: 'Text', text: /^용어$/ })).toBeUndefined()
