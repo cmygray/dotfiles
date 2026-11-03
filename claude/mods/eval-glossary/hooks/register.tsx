@@ -8,8 +8,9 @@ import { glossaryMarkdown } from './rule'
 
 type Entry = Term & { patterns: readonly RegExp[] }
 
-const MODES: readonly Mode[] = ['hover', 'inline', 'off']
-const mode = atom({ plugin: 'eval-glossary', key: 'mode' } as const, 'hover')
+const MODES: readonly Mode[] = ['band', 'hover', 'inline', 'off']
+const mode = atom({ plugin: 'eval-glossary', key: 'mode' } as const, 'band')
+const recent = atom({ plugin: 'eval-glossary', key: 'recent' } as const, [] as readonly string[])
 
 const ENTRIES: readonly Entry[] = TERMS.map(t => ({ ...t, patterns: t.match.map(p => new RegExp(p)) }))
 
@@ -31,8 +32,8 @@ export const register: Register = on => {
     }
     await $.command.register({
       name: 'glossary',
-      description: 'Eval glossary: list terms, or set display to hover | inline | off',
-      argumentHint: '[hover|inline|off]',
+      description: 'Eval glossary: list terms, or set display to band | hover | inline | off',
+      argumentHint: '[band|hover|inline|off]',
     })
 
     // The writing rule reaches the model through a CLAUDE.md that imports
@@ -60,9 +61,73 @@ export const register: Register = on => {
     }
   })
 
+  // A render hook cannot write state, so the band learns the latest reply's
+  // terms here: the main loop's answer only, not a subagent's report.
+  on('turn.complete', async ($, e, next) => {
+    const done = await next(e)
+    if (e.reason === 'answer' && e.agentId === undefined) {
+      const ids = termsIn(e.answer).map(t => t.id)
+      await update($, recent, () => ids).catch(() => undefined)
+    }
+    return done
+  })
+
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (e.props.hasSurvey || (await read($, mode)) !== 'band') {
+      return next(e)
+    }
+    const ids = await read($, recent)
+    const found = ENTRIES.filter(t => ids.includes(t.id))
+    if (found.length === 0) {
+      return next(e)
+    }
+
+    const { Box, Text } = $.ui.resolve(e)
+    const width = e.props.bodyColumns
+    // Each chip lights its scope; the definition of that scope sits in the
+    // second row, so nothing is drawn over the transcript.
+    return (
+      <Box flexDirection="column" width={width}>
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
+          <Text dimColor>용어</Text>
+          {found.map(t => (
+            <Box key={`b-${t.id}`} hover={{ scope: `term-${t.id}` }}>
+              <Text color="cyan" underline hover={{ bold: true }}>
+                {t.term}
+              </Text>
+            </Box>
+          ))}
+        </Box>
+        <Box height={1} overflow="hidden">
+          <Text dimColor wrap="truncate-end">
+            용어에 포인터를 올리면 뜻이 여기에 표시됩니다
+          </Text>
+          {found.map(t => (
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              width={width}
+              display="none"
+              hover={{ scope: `term-${t.id}`, display: 'flex' }}
+              backgroundColor="text"
+            >
+              <Text color="inverseText" wrap="truncate-end">
+                <Text bold color="inverseText">
+                  {t.term}
+                </Text>{' '}
+                {t.short}
+              </Text>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    )
+  })
+
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     const current = await read($, mode)
-    if (current === 'off' || e.props.isSummary) {
+    if (current === 'off' || current === 'band' || e.props.isSummary) {
       return next(e)
     }
     const found = termsIn(e.props.text)
@@ -107,12 +172,17 @@ export const register: Register = on => {
                 display="none"
                 hover={{ display: 'flex' }}
                 flexDirection="column"
-                borderStyle="round"
                 paddingX={1}
+                // An absolute Box paints no background of its own, so the reply
+                // beneath shows through. No theme key names the background:
+                // invert text and inverseText, opaque on light and dark alike.
+                backgroundColor="text"
               >
-                <Text bold>{t.term}</Text>
-                <Text>{t.short}</Text>
-                {t.long !== '' && <Text dimColor>{t.long}</Text>}
+                <Text bold color="inverseText">
+                  {t.term}
+                </Text>
+                <Text color="inverseText">{t.short}</Text>
+                {t.long !== '' && <Text color="inverseText">{t.long}</Text>}
               </Box>
             </Box>
           ))}

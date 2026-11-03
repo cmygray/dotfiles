@@ -11,7 +11,17 @@ const message = (text: string) =>
 
 const RUN = { origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } } as const
 
+const BAND = {
+  plugin: 'eval-glossary',
+  component: 'AbovePrompt',
+  requestId: 'above-prompt',
+  props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 80, scroll: { offset: 0, bodyRows: 10 }, view: {} },
+} as const
+
 const REPLY = 'C-D 집합의 nMAE는 0.138이고, L1 총점 SD는 반복 채점의 노이즈 플로어입니다.'
+
+const turn = (answer: string, extra: { agentId?: string } = {}) =>
+  ({ answer, durationMs: 1, isAborted: false, turnId: 't-1', reason: 'answer', ...extra }) as const
 
 function stubSession(on: Parameters<TestBody>[1], files: Map<string, string>) {
   const stored = new Map<string, unknown>()
@@ -27,6 +37,12 @@ function stubSession(on: Parameters<TestBody>[1], files: Map<string, string>) {
   })
   on('command.register', () => ({ value: { command: 'glossary' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('turn.complete', (_, e) => ({ text: e.answer }))
+  // stands for the engine's own drawing of every component
+  on('ui.render', ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>engine</Text>
+  })
 }
 
 test('session start writes GLOSSARY.md from the terms, and leaves an up-to-date one alone', async ($, on) => {
@@ -46,11 +62,49 @@ test('session start writes GLOSSARY.md from the terms, and leaves an up-to-date 
   expect(files.size).toBe(1)
 })
 
-test('a reply that uses terms gets one chip per term under it, on every surface', async ($, on) => {
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
-    return <Text>engine</Text>
-  })
+test('the band shows the latest answer\'s terms, a definition row under them, on every surface', async ($, on) => {
+  stubSession(on, new Map())
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  // nothing answered yet: the band is the engine's
+  const before = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect((await before.find({ type: 'Text', text: /^engine$/ }))?.text).toBe('engine')
+  await before.unmount()
+
+  await $.turn.complete(turn(REPLY))
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const band = await $.ui.mount({ ...BAND, surface })
+    expect(await band.find({ type: 'Text', text: /^용어$/ })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /^nMAE$/ })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /^C-D$/ })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /포인터를 올리면/ })).toBeDefined()
+    // each definition is drawn hidden in the second row, revealed by its chip's scope
+    expect(await band.find({ type: 'Text', text: /만점의 평균/ })).toBeDefined()
+    await band.unmount()
+  }
+
+  // a subagent's report leaves the band as it was; a reply with no term clears it
+  await $.turn.complete(turn('급락이 있었습니다.', { agentId: 'a-1' }))
+  const afterAgent = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect(await afterAgent.find({ type: 'Text', text: /^nMAE$/ })).toBeDefined()
+  expect(await afterAgent.find({ type: 'Text', text: /^급락$/ })).toBeUndefined()
+  await afterAgent.unmount()
+
+  await $.turn.complete(turn('용어 없는 답변입니다.'))
+  const cleared = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect((await cleared.find({ type: 'Text', text: /^engine$/ }))?.text).toBe('engine')
+  await cleared.unmount()
+
+  // in band mode the replies themselves carry no chips
+  const reply = await $.ui.mount({ ...message(REPLY), surface: 'desktop' })
+  expect(await reply.find({ type: 'Text', text: /^nMAE$/ })).toBeUndefined()
+  await reply.unmount()
+})
+
+test('/glossary hover puts one chip per term under a reply, on every surface', async ($, on) => {
+  stubSession(on, new Map())
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.command.run({ ...RUN, command: 'glossary', args: 'hover' })
 
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...message(REPLY), surface })
@@ -66,10 +120,9 @@ test('a reply that uses terms gets one chip per term under it, on every surface'
 })
 
 test('a term inside code, or no term at all, leaves the engine its drawing', async ($, on) => {
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
-    return <Text>engine</Text>
-  })
+  stubSession(on, new Map())
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.command.run({ ...RUN, command: 'glossary', args: 'hover' })
 
   for (const text of ['경로는 `eval/L1/metrics.json`입니다.', 'Plan B와 A안을 비교합니다.']) {
     const ui = await $.ui.mount({ ...message(text), surface: 'desktop' })
@@ -81,10 +134,6 @@ test('a term inside code, or no term at all, leaves the engine its drawing', asy
 })
 
 test('/glossary inline shows the meanings always; /glossary off draws nothing', async ($, on) => {
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
-    return <Text>engine</Text>
-  })
   stubSession(on, new Map())
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
