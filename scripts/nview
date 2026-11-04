@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# nview - Rex 팬에 띄운 nvim 으로 코드를 보여 준다 (에이전트·사람 공용).
+#
+# Usage:
+#   nview diff [<rev>]                 작업 트리 vs rev(기본 HEAD), 파일마다 탭
+#   nview diff <fileA> <fileB>         두 파일 비교
+#   nview show <file>:<from>[-<to>] [note]   한 곳 하이라이트 + 설명
+#   nview side <file>[:<l>] <file>[:<l>] [<file>[:<l>]]   2~3곳 나란히
+#   nview list [title] < grep형식      file:line[:col]:text 줄들을 quickfix 로 (rg -n 출력 그대로)
+#   nview clear                        nview 가 연 탭·표시 정리
+#   nview close                        nview 팬의 nvim 종료
+#
+# 세션(REX_SESSION)마다 nvim 하나를 재사용한다. 없으면 현재 팬(REX_BLOCK) 오른쪽에
+# 포커스를 옮기지 않고 split 해서 띄운다. 소켓 위치는 NVIEW_SOCK 으로 바꿀 수 있다.
+
+set -euo pipefail
+
+SELF="$(realpath "$0")"
+MOD="$(dirname "$SELF")/../nvim/lua/nview.lua"
+MOD="$(realpath "$MOD")"
+
+sid="${REX_SESSION:-default}"
+sid="${sid##*-}"                      # UUID 마지막 덩어리만 (소켓 경로 길이 제한 회피)
+SOCK="${NVIEW_SOCK:-${TMPDIR:-/tmp}/nview-${sid}.sock}"
+
+die() { echo "nview: $*" >&2; exit 1; }
+
+alive() { [ -S "$SOCK" ] && nvim --server "$SOCK" --remote-expr 1 >/dev/null 2>&1; }
+
+ensure() {
+  alive && return 0
+  rm -f "$SOCK"
+  command -v rex >/dev/null || die "rex 없음. 직접 띄우세요: nvim --listen $SOCK"
+  local anchor=()
+  [ -n "${REX_BLOCK:-}" ] && anchor=(-b "$REX_BLOCK")
+  local block
+  block=$(rex split "${anchor[@]}" --focus=false --ratio "${NVIEW_RATIO:-55}" -c "$PWD" -- \
+    nvim -n --listen "$SOCK" --cmd 'let g:startify_disable_at_vimenter=1')  # -n: 읽기 전용 뷰어라 swap 불필요(다른 nvim 과 swap 충돌 프롬프트 방지)
+  rex block rename "$block" nview >/dev/null 2>&1 || true
+  for _ in $(seq 1 30); do alive && return 0; sleep 0.2; done
+  die "nvim 이 소켓을 열지 않았습니다: $SOCK"
+}
+
+call() {  # call <cmd> <json>
+  local argfile res
+  argfile=$(mktemp "${TMPDIR:-/tmp}/nview-args.XXXXXX")
+  trap 'rm -f "$argfile"' RETURN
+  printf '%s' "$2" >"$argfile"
+  res=$(nvim --server "$SOCK" --remote-expr \
+    "luaeval('dofile(_A[1]).run(_A[2], _A[3])', ['$MOD', '$1', '$argfile'])")
+  echo "$res"
+  [[ "$res" == ok* ]]
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  diff)
+    ensure
+    if [ $# -eq 2 ] && [ -f "$1" ] && [ -f "$2" ]; then
+      call diff "$(jq -n --arg cwd "$PWD" --arg a "$1" --arg b "$2" '{cwd:$cwd, files:[$a,$b]}')"
+    else
+      call diff "$(jq -n --arg cwd "$PWD" --arg rev "${1:-HEAD}" '{cwd:$cwd, rev:$rev}')"
+    fi ;;
+  show)
+    [ $# -ge 1 ] || die "show <file>:<from>[-<to>] [note]"
+    ensure
+    call show "$(jq -n --arg cwd "$PWD" --arg spec "$1" --arg note "${2:-}" \
+      '{cwd:$cwd, spec:$spec} + (if $note == "" then {} else {note:$note} end)')" ;;
+  side)
+    [ $# -ge 2 ] || die "side <spec> <spec> [<spec>]"
+    ensure
+    call side "$(jq -n --arg cwd "$PWD" '{cwd:$cwd, specs:$ARGS.positional}' --args "$@")" ;;
+  list)
+    [ ! -t 0 ] || die "list 는 stdin 으로 file:line:text 줄을 받습니다 (예: rg -n foo | nview list)"
+    ensure
+    call list "$(jq -Rn --arg cwd "$PWD" --arg title "${1:-nview}" \
+      '{cwd:$cwd, title:$title, lines:[inputs | select(length > 0)]}')" ;;
+  clear)
+    alive || { echo "ok nview 없음"; exit 0; }
+    call clear '{}' ;;
+  close)
+    alive && nvim --server "$SOCK" --remote-send '<C-\><C-N>:qa!<CR>' || true
+    echo "ok close" ;;
+  ""|-h|--help|help)
+    sed -n '2,16p' "$SELF" | sed 's/^# \{0,1\}//' ;;
+  *) die "알 수 없는 명령: $cmd (nview help)" ;;
+esac
