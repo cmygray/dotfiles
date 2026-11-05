@@ -10,7 +10,7 @@
 #   nview clear                        nview 가 연 탭·표시 정리
 #   nview close                        nview 팬의 nvim 종료
 #
-# 세션(REX_SESSION)마다 nvim 하나를 재사용한다. 없으면 현재 팬(REX_BLOCK) 오른쪽에
+# Rex 탭(REX_BLOCK 이 속한 window)마다 nvim 하나를 재사용한다. 없으면 현재 팬 오른쪽에
 # 포커스를 옮기지 않고 split 해서 띄운다. 소켓 위치는 NVIEW_SOCK 으로 바꿀 수 있다.
 
 set -euo pipefail
@@ -19,9 +19,16 @@ SELF="$(realpath "$0")"
 MOD="$(dirname "$SELF")/../nvim/lua/nview.lua"
 MOD="$(realpath "$MOD")"
 
-sid="${REX_SESSION:-default}"
-sid="${sid##*-}"                      # UUID 마지막 덩어리만 (소켓 경로 길이 제한 회피)
-SOCK="${NVIEW_SOCK:-${TMPDIR:-/tmp}/nview-${sid}.sock}"
+# 탭(window)마다 nvim 을 따로 둔다. 세션 단위로 공유하면 다른 탭에 떠 있는 nvim 을
+# 재사용해 사용자가 보는 탭에 안 보인다. 탭을 못 찾으면 세션 단위로 물러선다.
+key=""
+if [ -z "${NVIEW_SOCK:-}" ] && [ -n "${REX_BLOCK:-}" ] && command -v rex >/dev/null; then
+  key=$(rex block ls ${REX_SESSION:+-s "$REX_SESSION"} --json 2>/dev/null \
+    | jq -r --arg b "$REX_BLOCK" '.blocks[] | select(.block_id == $b) | .window_id' 2>/dev/null || true)
+fi
+[ -n "$key" ] || key="${REX_SESSION:-default}"
+key="${key##*-}"                      # UUID 마지막 덩어리만 (소켓 경로 길이 제한 회피)
+SOCK="${NVIEW_SOCK:-${TMPDIR:-/tmp}/nview-${key}.sock}"
 
 die() { echo "nview: $*" >&2; exit 1; }
 
