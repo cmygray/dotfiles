@@ -14,7 +14,6 @@
   },
   "skillOverrides": {
     "check": "off",
-    "write": "off",
     "ui": "off",
     "change-profile-image": "off",
     "company-brief": "off",
@@ -29,17 +28,6 @@
     "design-doc": "off"
   },
   "hooks": {
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh -c '$HOME/dotfiles/claude/notification-wrapper.sh'"
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "matcher": "",
@@ -82,6 +70,15 @@
             "type": "command",
             "command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c 'rex __internal session-start --agent claude 2>/dev/null || true'",
+            "timeout": 5
           }
         ]
       }
@@ -138,7 +135,8 @@
       "source": {
         "source": "github",
         "repo": "classtinginc/super-ct"
-      }
+      },
+      "autoUpdate": true
     },
     "won-mods": {
       "source": {
@@ -147,14 +145,25 @@
       }
     }
   },
+  "outputStyle": "Explanatory",
   "language": "Korean",
   "alwaysThinkingEnabled": true,
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
+    }
+  },
   "autoUpdatesChannel": "latest",
-  "tui": "default",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
   "autoCompactEnabled": false,
   "teammateMode": "tmux",
+  "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "autoMode": {
@@ -189,7 +198,5 @@
   "autoCompact": false,
   "feedbackSurveyState": {
     "lastShownTime": 1754195027959
-  },
-  "inputNeededNotifEnabled": true,
-  "remoteControlAtStartup": true
+  }
 }
