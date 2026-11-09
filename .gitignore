@@ -39,6 +39,8 @@ claude/skills/agent-browser
 claude/skills/aside-browser/
 claude/skills/ego-browser
 claude/skills/sonamu-*/
+claude/skills/qa-run
+claude/skills/rex/
 
 # dotfiles repo 전용 로컬 Claude 설정
 .claude/settings.local.json
