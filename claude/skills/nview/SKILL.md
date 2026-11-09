@@ -5,7 +5,7 @@ description: Rex 터미널에서 옆 팬에 nvim 을 띄워 사용자에게 코�
 
 # nview — 옆 팬 nvim 으로 코드 보여 주기
 
-채팅에 코드를 길게 붙이는 대신, 사용자가 평소 쓰는 nvim 에서 바로 보게 합니다. 세션마다 nvim 하나를 재사용하고, 처음 부르면 현재 팬 오른쪽에 포커스를 옮기지 않고 split 해서 띄웁니다. 모든 명령은 읽기 전용으로 엽니다.
+채팅에 코드를 길게 붙이는 대신, 사용자가 평소 쓰는 nvim 에서 바로 보게 합니다. 탭마다 nvim 하나를 따로 두고 재사용하며, 처음 부르면 현재 팬 오른쪽에 포커스를 옮기지 않고 split 해서 띄웁니다. 모든 명령은 읽기 전용으로 엽니다.
 
 ## 언제 쓰는가
 
@@ -37,4 +37,4 @@ description: Rex 터미널에서 옆 팬에 nvim 을 띄워 사용자에게 코�
 
 - 엔진: `~/dotfiles/scripts/nview` (bash, PATH 에 있음)
 - nvim 쪽 로직: `~/dotfiles/nvim/lua/nview.lua` (매 호출마다 dofile, 하이라이트 그룹 `NviewFocus`·`NviewNote`)
-- 소켓: `$TMPDIR/nview-<세션ID 끝 12자>.sock`, `NVIEW_SOCK` 으로 바꿀 수 있습니다.
+- 소켓: `$TMPDIR/nview-<탭(window) ID 끝 12자>.sock` (탭을 못 찾으면 세션 ID), `NVIEW_SOCK` 으로 바꿀 수 있습니다.
