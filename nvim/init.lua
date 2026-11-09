@@ -122,6 +122,33 @@ vim.api.nvim_create_user_command("PP", function(opts)
 	vim.notify("Copied to clipboard: " .. file_path .. ":" .. start_line .. "-" .. end_line, vim.log.levels.INFO)
 end, { range = true, desc = "Copy selected code with file path to clipboard" })
 
+-- :QMD command - open current markdown buffer in QuickMD.app
+vim.api.nvim_create_user_command("QMD", function()
+	local file_path = vim.fn.expand("%:p")
+	if file_path == "" then
+		vim.notify("QMD: buffer has no file name", vim.log.levels.ERROR)
+		return
+	end
+	if vim.fn.fnamemodify(file_path, ":e"):lower() ~= "md" then
+		vim.notify("QMD: not a .md file: " .. vim.fn.fnamemodify(file_path, ":t"), vim.log.levels.ERROR)
+		return
+	end
+	if vim.fn.filereadable(file_path) == 0 then
+		vim.notify("QMD: file not saved to disk yet: " .. file_path, vim.log.levels.ERROR)
+		return
+	end
+	if vim.bo.modified then
+		vim.notify("QMD: buffer has unsaved changes; QuickMD shows the file on disk", vim.log.levels.WARN)
+	end
+	vim.system({ "open", "-a", "QuickMD", file_path }, { text = true }, function(res)
+		if res.code ~= 0 then
+			vim.schedule(function()
+				vim.notify("QMD: failed to open QuickMD: " .. vim.trim(res.stderr or ""), vim.log.levels.ERROR)
+			end)
+		end
+	end)
+end, { desc = "Open current .md buffer in QuickMD" })
+
 -- Load module configurations only when plugins are available
 vim.api.nvim_create_autocmd("User", {
 	pattern = "LazyDone",
