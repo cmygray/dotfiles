@@ -232,3 +232,7 @@ if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)
 
 # harness shim — claude/codex 하네스 동기화 (dotfiles/shim/bin/shim). PATH 최앞단 유지
 export PATH="$HOME/dotfiles/shim/bin:$PATH"
+
+# yt-dlp: ~/Downloads에 영상(ytv)·음원(yta) 저장, URL 여러 개 가능
+ytv() { yt-dlp -P ~/Downloads -f "bv*+ba/b" --merge-output-format mp4 -o "%(title)s [%(id)s].%(ext)s" "$@"; }
+yta() { yt-dlp -P ~/Downloads -x --audio-format mp3 --audio-quality 0 -o "%(title)s [%(id)s].%(ext)s" "$@"; }
