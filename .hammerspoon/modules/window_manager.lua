@@ -201,6 +201,9 @@ end)
 --  window:setFrame(window_frame)
 --end)
 
+-- 상하 분할 비율: up = 위쪽 2/3, down = 아래쪽 1/3 (서로 맞물림)
+local TOP_RATIO = 2 / 3
+
 hs.hotkey.bind({ "ctrl", "shift", "alt" }, "up", function()
 	local frame = get_frame()
 
@@ -210,7 +213,7 @@ hs.hotkey.bind({ "ctrl", "shift", "alt" }, "up", function()
 	window_frame.x = frame.x
 	window_frame.y = frame.y
 	window_frame.w = frame.w
-	window_frame.h = frame.h / 2
+	window_frame.h = frame.h * TOP_RATIO
 
 	window:setFrame(window_frame)
 end)
@@ -222,9 +225,9 @@ hs.hotkey.bind({ "ctrl", "shift", "alt" }, "down", function()
 	local window_frame = window:frame()
 
 	window_frame.x = frame.x
-	window_frame.y = frame.y + frame.h / 2
+	window_frame.y = frame.y + frame.h * TOP_RATIO
 	window_frame.w = frame.w
-	window_frame.h = frame.h / 2
+	window_frame.h = frame.h * (1 - TOP_RATIO)
 
 	window:setFrame(window_frame)
 end)
