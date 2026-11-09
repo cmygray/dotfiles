@@ -105,11 +105,6 @@ node ~/Workspace/serviz/blast-radius/build.mjs <data-dir> <output-path>
 open <output-path>
 ```
 
-또는 mdgate로 공유:
-```bash
-mdgate <output-path>
-```
-
 ## 주의사항
 
 - 노드 수는 20~60개가 적정 범위. 너무 많으면 핵심 컴포넌트만 선별

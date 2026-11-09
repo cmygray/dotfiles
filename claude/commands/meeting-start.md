@@ -33,19 +33,6 @@ ls -t ~/Library/Application\ Support/tst/meetings/*.md | head -1
 
 그 다음 `meeting_notes_live.md`를 초기화하세요. Write 도구 사용 전 Read가 필요하므로, 파일 존재 여부와 무관하게 Read를 먼저 실행한 뒤 새 내용으로 덮어씁니다.
 
-### mdgate 연동 (optional)
-
-tst-meeting이 시작되고 전사 파일 경로를 확보한 뒤, mdgate가 설치되어 있으면 라이브 노트를 모바일에서 볼 수 있도록 서빙합니다.
-
-1. mdgate 존재 여부 확인: `which mdgate`
-2. 있으면 전사 파일과 라이브 노트를 `--share` 옵션으로 서빙 (zrok 공개 URL 생성):
-   ```
-   mdgate --share <전사 파일 경로>
-   mdgate --share meeting_notes_live.md
-   ```
-   mdgate 서버가 이미 실행 중이면 자동으로 파일만 등록됩니다 (register API).
-3. 출력된 zrok URL을 사용자에게 안내 (인터넷 어디서든 접근 가능)
-4. mdgate가 없으면 스킵하고, 사용자에게 "mdgate가 설치되면 모바일에서 라이브 노트를 볼 수 있습니다"라고 간단히 안내
 
 ## 3단계: 모니터링 & 라이브 노트 작성
 
@@ -118,7 +105,6 @@ tst-meeting이 시작되고 전사 파일 경로를 확보한 뒤, mdgate가 설
    - Slack 드래프트 기능은 스레드 댓글까지 함께 남기기 어렵기 때문에 기본 타협안은 "로컬 드래프트 검토 → 승인 후 본문과 스레드 댓글 동시 전송"입니다.
    - 사용자가 승인하면 slack_send_message MCP 도구로 전송합니다. 글자수 제한(5000자)을 초과하면 스레드로 분할합니다.
    - 사용자가 Slack 드래프트만 원하면 첫 메시지만 드래프트로 남기고, 스레드 댓글용 전문은 `meeting_notes_share_draft.md`에 유지한다고 안내합니다.
-6. mdgate가 실행 중이었으면 `mdgate --stop`으로 종료
 
 ## 주의사항
 
