@@ -1,3 +1,17 @@
+-- 일부 앱(Yab 등 CEF 기반)은 hs.window.focusedWindow()가 nil을 돌려주므로
+-- 앞에 있는 앱의 focused/main 창으로 대체한다
+function target_window()
+	local window = hs.window.focusedWindow()
+	if window then
+		return window
+	end
+	local app = hs.application.frontmostApplication()
+	if not app then
+		return nil
+	end
+	return app:focusedWindow() or app:mainWindow()
+end
+
 function get_frame()
 	if #hs.screen.allScreens() == 1 then
 		return hs.screen.mainScreen():frame()
@@ -36,7 +50,10 @@ end
 hs.hotkey.bind({ "ctrl", "shift", "alt" }, "return", function()
 	local frame = get_frame()
 
-	local window = hs.window.focusedWindow()
+	local window = target_window()
+	if not window then
+		return
+	end
 	local window_frame = window:frame()
 
 	window_frame.x = frame.x
@@ -207,7 +224,10 @@ local TOP_RATIO = 2 / 3
 hs.hotkey.bind({ "ctrl", "shift", "alt" }, "up", function()
 	local frame = get_frame()
 
-	local window = hs.window.focusedWindow()
+	local window = target_window()
+	if not window then
+		return
+	end
 	local window_frame = window:frame()
 
 	window_frame.x = frame.x
@@ -221,7 +241,10 @@ end)
 hs.hotkey.bind({ "ctrl", "shift", "alt" }, "down", function()
 	local frame = get_frame()
 
-	local window = hs.window.focusedWindow()
+	local window = target_window()
+	if not window then
+		return
+	end
 	local window_frame = window:frame()
 
 	window_frame.x = frame.x
