@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# draw - Rex 옆 팬에 그림(SVG/PNG)을 kitty graphics protocol 로 띄운다 (에이전트·사람 공용).
+#
+# Usage:
+#   draw show <file.svg|file.png>   그림을 띄운다(이전 그림을 바꿔 그림)
+#   draw show - < file.svg          stdin 의 SVG 를 띄운다 (heredoc 용)
+#   draw close                      draw 팬을 닫는다
+#
+# Rex 탭(REX_BLOCK 이 속한 window)마다 draw 팬 하나를 재사용한다. 없으면 같은 탭의
+# nview 팬 아래, 그것도 없으면 현재 팬 오른쪽에 포커스를 옮기지 않고 split 한다.
+# 그림은 팬 픽셀 크기에 맞춰 1x 로 래스터화한다. 파일은 $TMPDIR/draw-<탭> 에 두고 버린다.
+
+set -euo pipefail
+
+SELF="$(realpath "$0")"
+VIEW="$(dirname "$SELF")/draw-view"
+die() { echo "ERR draw: $*" >&2; exit 1; }
+
+win=""
+if [ -n "${REX_BLOCK:-}" ] && command -v rex >/dev/null; then
+  blocks=$(rex block ls ${REX_SESSION:+-s "$REX_SESSION"} --json 2>/dev/null || echo '{"blocks":[]}')
+  win=$(jq -r --arg b "$REX_BLOCK" '.blocks[] | select(.block_id == $b) | .window_id' <<<"$blocks" 2>/dev/null || true)
+fi
+key="${win:-${REX_SESSION:-default}}"; key="${key##*-}"
+DIR="${TMPDIR:-/tmp}/draw-${key}"
+mkdir -p "$DIR"
+
+alive() { [ -f "$DIR/pid" ] && kill -0 "$(cat "$DIR/pid")" 2>/dev/null; }
+
+ensure() {
+  alive && return 0
+  command -v rex >/dev/null || die "rex 없음 (Rex 터미널에서만 동작)"
+  local anchor=(-b "${REX_BLOCK:?REX_BLOCK 없음}") dir=right
+  local nv
+  nv=$(jq -r --arg w "$win" '.blocks[] | select(.window_id == $w and .label == "nview") | .block_id' <<<"${blocks:-}" 2>/dev/null | head -1 || true)
+  [ -n "$nv" ] && { anchor=(-b "$nv"); dir=below; }
+  local block
+  block=$(rex split "${anchor[@]}" --split "$dir" --focus=false --ratio "${DRAW_RATIO:-50}" -- \
+    sh -c "echo \$\$ > '$DIR/pid'; exec python3 '$VIEW' '$DIR'")
+  rex block rename "$block" draw >/dev/null 2>&1 || true
+  # CLI 로 만든 팬은 Rex 앱이 소유하기 전까지 서버 기본 80x24·셀 8x16 이다.
+  # 기준 팬 크기로 추정해 맞춰 두고, 앱이 소유하면 SIGWINCH 로 뷰어가 다시 그린다.
+  local sz
+  sz=$(rex block call -b "${anchor[1]}" size '{}' 2>/dev/null || true)
+  if [ -n "$sz" ] && [ "$(rex block call -b "$block" size '{}' 2>/dev/null | jq -r .owner)" = null ]; then
+    rex block call -b "$block" resize "$(jq -c --arg d "$dir" --argjson p "${DRAW_RATIO:-50}" '
+      {columns: (if $d == "right" then (.columns * $p / 100 | floor) else .columns end),
+       rows: (if $d == "below" then (.rows * $p / 100 | floor) else .rows end),
+       cell_width_px, cell_height_px}' <<<"$sz")" >/dev/null 2>&1 || true
+  fi
+  for _ in $(seq 1 25); do alive && return 0; sleep 0.2; done
+  die "뷰어가 뜨지 않았습니다"
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  show)
+    src="${1:-}"; [ -n "$src" ] || die "show <file.svg|file.png|->"
+    rm -f "$DIR/cur.svg" "$DIR/cur.png" "$DIR/last"
+    if [ "$src" = "-" ]; then cat >"$DIR/cur.svg"
+    else
+      [ -f "$src" ] || die "파일 없음: $src"
+      case "$src" in
+        *.svg) cp "$src" "$DIR/cur.svg" ;;
+        *.png) cp "$src" "$DIR/cur.png" ;;
+        *) die "svg 나 png 만 됩니다: $src" ;;
+      esac
+    fi
+    if [ -f "$DIR/cur.svg" ]; then  # 렌더 전에 SVG 문법부터 확인
+      rsvg-convert "$DIR/cur.svg" -o "$DIR/check.png" 2>"$DIR/err" || die "SVG 오류: $(head -3 "$DIR/err")"
+    fi
+    ensure
+    touch "$DIR/stamp"
+    for _ in $(seq 1 30); do [ -s "$DIR/last" ] && break; sleep 0.2; done
+    res=$(cat "$DIR/last" 2>/dev/null || echo "ERR 응답 없음")
+    echo "$res (원본: $DIR/view.png)"
+    [[ "$res" == ok* ]] ;;
+  close)
+    alive && kill "$(cat "$DIR/pid")" 2>/dev/null || true
+    rm -rf "$DIR"
+    echo "ok close" ;;
+  ""|-h|--help|help)
+    sed -n '2,11p' "$SELF" | sed 's/^# \{0,1\}//' ;;
+  *) die "알 수 없는 명령: $cmd (draw help)" ;;
+esac

@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""draw-view - draw 팬 안에서 도는 뷰어. `draw` 엔진이 부른다.
+
+DIR/cur.svg 또는 DIR/cur.png 를 지켜보다가 DIR/stamp 가 바뀌거나 팬 크기가 바뀌면
+팬 픽셀 크기에 맞춰 1x 로 래스터화해 kitty graphics protocol 로 다시 그린다.
+(Rex 는 kitty 이미지를 point 해상도로 다시 샘플링하므로 2x 로 그리면 흐려진다.)
+그린 결과는 DIR/last 에 'ok <w>x<h> <cols>x<rows>' 로 남긴다.
+"""
+import base64, fcntl, os, signal, struct, subprocess, sys, termios, time
+
+DIR = sys.argv[1]
+STAMP, LAST = os.path.join(DIR, "stamp"), os.path.join(DIR, "last")
+out = sys.stdout
+
+
+def winsize():
+    rows, cols, xp, yp = struct.unpack("HHHH", fcntl.ioctl(1, termios.TIOCGWINSZ, b"\0" * 8))
+    cw = xp // cols if xp and cols else 8
+    ch = yp // rows if yp and rows else 16
+    return rows, cols, cw, ch
+
+
+def png_size(path):
+    with open(path, "rb") as f:
+        head = f.read(24)
+    return struct.unpack(">II", head[16:24])
+
+
+def rasterize(W, H):
+    svg, png = os.path.join(DIR, "cur.svg"), os.path.join(DIR, "cur.png")
+    dst = os.path.join(DIR, "view.png")
+    if os.path.exists(svg) and os.path.getmtime(svg) >= (os.path.getmtime(png) if os.path.exists(png) else 0):
+        subprocess.run(["rsvg-convert", "-a", "-w", str(W), svg, "-o", dst], check=True)
+        if png_size(dst)[1] > H:  # 세로가 넘치면 높이에 맞춘다
+            subprocess.run(["rsvg-convert", "-a", "-h", str(H), svg, "-o", dst], check=True)
+    else:  # PNG 는 넘칠 때만 줄인다(확대하면 흐려짐)
+        subprocess.run(["magick", png, "-resize", f"{W}x{H}>", dst], check=True)
+    return dst
+
+
+def render():
+    rows, cols, cw, ch = winsize()
+    W, H = cols * cw, (rows - 1) * ch
+    try:
+        path = rasterize(W, H)
+    except Exception as e:  # noqa: BLE001
+        out.write(f"\033[2J\033[Hdraw: 그리기 실패: {e}\n"); out.flush()
+        open(LAST, "w").write(f"ERR {e}\n")
+        return
+    pw, ph = png_size(path)
+    c, r = max(1, -(-pw // cw)), max(1, -(-ph // ch))
+    data = base64.standard_b64encode(open(path, "rb").read())
+    out.write("\033[?25l\033_Ga=d,d=A,q=2\033\\\033[2J\033[H")
+    first = True
+    while data:
+        chunk, data = data[:4096], data[4096:]
+        ctrl = f"a=T,f=100,q=2,C=1,c={c},r={r}," if first else ""
+        out.write(f"\033_G{ctrl}m={1 if data else 0};{chunk.decode()}\033\\")
+        first = False
+    out.flush()
+    open(LAST, "w").write(f"ok {pw}x{ph} {cols}x{rows}\n")
+
+
+resized = False
+
+
+def on_winch(*_):
+    global resized
+    resized = True
+
+
+signal.signal(signal.SIGWINCH, on_winch)
+seen = None
+while True:
+    try:
+        m = os.path.getmtime(STAMP)
+    except FileNotFoundError:
+        m = None
+    if m != seen or resized:
+        seen, resized = m, False
+        if m is not None:
+            render()
+    time.sleep(0.2)
