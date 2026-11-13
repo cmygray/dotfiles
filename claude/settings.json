@@ -8,7 +8,9 @@
     "allow": [
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "mcp__plugin_Notion_notion__notion-fetch",
+      "mcp__plugin_Notion_notion__notion-search"
     ],
     "defaultMode": "auto"
   },
@@ -84,6 +86,7 @@
       }
     ]
   },
+  "enableArtifact": false,
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline.sh"
@@ -149,19 +152,21 @@
   "language": "Korean",
   "alwaysThinkingEnabled": true,
   "modelSettings": {
-    "claude-fable-5-1": {
+    "claude-fable-5-2": {
       "effortLevel": "high"
     },
     "claude-opus-5-5": {
       "effortLevel": "medium"
     }
   },
+  "promptSuggestionEnabled": false,
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
+  "verbose": false,
   "autoCompactEnabled": false,
-  "teammateMode": "tmux",
+  "teammateMode": "auto",
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
