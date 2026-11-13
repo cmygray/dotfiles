@@ -5,8 +5,9 @@ DIR/cur.svg 또는 DIR/cur.png 를 지켜보다가 DIR/stamp 가 바뀌거나 �
 팬 픽셀 크기에 맞춰 1x 로 래스터화해 kitty graphics protocol 로 다시 그린다.
 (Rex 는 kitty 이미지를 point 해상도로 다시 샘플링하므로 2x 로 그리면 흐려진다.)
 그린 결과는 DIR/last 에 'ok <w>x<h> <cols>x<rows>' 로 남긴다.
+팬 맨 아래 줄은 안내 줄이다. 팬에 포커스를 두고 c 를 누르면 그림을 2x PNG 로 클립보드에 복사한다.
 """
-import base64, fcntl, os, signal, struct, subprocess, sys, termios, time
+import atexit, base64, fcntl, os, select, signal, struct, subprocess, sys, termios, time, tty
 
 DIR = sys.argv[1]
 STAMP, LAST = os.path.join(DIR, "stamp"), os.path.join(DIR, "last")
@@ -58,7 +59,33 @@ def render():
         out.write(f"\033_G{ctrl}m={1 if data else 0};{chunk.decode()}\033\\")
         first = False
     out.flush()
+    status("c 복사")
     open(LAST, "w").write(f"ok {pw}x{ph} {cols}x{rows}\n")
+
+
+def status(msg, color="38;2;130;139;184"):
+    """팬 맨 아래 줄(그림이 쓰지 않는 줄)에 안내를 쓴다."""
+    rows = winsize()[0]
+    out.write(f"\033[{rows};1H\033[2K\033[{color}m{msg}\033[0m"); out.flush()
+
+
+def copy():
+    """화면용 1x 가 아니라 2x 로 다시 렌더해 클립보드에 넣는다(붙여 넣을 때 선명하게)."""
+    svg, png = os.path.join(DIR, "cur.svg"), os.path.join(DIR, "cur.png")
+    dst = os.path.join(DIR, "copy.png")
+    try:
+        if os.path.exists(svg):
+            subprocess.run(["rsvg-convert", "-z", "2", svg, "-o", dst], check=True)
+        elif os.path.exists(png):
+            dst = png
+        else:
+            return status("복사할 그림이 없습니다", "38;2;255;199;119")
+        subprocess.run(["osascript", "-e", f'set the clipboard to (read (POSIX file "{dst}") as «class PNGf»)'],
+                       check=True, capture_output=True)
+        w, h = png_size(dst)
+        status(f"복사됨 {w}x{h}", "38;2;195;232;141")
+    except Exception as e:  # noqa: BLE001
+        status(f"복사 실패: {e}", "38;2;255;117;127")
 
 
 resized = False
@@ -70,6 +97,12 @@ def on_winch(*_):
 
 
 signal.signal(signal.SIGWINCH, on_winch)
+tty_in = sys.stdin.isatty()
+if tty_in:  # 키를 한 글자씩, 화면에 찍히지 않게 받는다
+    saved = termios.tcgetattr(0)
+    atexit.register(termios.tcsetattr, 0, termios.TCSADRAIN, saved)
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    tty.setcbreak(0)
 seen = None
 while True:
     try:
@@ -80,4 +113,12 @@ while True:
         seen, resized = m, False
         if m is not None:
             render()
-    time.sleep(0.2)
+    if not tty_in:
+        time.sleep(0.2)
+        continue
+    try:
+        ready = select.select([0], [], [], 0.2)[0]
+    except InterruptedError:  # SIGWINCH
+        continue
+    if ready and os.read(0, 32).lower().startswith(b"c"):
+        copy()
