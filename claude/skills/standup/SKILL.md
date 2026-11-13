@@ -1,13 +1,13 @@
 ---
 name: standup
-description: 일일 standup 초안 생성. "standup", "데일리", "오늘 standup", "스탠드업" 등의 요청에 반응. 세션 히스토리·Reminders·GitHub·Slack을 종합해 Won의 형식으로 초안을 만들고, 확인 후 #group-product Daily update 스레드에 전송.
+description: 일일 standup 초안 생성. "standup", "데일리", "오늘 standup", "스탠드업" 등의 요청에 반응. 세션 히스토리·GitHub·Slack을 종합해 Won의 형식으로 초안을 만들고, 확인 후 #group-product Daily update 스레드에 전송.
 allowed-tools: Bash, Read
 ---
 
 # standup — Daily standup 초안 생성
 
 매일 평일 아침 `#group-product` Daily update 스레드에 올릴 standup 초안을 생성한다.
-세션 히스토리, Reminders, GitHub 활동, Slack 활동을 종합해서 Won의 형식대로 정리하고, 확인 후 Slack에 전송한다.
+세션 히스토리, GitHub 활동, Slack 활동을 종합해서 Won의 형식대로 정리하고, 확인 후 Slack에 전송한다.
 
 ---
 
@@ -58,8 +58,7 @@ Python으로 계산 권장.
 2. **어제 데일리 스탠덥 미팅노트의 Action Items** — Won 본인 항목 직접 추출
 3. **어제 머지·OPEN PR (Won 작성)** — 코드로 증명된 작업
 4. **오늘 캘린더 미팅** — prep 작업 단서 (예: PRD 리뷰 미팅 → "PRD 리뷰 및 설계 검토" 추가)
-5. **Reminders Today-Work 미완료** — 부수 누적 풀
-6. **에이전트 이름 / 세션 활동** — **검증용 보조** (단독 신뢰 X, 위 소스와 교차 확인용)
+5. **에이전트 이름 / 세션 활동** — **검증용 보조** (단독 신뢰 X, 위 소스와 교차 확인용)
 
 ⚠️ **금지:** 에이전트 이름을 곧바로 standup 항목으로 변환하지 말 것. 탐색·실험 세션이 많아 1:1 매핑이 안 됨.
 
@@ -132,16 +131,6 @@ gh search issues --author=@me --state=closed --closed=$YESTERDAY..* --json title
 
 # 어제 업데이트된 OPEN PR → (진행중) 마커 후보
 gh search prs --author=@me --updated="${YESTERDAY}..*" --state=open --json title,repository,number --limit 20
-```
-
-### 4. Today-Work Reminders
-```bash
-# 미완료 항목 → 오늘 계획
-remindctl list "Today-Work" --json | jq -r '.[] | select(.isCompleted == false) | .title'
-
-# 오늘 완료한 항목 (있으면 어제 한 일에 추가 고려)
-TODAY=$(date +%Y-%m-%d)
-remindctl list "Today-Work" --json | jq -r --arg t "$TODAY" '.[] | select(.isCompleted == true and (.completionDate // "" | startswith($t))) | .title'
 ```
 
 ### 5. 어제 Slack 활동 (옵션, 컨텍스트 강화)
@@ -272,12 +261,10 @@ Sub-bullet은 **테마 아래의 구체적 변경/하위 작업**일 때만:
 - `(완료)` 신호:
   - 어제 머지된 PR이 그 테마에 속함 (`gh search prs --merged-at=YESTERDAY`)
   - 어제 닫힌 이슈
-  - Reminders Today-Work에서 어제 `isCompleted=true && completionDate startswith YESTERDAY`
   - 에이전트 세션이 어제 마지막 활동 후 dead (조심: 일찍 종료된 것일 수도)
 - `(진행중)` 신호:
   - 작업 흔적은 있는데 PR이 아직 open
   - 어제 활동한 에이전트 세션이 alive
-  - Reminders 미완료 + 어제 활동
 - **마커 없음**: 신호가 불확실하면 마커 생략 (Won 본인이 추가하도록)
 
 ---
@@ -298,7 +285,6 @@ Sub-bullet은 **테마 아래의 구체적 변경/하위 작업**일 때만:
 ### B. 추가 선택 (휴먼인더루프)
 
 부수 누적 풀 = Won이 추가할지 결정:
-- **Reminders Today-Work 미완료** 항목 (`/daily-note`의 누적 작업)
 - 스프린트 中 "할 일" 상태 작업
 - 어제 자연 연결 (avatar-handler 같은 임시 작업 등 unclassified)
 
@@ -307,11 +293,6 @@ Sub-bullet은 **테마 아래의 구체적 변경/하위 작업**일 때만:
    ```
    📥 추가 선택 후보 — YYYY-MM-DD
    
-   [Reminders 미완료]
-   [ ] B1. ⚠️ <high priority 항목>
-   [ ] B2. <일반 항목>
-   ...
-   
    [스프린트 27 할 일]
    [ ] S1. <스프린트 작업>
    ...
@@ -319,7 +300,7 @@ Sub-bullet은 **테마 아래의 구체적 변경/하위 작업**일 때만:
    [어제 자연 연결]
    [ ] C1. <어제 1회성 작업>
    ```
-2. Won이 선택 (예: `B1 C1` 또는 `없음`)
+2. Won이 선택 (예: `S1 C1` 또는 `없음`)
 3. 선택된 항목을 "오늘" 섹션에 추가
 
 **중요:**
@@ -415,7 +396,7 @@ delaySeconds = min(3600, delay)
 - 봇 메시지 timestamp 검색은 07:00 KST 이후에만 유효
 - 세션 jsonl 파싱 시 control char escape 에러 주의 → single jq pipe 사용
 - 이미 게시된 standup 중복 방지를 위해 매 실행 전 확인
-- **취소 작업 처리**: 사용자가 "X 작업 취소" 언급 시 어제·오늘 양쪽에서 제외 + Reminders 항목도 삭제 제안
+- **취소 작업 처리**: 사용자가 "X 작업 취소" 언급 시 어제·오늘 양쪽에서 제외
 - **사용자 정정 우선**: 자동 감지된 활동이라도 "X 안 했음" 정정 시 즉시 제외 (자동 신호 > 사용자 발언이 아니라 사용자 발언 > 자동 신호)
 
 ## 캐치하기 어려운 항목 (확인 후 추가)
