@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""Rex 서버 재시작(업데이트) 전후로 세션 구성을 저장·복원한다.
+
+  rex-restore snapshot [FILE]          # 지금 상태를 FILE에 저장
+  rex-restore restore  [FILE] [--prefix P] [--dry-run]
+
+FILE 기본값: ~/.local/state/rex-restore/snapshot.json (호스트마다 따로)
+
+저장: 세션 라벨 → 창(탭) → 분할 레이아웃 → 블록별 cwd, 그 블록에서 돌던 Claude 세션 ID.
+복원: 라벨이 같은 세션이 있으면(Rex가 재시작 후 세션·블록 ID를 되살린 경우)
+      셸만 떠 있는 블록에 `claude --resume <id>`를 입력한다. 이미 실행 중인 세션은 건너뛴다.
+      세션이 없으면 같은 라벨로 만들고 분할을 다시 나눈 뒤 같은 명령을 입력한다.
+      셸·Claude 외 프로세스(nvim 등)는 기록만 하고 다시 실행하지 않는다.
+"""
+import glob
+import shlex
+import time
+import json
+import os
+import re
+import subprocess
+import sys
+
+DEFAULT = os.path.expanduser("~/.local/state/rex-restore/snapshot.json")
+
+
+def sh(*args, check=True):
+    r = subprocess.run(args, capture_output=True, text=True)
+    if check and r.returncode != 0:
+        raise SystemExit(f"실패: {' '.join(args)}\n{r.stderr.strip()}")
+    return r.stdout
+
+
+def rex_json(*args):
+    return json.loads(sh("rex", *args))
+
+
+# ---------- snapshot ----------
+
+def claude_map():
+    """살아 있는 Claude 프로세스 pid -> (sessionId, cwd, name)"""
+    res = {}
+    for f in glob.glob(os.path.expanduser("~/.claude/sessions/*.json")):
+        try:
+            d = json.load(open(f))
+            os.kill(d["pid"], 0)
+        except Exception:
+            continue
+        res[d["pid"]] = d
+    return res
+
+
+def block_call(sid, bid, method):
+    try:
+        return rex_json("block", "call", "-s", sid, "-b", bid, method)
+    except SystemExit:
+        return {}
+
+
+def describe_block(sid, bid, claudes):
+    """Rex 블록 API로 포그라운드 프로세스와 셸 cwd를 읽는다."""
+    fg = block_call(sid, bid, "process").get("foreground") or {}
+    pwd = block_call(sid, bid, "pwd").get("pwd") or ""
+    cwd = re.sub(r"^file://[^/]*", "", pwd) or fg.get("cwd")
+    info = {"cwd": cwd, "claude": None, "foreground": None}
+    c = claudes.get(fg.get("pid"))
+    if c:
+        info["claude"] = {"id": c["sessionId"], "name": c.get("name")}
+        info["cwd"] = c["cwd"]
+    elif fg.get("name") and fg.get("name") not in ("zsh", "bash", "fish", "login"):
+        info["foreground"] = fg["name"]
+    return info
+
+
+def walk(sid, node, claudes):
+    if "block_id" in node:
+        return {"block": node["block_id"], **describe_block(sid, node["block_id"], claudes)}
+    s = node["split"]
+    return {
+        "direction": s["direction"],
+        "ratio": s["ratio"],
+        "before": walk(sid, s["before"], claudes),
+        "after": walk(sid, s["after"], claudes),
+    }
+
+
+def snapshot(path):
+    claudes = claude_map()
+    sessions = []
+    for s in rex_json("api", "call", "session.list")["sessions"]:
+        view = rex_json("api", "call", "session.view", "-s", s["session_id"])
+        windows = []
+        for w in view["windows"]:
+            tiled = [l for l in w["layers"] if l["kind"] == "tiled"]
+            if not tiled:
+                continue
+            windows.append({"label": w.get("label"), "layout": walk(s["session_id"], tiled[0]["layout"], claudes)})
+        sessions.append({"label": view.get("label"), "windows": windows})
+    json.dump({"sessions": sessions}, open(path, "w"), ensure_ascii=False, indent=2)
+    n_claude = json.dumps(sessions).count('"claude": {')
+    print(f"저장: {path} — 세션 {len(sessions)}개, Claude 블록 {n_claude}개")
+    for s in sessions:
+        for w in s["windows"]:
+            for leaf in leaves(w["layout"]):
+                tag = f"claude {leaf['claude']['id'][:8]}" if leaf["claude"] else (leaf["foreground"] or "shell")
+                print(f"  {s['label']:<28} {tag:<18} {leaf['cwd']}")
+
+
+# ---------- restore ----------
+
+def leaves(node):
+    if "block" in node:
+        return [node]
+    return leaves(node["before"]) + leaves(node["after"])
+
+
+def first_id(result):
+    """rex new/run/split --json 결과에서 새 block_id를 찾는다."""
+    found = re.findall(r'"(block:[0-9a-f-]+)"', json.dumps(result))
+    return found[-1] if found else None
+
+
+PENDING = []  # (sid, block, command) — 셸이 다 뜬 뒤 한꺼번에 입력한다
+
+
+def start_leaf(sid, bid, leaf, dry):
+    if not leaf["claude"]:
+        return
+    cmd = f"cd {shlex.quote(leaf['cwd'])} && claude --resume {leaf['claude']['id']}"
+    if dry:
+        print(f"    send {bid}: {cmd}")
+    else:
+        PENDING.append((sid, bid, cmd))
+
+
+def build(sid, anchor, node, dry):
+    if "block" in node:
+        start_leaf(sid, anchor, node, dry)
+        return
+    where = "right" if node["direction"] == "horizontal" else "below"
+    pct = str(max(5, min(95, round((1 - node["ratio"]) * 100))))
+    cwd = leaves(node["after"])[0]["cwd"] or os.path.expanduser("~")
+    if dry:
+        new = f"<split {where} {pct}%>"
+        print(f"    split {anchor} {where} {pct}% cwd={cwd}")
+    else:
+        new = first_id(rex_json("split", "-s", sid, "-b", anchor, "--split", where,
+                                "--ratio", pct, "-c", cwd, "--focus=false", "--json"))
+    build(sid, anchor, node["before"], dry)
+    build(sid, new, node["after"], dry)
+
+
+SHELLS = ("zsh", "bash", "fish", "login")
+
+
+def resume_in_existing(sid, label, s, running, dry):
+    """Rex가 세션·블록을 같은 ID로 되살린 경우: 셸만 떠 있는 블록에 resume을 입력한다."""
+    live = set(re.findall(r'"(block:[0-9a-f-]+)"',
+                          json.dumps(rex_json("api", "call", "session.view", "-s", sid))))
+    print(f"기존 세션: {label}")
+    for w in s["windows"]:
+        for leaf in leaves(w["layout"]):
+            if not leaf["claude"]:
+                continue
+            cid, bid = leaf["claude"]["id"], leaf["block"]
+            if cid in running:
+                print(f"  건너뜀(이미 실행 중): claude {cid[:8]}")
+            elif bid not in live:
+                print(f"  건너뜀(블록 없음): {bid}")
+            elif (block_call(sid, bid, "process").get("foreground") or {}).get("name") not in SHELLS:
+                print(f"  건너뜀(셸 아닌 프로그램 실행 중): {bid}")
+            else:
+                start_leaf(sid, bid, leaf, dry)
+
+
+def restore(path, prefix, dry):
+    snap = json.load(open(path))
+    existing = {s.get("label"): s["session_id"]
+                for s in rex_json("api", "call", "session.list")["sessions"]}
+    running = {c["sessionId"] for c in claude_map().values()}
+    for s in snap["sessions"]:
+        label = prefix + (s["label"] or "restored")
+        if label in existing:
+            resume_in_existing(existing[label], label, s, running, dry)
+            continue
+        print(f"세션: {label}")
+        sid = None
+        for i, w in enumerate(s["windows"]):
+            cwd = leaves(w["layout"])[0]["cwd"] or os.path.expanduser("~")
+            if dry:
+                anchor = f"<{'new' if i == 0 else 'run'} {cwd}>"
+                print(f"  창 {i + 1}: {anchor}")
+            elif i == 0:
+                res = rex_json("new", label, "-c", cwd, "--json",
+                               *(["--window", w["label"]] if w.get("label") else []))
+                sid = re.search(r'"(session:[0-9a-f-]+)"', json.dumps(res)).group(1)
+                anchor = first_id(res)
+            else:
+                args = ["window", "new", "-s", sid] + ([w["label"]] if w.get("label") else [])
+                anchor = first_id(rex_json(*args, "-c", cwd, "--focus=false", "--json"))
+            build(sid, anchor, w["layout"], dry)
+    if PENDING:
+        time.sleep(2)  # 셸 초기화(.zshrc) 끝날 때까지 대기
+        for sid, bid, cmd in PENDING:
+            sh("rex", "send", "-s", sid, "-b", bid, cmd + "\r")
+        print(f"Claude 세션 {len(PENDING)}개 재개 명령 입력")
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if not a or a[0] not in ("snapshot", "restore"):
+        raise SystemExit(__doc__)
+    cmd = a.pop(0)
+    dry = "--dry-run" in a
+    prefix = ""
+    if "--prefix" in a:
+        prefix = a[a.index("--prefix") + 1]
+        del a[a.index("--prefix"):a.index("--prefix") + 2]
+    a = [x for x in a if x != "--dry-run"]
+    path = a[0] if a else DEFAULT
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    snapshot(path) if cmd == "snapshot" else restore(path, prefix, dry)
