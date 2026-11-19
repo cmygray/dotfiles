@@ -24,8 +24,8 @@ import sys
 DEFAULT = os.path.expanduser("~/.local/state/rex-restore/snapshot.json")
 
 
-def sh(*args, check=True):
-    r = subprocess.run(args, capture_output=True, text=True)
+def sh(*args, check=True, env=None):
+    r = subprocess.run(args, capture_output=True, text=True, env=env)
     if check and r.returncode != 0:
         raise SystemExit(f"실패: {' '.join(args)}\n{r.stderr.strip()}")
     return r.stdout
@@ -46,8 +46,19 @@ def claude_map():
             os.kill(d["pid"], 0)
         except Exception:
             continue
+        if not same_process(d):
+            continue  # 재부팅·강제 종료로 남은 pid 파일. pid가 다른 프로세스에 재사용됨
         res[d["pid"]] = d
     return res
+
+
+def same_process(d):
+    """pid 파일이 지금 그 pid의 프로세스를 가리키는지: 시작 시각(UTC) 비교."""
+    started = " ".join(sh("ps", "-o", "lstart=", "-p", str(d["pid"]), check=False,
+                          env={**os.environ, "TZ": "UTC"}).split())
+    if d.get("procStart"):
+        return started == " ".join(d["procStart"].split())
+    return "claude" in sh("ps", "-o", "args=", "-p", str(d["pid"]), check=False)
 
 
 def block_call(sid, bid, method):
