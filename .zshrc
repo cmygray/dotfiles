@@ -126,6 +126,17 @@ export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.config/git-fuzzy/bin:$H
 # Chamber (AWS SSM)
 export CHAMBER_KMS_KEY_ALIAS="aws/ssm"
 
+# aws-vault: 키체인이 잠겨 있으면 GUI 창 대신 터미널(Rex 팬)에서 비밀번호를 받는다.
+# TTY가 없으면(에이전트·자동화) 기다리지 않고 실패한다.
+aws-vault() {
+  local kc=~/Library/Keychains/aws-vault.keychain-db
+  if [[ -e "$kc" ]] && ! security show-keychain-info "$kc" >/dev/null 2>&1; then
+    [[ -t 0 ]] || { echo "aws-vault 키체인이 잠겨 있습니다. Rex 팬에서 먼저 실행하세요." >&2; return 1; }
+    security unlock-keychain "$kc" || return
+  fi
+  command aws-vault "$@"
+}
+
 # Basic aliases
 alias vim=nvim
 alias ll="ls -l"
