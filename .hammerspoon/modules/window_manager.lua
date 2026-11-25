@@ -218,42 +218,21 @@ end)
 --  window:setFrame(window_frame)
 --end)
 
--- 상하 분할 비율: up = 위쪽 2/3, down = 아래쪽 1/3 (서로 맞물림)
-local TOP_RATIO = 2 / 3
-
-hs.hotkey.bind({ "ctrl", "shift", "alt" }, "up", function()
-	local frame = get_frame()
-
-	local window = target_window()
-	if not window then
-		return
-	end
-	local window_frame = window:frame()
-
-	window_frame.x = frame.x
-	window_frame.y = frame.y
-	window_frame.w = frame.w
-	window_frame.h = frame.h * TOP_RATIO
-
-	window:setFrame(window_frame)
-end)
-
-hs.hotkey.bind({ "ctrl", "shift", "alt" }, "down", function()
-	local frame = get_frame()
-
-	local window = target_window()
-	if not window then
-		return
-	end
-	local window_frame = window:frame()
-
-	window_frame.x = frame.x
-	window_frame.y = frame.y + frame.h * TOP_RATIO
-	window_frame.w = frame.w
-	window_frame.h = frame.h * (1 - TOP_RATIO)
-
-	window:setFrame(window_frame)
-end)
+-- 위 1/3, 아래 2/3 타일링: 포커스된 창을 옮기면 레이아웃의 나머지 창이 따라 움직인다 (modules/tiling.lua)
+local tiling = require("modules.tiling")
+local TILING_KEYS = {
+	up = "TOP", -- 두 모니터에 걸친 위 1/3
+	down = "BOT", -- 두 모니터에 걸친 아래 2/3
+	u = "LT", -- 왼쪽 모니터 위
+	i = "RT", -- 오른쪽 모니터 위
+	j = "LB", -- 왼쪽 모니터 아래
+	k = "RB", -- 오른쪽 모니터 아래
+}
+for key, region in pairs(TILING_KEYS) do
+	hs.hotkey.bind({ "ctrl", "shift", "alt" }, key, function()
+		tiling.move(region)
+	end)
+end
 
 --hs.hotkey.bind({"ctrl", "alt"}, "c", function()
 --  local frame = get_frame()

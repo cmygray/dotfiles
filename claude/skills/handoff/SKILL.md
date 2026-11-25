@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: 다른 세션(옆 Rex 팬의 새 Claude 세션, 주로 Fable)에 일을 넘기는 handoff 문서를 쓰고, 그 세션이 돌려준 handoff-back 문서를 읽어 다음 결정으로 잇는다. "핸드오프", "handoff", "handoff back", "옆 팬에서 fable로", "다른 세션에 넘겨", "핸드오프 프롬프트 써 줘", "handoff-back 읽어 줘" 요청에 사용.
+description: 다른 세션(옆 Rex 팬의 새 Claude 세션. 모델은 인자나 첫 질문으로 정함)에 일을 넘기는 handoff 문서를 쓰고, 그 세션이 돌려준 handoff-back 문서를 읽어 다음 결정으로 잇는다. "핸드오프", "handoff", "handoff back", "옆 팬에서 fable로", "다른 세션에 넘겨", "핸드오프 프롬프트 써 줘", "handoff-back 읽어 줘" 요청에 사용.
 ---
 
 # handoff — 다른 세션에 일을 넘기고 돌려받기
@@ -10,8 +10,8 @@ description: 다른 세션(옆 Rex 팬의 새 Claude 세션, 주로 Fable)에 �
 ## 흐름
 
 1. **넘길 일인지 가른다.** 메인 세션에서 몇 번의 도구 호출로 끝나는 일은 넘기지 않습니다. 넘기는 경우는 맥락을 많이 쓰는 조사·구현·실험, 다른 모델이나 effort가 맞는 일, 메인과 나란히 돌릴 일입니다.
-2. **결정할 것을 먼저 닫는다.** 넘기기 전에 원이 정해야 할 전제(범위, 비용 상한, 건드리면 안 되는 것)가 있으면 이분법으로 묻고 합의합니다. 합의한 것은 「바뀌지 않는 전제」에 적습니다.
-3. **`handoff-<주제>.md`를 쓴다.** 템플릿은 [references/handoff-template.md](references/handoff-template.md)입니다. 공통 절(토큰·비용 예산, 서브에이전트 정책, 끝까지 하기, 글쓰기 방식)은 템플릿 문구를 기본으로 두고 일에 맞게 고칩니다. 쓰기 전에 [references/prompting-guide.md](references/prompting-guide.md)를 읽습니다.
+2. **결정할 것을 먼저 닫는다.** 넘기기 전에 원이 정해야 할 전제(범위, 비용 상한, 건드리면 안 되는 것)가 있으면 이분법으로 묻고 합의합니다. 합의한 것은 「바뀌지 않는 전제」에 적습니다. 작업 세션의 모델과 effort도 여기서 정합니다(아래 「모델과 effort 정하기」).
+3. **`handoff-<주제>.md`를 쓴다.** 템플릿은 [references/handoff-template.md](references/handoff-template.md)입니다. 공통 절(토큰·비용 예산, 서브에이전트 정책, 끝까지 하기, 글쓰기 방식)은 템플릿 문구를 기본으로 두고 일에 맞게 고칩니다. 쓰기 전에 그 모델의 프롬프팅 가이드(기본 [references/prompting-guide-fable.md](references/prompting-guide-fable.md))를 읽습니다.
 4. **옆 팬에서 새 세션을 띄운다.** 아래 「세션 띄우기」를 따릅니다. 넘기는 말은 한 줄입니다.
 5. **돌려받는다.** 작업 세션은 `handoff-back-<주제>.md`를 남깁니다(템플릿: [references/handoff-back-template.md](references/handoff-back-template.md)). 원이 「돌아왔다」고 하거나 파일이 생기면 읽고, 결론과 「원이 지금 정해야 할 것」을 원에게 짧게 전합니다. 결정을 받으면 다음 handoff를 씁니다.
 
@@ -22,6 +22,13 @@ description: 다른 세션(옆 Rex 팬의 새 Claude 세션, 주로 Fable)에 �
 - 작업 세션의 진행 노트: `progress-<주제>.md`
 - 위치: 작업 폴더 루트. 폴더가 정해지지 않았으면 원에게 묻습니다.
 
+## 모델과 effort 정하기
+
+1. **인자가 우선입니다.** `/handoff ... model=opus effort=xhigh`처럼 `model=`, `effort=`가 있으면 그대로 씁니다. 별칭은 `opus` → `claude-opus-5-5`, `fable` → `claude-fable-5-2`, `sonnet` → `claude-sonnet-5-5`입니다. 다른 값이면 모델 ID로 보고 그대로 넘깁니다.
+2. **인자가 없으면 흐름 2단계의 질문에 함께 묻습니다.** 전제를 묻는 같은 질문 묶음에 모델 선택지(Fable / Opus / Sonnet)와 effort를 더합니다. 따로 한 번 더 묻지 않습니다. 물을 전제가 하나도 없으면 모델만 묻습니다.
+3. **세 곳을 같은 값으로 씁니다.** handoff 문서 첫 줄의 「대상」, 예산 절의 「이 세션」, 아래 명령의 `--model`·`--effort`.
+4. **프롬프팅 가이드는 그 모델의 것을 씁니다.** `references/prompting-guide-<별칭>.md`가 있으면 그것을 읽고, 그 파일의 「템플릿과 다르게 쓸 곳」 표대로 공통 절을 고쳐 씁니다. 템플릿은 Fable 5.2 기준이라 `prompting-guide-fable.md`에는 그 표가 없습니다. 없으면 claude-api skill의 `shared/live-sources.md`에서 그 모델의 Prompting 페이지를 확인하고, 템플릿의 공통 절(예산, 서브에이전트, 끝까지 하기)이 그 모델에도 맞는지 본 뒤 새 파일로 남깁니다. 확인하지 못했으면 handoff 문서 예산 절에 「이 모델의 가이드는 확인하지 못해 Fable 5.2 기준 문구를 썼다」고 적습니다.
+
 ## 세션 띄우기
 
 `REX_SESSION`이 있을 때 현재 팬 오른쪽에 띄웁니다. 대상 모델과 effort는 handoff 문서 첫 줄과 같게 합니다.
@@ -29,13 +36,13 @@ description: 다른 세션(옆 Rex 팬의 새 Claude 세션, 주로 Fable)에 �
 ```bash
 rex split -s "$REX_SESSION" -b "$REX_BLOCK" --split=right \
   -c <작업 폴더> --label <주제> --json -- \
-  claude --model claude-fable-5-2 --effort high \
+  claude --model <모델 ID> --effort <effort> \
   --settings ~/dotfiles/claude/skills/handoff/scripts/session-settings.json \
   "<작업 폴더>/handoff-<주제>.md 를 읽고 그대로 수행해 주세요. 끝나면 handoff-back-<주제>.md로 돌려주세요." \
   | jq -r '.block_ids[0]'
 ```
 
-- **`--settings`는 빼지 않습니다.** 이 설정이 Fable 세션이 Fable 서브에이전트를 띄우는 것을 막습니다(아래 「서브에이전트 모델 고정」).
+- **`--settings`는 빼지 않습니다.** 이 설정이 작업 세션이 자기와 같은 비싼 모델로 서브에이전트를 띄우는 것을 막습니다(아래 「서브에이전트 모델 고정」).
 - 띄운 뒤 `rex capture -s "$REX_SESSION" -b <block> --trim | tail -15`로 시작했는지만 확인합니다. 그 뒤로는 지켜보지 않습니다.
 - `REX_SESSION`이 없으면 위 한 줄 프롬프트를 원에게 주고, 원이 직접 세션을 엽니다.
 - 같은 대화 맥락이 꼭 필요하면 `claude --resume <id> --fork-session`을 쓸 수 있습니다. 하지만 기본은 새 세션입니다. 넘길 맥락은 handoff 문서에 씁니다.

@@ -63,6 +63,15 @@
             "command": "sh -c '$HOME/dotfiles/claude/hooks/block-node-modules-symlink.sh'"
           }
         ]
+      },
+      {
+        "matcher": "mcp__.*[Nn]otion.*__notion-(create-pages|update-page|create-comment|update-comment|create-suggested-edit|create-database|create-meeting-note)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/dotfiles/claude/hooks/notion-local-path-gate.py\""
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -97,9 +106,7 @@
     "security-guidance@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": false,
     "claude-hud@claude-hud": false,
-    "codex@openai-codex": true,
     "dev@superct": true,
-    "ralph-loop@claude-plugins-official": true,
     "sentry@claude-plugins-official": true,
     "notion@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
@@ -115,6 +122,7 @@
     "cowork-plugin-management@synced": false,
     "design@synced": false,
     "eval-glossary@won-mods": true,
+    "pm@superct": true,
     "terminal-browser@terminal-browser": true
   },
   "extraKnownMarketplaces": {
@@ -171,6 +179,7 @@
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
+  "theme": "auto",
   "editorMode": "vim",
   "verbose": false,
   "autoCompactEnabled": false,

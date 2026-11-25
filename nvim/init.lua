@@ -38,10 +38,17 @@ vim.opt.tabstop = 2
 vim.opt.expandtab = true
 vim.opt.signcolumn = "yes" -- for vim-gitgutter
 
--- markdown-preview
-vim.g.mkdp_theme = "dark"
-vim.g.mkdp_open_to_the_world = 1
-vim.g.mkdp_port = "8689"
+-- mdr: 마크다운 리더 (cmygray/mdr). 파일이 바뀌면 앱이 스스로 다시 그립니다.
+-- mdr 명령(CLI)이 PATH에 있으면 그것으로 열고(원격·SSH 팬이면 링크를 냄),
+-- 없으면 번들 식별자로 이 Mac의 mdr.app을 바로 엽니다.
+vim.api.nvim_create_user_command("Mdr", function()
+	local file = vim.fn.expand("%:p")
+	if file == "" then
+		return vim.notify("mdr: 파일에 연결된 버퍼가 아닙니다", vim.log.levels.WARN)
+	end
+	local cmd = vim.fn.executable("mdr") == 1 and { "mdr", file } or { "open", "-b", "kim.two.mdr", file }
+	vim.fn.jobstart(cmd, { detach = true })
+end, {})
 
 -- Keymaps
 vim.keymap.set("v", "//", 'y/<C-R>"<CR>N')

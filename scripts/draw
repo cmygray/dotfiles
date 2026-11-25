@@ -7,7 +7,8 @@
 #   draw close                      draw 팬을 닫는다
 #
 # Rex 탭(REX_BLOCK 이 속한 window)마다 draw 팬 하나를 재사용한다. 없으면 같은 탭의
-# nview 팬 아래, 그것도 없으면 현재 팬 오른쪽에 포커스를 옮기지 않고 split 한다.
+# nview 팬 아래, 그것도 없으면 현재 팬을 그림 비율에 맞춰 오른쪽/아래 중 그림이 더 크게
+# 보이는 쪽으로 포커스를 옮기지 않고 split 한다(크기를 못 읽으면 오른쪽).
 # 그림은 팬 픽셀 크기에 맞춰 1x 로 래스터화한다. 파일은 $TMPDIR/draw-<탭> 에 두고 버린다.
 
 set -euo pipefail
@@ -25,6 +26,36 @@ key="${win:-${REX_SESSION:-default}}"; key="${key##*-}"
 DIR="${TMPDIR:-/tmp}/draw-${key}"
 mkdir -p "$DIR"
 
+# 셀 픽셀 크기를 못 읽을 때의 기본값(관찰: 525px/75열 = 7px, 행은 그 약 2배)
+CELL_W_DEFAULT=7
+CELL_H_DEFAULT=15
+
+# 그림(cur.svg→check.png / cur.png) 픽셀 크기 "w h". 실패하면 빈 문자열.
+img_size() {
+  local f="$DIR/cur.png"; [ -f "$f" ] || f="$DIR/check.png"
+  python3 -c 'import struct,sys
+d=open(sys.argv[1],"rb").read(24)
+w,h=struct.unpack(">II",d[16:24]); print(w,h) if w and h else sys.exit(1)' "$f" 2>/dev/null || true
+}
+
+# 분할 대상 팬 크기와 그림 크기로 right/below 중 그림 넓이가 큰 쪽을 출력. 실패 시 빈 문자열.
+# 넓이 = min(w/iw, h/ih)^2 * iw * ih (비율 유지), 후보 팬: right = (W*p, H), below = (W, H*p)
+pick_dir() {
+  local sz img ratio="${DRAW_RATIO:-50}"
+  sz=$(rex block call -b "$1" size '{}' 2>/dev/null) || return 0
+  img=$(img_size); [ -n "$img" ] || return 0
+  jq -nr --argjson s "$sz" --arg img "$img" --argjson p "$ratio" \
+    --argjson cw "$CELL_W_DEFAULT" --argjson ch "$CELL_H_DEFAULT" '
+    ($img | split(" ") | map(tonumber)) as [$iw, $ih]
+    | (($s.cell_width_px // 0) | if . > 0 then . else $cw end) as $cwp
+    | (($s.cell_height_px // 0) | if . > 0 then . else $ch end) as $chp
+    | ($s.columns * $cwp) as $W | ($s.rows * $chp) as $H
+    | def area($w; $h): ([$w / $iw, $h / $ih] | min) as $k | $k * $k * $iw * $ih;
+      if $W > 0 and $H > 0 and $iw > 0 and $ih > 0 then
+        (if area($W * $p / 100; $H) >= area($W; $H * $p / 100) then "right" else "below" end)
+      else empty end' 2>/dev/null || true
+}
+
 alive() { [ -f "$DIR/pid" ] && kill -0 "$(cat "$DIR/pid")" 2>/dev/null; }
 
 ensure() {
@@ -33,7 +64,11 @@ ensure() {
   local anchor=(-b "${REX_BLOCK:?REX_BLOCK 없음}") dir=right
   local nv
   nv=$(jq -r --arg w "$win" '.blocks[] | select(.window_id == $w and .label == "nview") | .block_id' <<<"${blocks:-}" 2>/dev/null | head -1 || true)
-  [ -n "$nv" ] && { anchor=(-b "$nv"); dir=below; }
+  if [ -n "$nv" ]; then anchor=(-b "$nv"); dir=below
+  else
+    local pd; pd=$(pick_dir "${anchor[1]}")
+    [ -n "$pd" ] && dir="$pd"
+  fi
   local block
   block=$(rex split "${anchor[@]}" --split "$dir" --focus=false --ratio "${DRAW_RATIO:-50}" -- \
     sh -c "echo \$\$ > '$DIR/pid'; exec python3 '$VIEW' '$DIR'")
