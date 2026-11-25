@@ -2,7 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
     "FIGMA_TOKEN": "__REDACTED__",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_ENABLE_FUNCTION_HOOKS": "1"
   },
   "permissions": {
     "allow": [
@@ -113,7 +114,8 @@
     "pm@synced": false,
     "cowork-plugin-management@synced": false,
     "design@synced": false,
-    "eval-glossary@won-mods": true
+    "eval-glossary@won-mods": true,
+    "terminal-browser@terminal-browser": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -145,6 +147,12 @@
       "source": {
         "source": "directory",
         "path": "~/dotfiles/claude/mods"
+      }
+    },
+    "terminal-browser": {
+      "source": {
+        "source": "github",
+        "repo": "zenbu-labs/terminal-browser"
       }
     }
   },
