@@ -11,7 +11,11 @@
       "Bash(git push:*)",
       "Bash(git *)",
       "mcp__plugin_Notion_notion__notion-fetch",
-      "mcp__plugin_Notion_notion__notion-search"
+      "mcp__plugin_Notion_notion__notion-search",
+      "mcp__s2",
+      "mcp__arxiv",
+      "mcp__unpaywall",
+      "mcp__scihub"
     ],
     "defaultMode": "auto"
   },
